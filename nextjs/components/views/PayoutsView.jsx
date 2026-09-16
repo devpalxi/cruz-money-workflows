@@ -96,6 +96,9 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const isReviewRole = isApprover || isAuthoriser;
   const reviewBasePath = isAuthoriser ? '/authoriser' : '/approver';
   const reviewScenarios = isAuthoriser ? AUTHORISER_SCENARIOS : APPROVER_SCENARIOS;
+  // A payout still waiting on the patron has no verification results yet, so
+  // there is nothing to review. Every other status opens the review screen.
+  const isReviewable = (payout) => payout.status !== 'Pending verification';
 
 
   // Filters state
@@ -1069,12 +1072,16 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         {/* Actions */}
                         {isReviewRole && (
                           <td className="px-2.5 py-3 whitespace-nowrap">
-                            <Link
-                              href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}`}
-                              className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
-                            >
-                              Review
-                            </Link>
+                            {isReviewable(item) ? (
+                              <Link
+                                href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
+                                className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
+                              >
+                                Review
+                              </Link>
+                            ) : (
+                              <span className="text-[13px] text-ink-lo">&mdash;</span>
+                            )}
                           </td>
                         )}
                       </tr>
