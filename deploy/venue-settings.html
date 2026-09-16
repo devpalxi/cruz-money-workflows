@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Venue settings - Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <script src="blacklist-data.js"></script>
+  <link rel="stylesheet" href="super-admin-ui.css">
+  <!-- Google Fonts: JetBrains Mono for numbers/codes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Specific enhancements aligned with super-admin-ui standard */
+    .back-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--sa-muted);
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: underline;
+      transition: color 0.15s ease;
+    }
+    .back-link-btn:hover {
+      color: var(--sa-teal);
+    }
+    .back-link-btn svg {
+      color: var(--sa-teal);
+    }
+
+    /* Choice group (radio pills for approvers) */
+    .sa-choice-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Pixel-Perfect Form Grid & Input Alignment */
+    .sa-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 20px;
+      align-items: start;
+    }
+    .sa-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      justify-content: flex-start;
+    }
+    .sa-field.full {
+      grid-column: 1 / -1;
+    }
+    .sa-field label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.05em;
+      color: var(--sa-muted);
+      line-height: 1.3;
+      margin: 0;
+    }
+    .sa-field input,
+    .sa-field select,
+    .sa-field textarea {
+      width: 100%;
+      height: 40px;
+      box-sizing: border-box;
+      border: 1px solid var(--sa-border);
+      border-radius: 6px;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 13.5px;
+      color: var(--sa-ink);
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .sa-field textarea {
+      height: auto;
+      min-height: 90px;
+      padding: 10px 12px;
+      resize: vertical;
+    }
+    .sa-field input:focus,
+    .sa-field select:focus,
+    .sa-field textarea:focus {
+      border-color: var(--sa-teal);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+    .sa-field-hint {
+      display: block;
+      font-size: 11.5px;
+      color: var(--sa-muted);
+      line-height: 1.4;
+      margin-top: 2px;
+    }
+    .sa-choice-btn {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 1px solid var(--sa-border);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--sa-ink);
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+    .sa-choice-btn:hover {
+      background: var(--sa-bg);
+    }
+    .sa-choice-btn[aria-checked="true"] {
+      border-color: var(--sa-teal);
+      background: var(--sa-teal-soft);
+      color: var(--sa-teal);
+      font-weight: 700;
+    }
+    #disbursementMethods [aria-pressed="true"] {
+      border-color: var(--sa-teal);
+      background: var(--sa-teal-soft);
+      color: var(--sa-teal);
+      font-weight: 700;
+    }
+    #disbursementMethods.has-error {
+      padding: 8px;
+      border: 1px solid var(--sa-danger, #dc2626);
+      border-radius: 8px;
+      background: #fff7f7;
+    }
+    #disbursementMethods.has-error [aria-pressed="true"] {
+      border-color: #dc2626;
+      background: #fff1f2;
+      color: #b91c1c;
+    }
+    #disbursementValidation {
+      color: #b91c1c;
+      font-weight: 700;
+      min-height: 18px;
+    }
+
+    /* Animated Switch Controls */
+    .sa-switch-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--sa-border);
+    }
+    .sa-switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border: 1px solid var(--sa-border);
+      border-radius: 8px;
+      background: #ffffff;
+      transition: background 0.15s ease;
+    }
+    .sa-switch-row:hover {
+      background: #fbfdfd;
+    }
+    .sa-switch-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sa-switch-label {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--sa-ink);
+    }
+    .sa-switch-hint {
+      font-size: 12px;
+      color: var(--sa-muted);
+    }
+    .sa-switch-toggle {
+      position: relative;
+      flex-shrink: 0;
+      width: 44px;
+      height: 24px;
+      border: 0;
+      border-radius: 999px;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      outline: none;
+    }
+    .sa-switch-toggle::after {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      content: "";
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
+    }
+    .sa-switch-toggle[aria-checked="true"] {
+      background: var(--sa-teal);
+    }
+    .sa-switch-toggle[aria-checked="true"]::after {
+      transform: translateX(20px);
+    }
+
+    /* Connection & Settlement Grid */
+    .sa-connection-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .sa-connection-card {
+      padding: 16px;
+      border: 1px solid var(--sa-border);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+    .sa-connection-card .sa-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.05em;
+      color: var(--sa-muted);
+    }
+    .sa-connection-card .sa-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--sa-ink);
+      margin-top: 4px;
+    }
+    .settings-page-actions { display:flex; align-items:center; gap:10px; }
+    .settings-page-actions .sa-btn[hidden] { display:none; }
+    .settings-readonly .sa-tab-panel form { pointer-events:none; }
+    .settings-readonly .sa-tab-panel input { display:none; }
+    .settings-readonly .sa-tab-panel .sa-readonly-value { display:block; min-height:42px; padding:10px 0 8px; color:var(--sa-ink); font-size:14px; font-weight:600; line-height:1.45; }
+    .sa-readonly-value { display:none; }
+    .settings-readonly .sa-choice-btn[aria-checked="true"] { opacity:1; }
+    .settings-readonly .sa-switch-toggle { opacity:.8; }
+
+    @media (max-width: 700px) {
+      .sa-connection-grid {
+        grid-template-columns: 1fr;
+      }
+      .settings-page-actions { width:100%; }
+      .settings-page-actions .sa-btn { flex:1; }
+    }
+  </style>
+</head>
+<body class="super-admin-ui">
+
+  <!-- Floating Island Header Navigation -->
+      <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content in Super Admin Layout -->
+  <main class="sa-main settings-readonly" id="settingsMain">
+    <div class="sa-page-head">
+      <div>
+        <button class="back-link-btn" id="backToDashboardBtn" type="button" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+          Back to Venues
+        </button>
+        <h1 id="venueTitle">Riverside RSL Club</h1>
+        <p id="venueSubtitle">Venue profile, payout limits, two-approver dual authorisation, AUSTRAC compliance, and bank account settings.</p>
+      </div>
+      <div class="settings-page-actions">
+        <button class="sa-btn sa-btn-secondary" id="editSettingsBtn" type="button">Edit settings</button>
+        <button class="sa-btn sa-btn-secondary" id="cancelSettingsBtn" type="button" hidden>Cancel</button>
+        <button class="sa-btn sa-btn-primary" id="saveSettingsBtn" type="button" hidden>Save changes</button>
+      </div>
+    </div>
+
+    <!-- Tabbed Settings Section -->
+    <section class="sa-section">
+      <div class="sa-section-body">
+        <div class="sa-side-layout">
+          
+          <!-- Side Tabs Navigation -->
+          <nav class="sa-side-nav" aria-label="Venue settings sections">
+            <button class="active" data-tab="profile" type="button">Venue profile</button>
+            <button data-tab="payouts" type="button">Payout &amp; compliance</button>
+            <button data-tab="connection" type="button">Settlement &amp; banking</button>
+            
+          </nav>
+
+          <!-- Tab Content Area -->
+          <div>
+            
+            <!-- Tab 1: Venue Profile -->
+            <div class="sa-tab-panel active" id="tab-profile">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Venue profile</h2>
+                  <p>Keep venue identity, legal entity, and operational contact information current.</p>
+                </div>
+              </div>
+
+              <form id="profileForm" novalidate>
+                <div class="sa-form-grid">
+                  <div class="sa-field">
+                    <label for="venueName">Venue legal name *</label>
+                    <input id="venueName" name="venueName" type="text" required autocomplete="organization" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="orgName">Organisation / Group</label>
+                    <input id="orgName" name="orgName" type="text" readonly style="background:var(--sa-bg);color:var(--sa-muted);" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="venueEmail">Venue email address *</label>
+                    <input id="venueEmail" name="venueEmail" type="email" required autocomplete="email" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="abn">Australian Business Number (ABN)</label>
+                    <input id="abn" name="abn" type="text" inputmode="numeric" placeholder="e.g. 12 345 678 901" />
+                  </div>
+                  <div class="sa-field full">
+                    <label for="venueAddress">Venue physical address</label>
+                    <input id="venueAddress" name="venueAddress" type="text" autocomplete="street-address" placeholder="e.g. 102 Riverside Drive, Parramatta NSW 2150" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="contactName">Compliance officer / Contact name</label>
+                    <input id="contactName" name="contactName" type="text" autocomplete="name" placeholder="e.g. Jonathan Chen" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="contactEmail">Contact email</label>
+                    <input id="contactEmail" name="contactEmail" type="email" autocomplete="email" placeholder="e.g. j.chen@riversidersl.com.au" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="contactPhone">Contact phone</label>
+                    <input id="contactPhone" name="contactPhone" type="tel" autocomplete="tel" placeholder="e.g. +61 2 9876 5432" />
+                  </div>
+                </div>
+
+                <div class="sa-actions" style="margin-top:20px; align-items:center;">
+                  <div id="profileMessage" class="sa-inline-message"></div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tab 2: Payout & Compliance -->
+            <div class="sa-tab-panel" id="tab-payouts">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Payout &amp; compliance controls</h2>
+                </div>
+              </div>
+
+              <form id="payoutForm" novalidate>
+                <div class="sa-form-grid">
+                  <div class="sa-field full">
+                    <label>Required number of approvers</label>
+                    <div class="sa-choice-group" role="radiogroup" aria-label="Number of approvers">
+                      <button type="button" class="sa-choice-btn" id="oneApproverBtn" role="radio" aria-checked="false">1 Approver</button>
+                      <button type="button" class="sa-choice-btn" id="twoApproverBtn" role="radio" aria-checked="true">2 Approvers</button>
+                    </div>
+                  </div>
+                  <div class="sa-field">
+                    <label for="delayHours">Minimum wait time (Hours)</label>
+                    <input id="delayHours" name="delayHours" type="number" min="0" max="64" step="1" inputmode="numeric" required />
+                    <span class="sa-field-hint">Hours required between jackpot win and disbursement.</span>
+                  </div>
+                  <div class="sa-field">
+                    <label for="maxPerTransaction">Max amount per transaction (AUD)</label>
+                    <input id="maxPerTransaction" name="maxPerTransaction" type="number" min="0" step="0.01" inputmode="decimal" required />
+                  </div>
+                  <div class="sa-field">
+                    <label for="maxDaily">Max daily venue disbursement cap (AUD)</label>
+                    <input id="maxDaily" name="maxDaily" type="number" min="0" step="0.01" inputmode="decimal" required />
+                  </div>
+                  <div class="sa-field">
+                    <label for="skipIdThreshold">Skip-ID threshold (AUD)</label>
+                    <input id="skipIdThreshold" name="skipIdThreshold" type="number" min="0" step="0.01" inputmode="decimal" />
+                  </div>
+                  <div class="sa-field">
+                    <label for="noEFTLimit">Cash / No-EFT Limit (AUD)</label>
+                    <input id="noEFTLimit" name="noEFTLimit" type="number" min="0" step="0.01" inputmode="decimal" />
+                  </div>
+                </div>
+
+                <div class="sa-field full" style="margin-top:22px;">
+                  <label>Payment disbursement methods</label>
+                  <span style="font-size:12px;color:var(--sa-muted);">Choose the payment methods this venue may use. Bank transfer and cheque cannot be enabled together.</span>
+                  <div class="sa-choice-group" id="disbursementMethods" role="group" aria-label="Payment disbursement methods">
+                    <button type="button" class="sa-choice-btn" data-method="cash" aria-pressed="true">Cash</button>
+                    <button type="button" class="sa-choice-btn" data-method="bank_transfer" aria-pressed="true">Bank transfer</button>
+                    <button type="button" class="sa-choice-btn" data-method="cheque" aria-pressed="false">Cheque</button>
+                  </div>
+                  <div id="disbursementValidation" class="sa-inline-message" role="alert" aria-live="polite"></div>
+                </div>
+
+                <!-- Toggles Strip -->
+                <div class="sa-switch-group">
+                  <div class="sa-switch-row">
+                    <div class="sa-switch-copy">
+                      <span class="sa-switch-label">Allow Cash / No-EFT Payouts</span>
+                      <span class="sa-switch-hint">Allow direct floor cash payouts that bypass standard electronic disbursement.</span>
+                    </div>
+                    <button type="button" class="sa-switch-toggle" id="allowNoEftSwitch" role="switch" aria-checked="false" aria-label="Allow cash or no-EFT payouts"></button>
+                  </div>
+
+                  <div class="sa-switch-row">
+                    <div class="sa-switch-copy">
+                      <span class="sa-switch-label">Identity Verification Enabled (IDV)</span>
+                      <span class="sa-switch-hint">Require patron digital identity checks before payout approval at this venue.</span>
+                    </div>
+                    <button type="button" class="sa-switch-toggle" id="identityVerifiedSwitch" role="switch" aria-checked="true" aria-label="Toggle identity verification enabled"></button>
+                  </div>
+
+                  <div class="sa-switch-row">
+                    <div class="sa-switch-copy">
+                      <span class="sa-switch-label">Skip Identity Verification</span>
+                      <span class="sa-switch-hint">Allow eligible low-risk wins under threshold to bypass digital IDV check.</span>
+                    </div>
+                    <button type="button" class="sa-switch-toggle" id="skipIdSwitch" role="switch" aria-checked="true" aria-label="Skip identity verification"></button>
+                  </div>
+
+                  <div class="sa-switch-row">
+                    <div class="sa-switch-copy">
+                      <span class="sa-switch-label">Suspicious Transaction Analysis</span>
+                      <span class="sa-switch-hint">Enable continuous AI/AML risk scoring and suspicious activity indicators.</span>
+                    </div>
+                    <button type="button" class="sa-switch-toggle" id="suspiciousSwitch" role="switch" aria-checked="true" aria-label="Enable suspicious transaction analysis"></button>
+                  </div>
+                </div>
+
+                <div class="sa-actions" style="margin-top:20px; align-items:center;">
+                  <div id="payoutMessage" class="sa-inline-message"></div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tab 3: Settlement & Banking -->
+            <div class="sa-tab-panel" id="tab-connection">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Settlement &amp; banking connection</h2>
+                  <p>Direct debit and real-time PayTo settlement details configured for this venue.</p>
+                </div>
+              </div>
+
+              <div class="sa-connection-grid">
+                <div class="sa-connection-card">
+                  <div class="sa-label">Bank Connection</div>
+                  <div class="sa-value" id="bankStatus">Connected (Payment Service / Zepto)</div>
+                </div>
+                <div class="sa-connection-card">
+                  <div class="sa-label">Account Name</div>
+                  <div class="sa-value" id="bankName">Riverside RSL Club Gaming Acc</div>
+                </div>
+                <div class="sa-connection-card">
+                  <div class="sa-label">BSB Number</div>
+                  <div class="sa-value sa-mono" id="bankBsb">082-901</div>
+                </div>
+                <div class="sa-connection-card">
+                  <div class="sa-label">Account Number</div>
+                  <div class="sa-value sa-mono" id="bankAccount">••••••7890</div>
+                </div>
+                <div class="sa-connection-card">
+                  <div class="sa-label">PayTo Agreement Status</div>
+                  <div class="sa-value" id="payToStatus">Active Agreement</div>
+                </div>
+                <div class="sa-connection-card">
+                  <div class="sa-label">Last Telemetry Sync</div>
+                  <div class="sa-value" id="lastSync">Today, 08:30 AEST</div>
+                </div>
+              </div>
+            </div>
+
+            </div>
+</div>
+</section>
+  </main>
+
+  <!-- Add Blacklist Modal (Venue Admin) -->
+  <div class="modal-backdrop" id="venueAddBlacklistModal" tabindex="-1" style="display:none; position:fixed; inset:0; background:rgba(16,42,67,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; border:1px solid var(--sa-border); box-shadow:0 20px 40px rgba(0,0,0,0.18); width:100%; max-width:560px; padding:24px 28px; max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--sa-border); padding-bottom:14px;">
+        <h2 style="margin:0; font-size:18px; color:var(--sa-ink);">Add Venue Blacklist Record</h2>
+        <button type="button" onclick="closeVenueAddBlacklistModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--sa-muted);">&times;</button>
+      </div>
+      <form id="venueAddBlacklistForm" onsubmit="handleVenueAddBlacklist(event)">
+        <div class="sa-form-grid" style="grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="sa-field full">
+            <label for="venueNewPatronName">Patron full name *</label>
+            <input type="text" id="venueNewPatronName" placeholder="e.g. MARCUS A PROCTOR" required style="text-transform:uppercase;">
+          </div>
+          <div class="sa-field">
+            <label for="venueNewDob">Date of birth</label>
+            <input type="text" id="venueNewDob" placeholder="DD/MM/YYYY">
+          </div>
+          <div class="sa-field">
+            <label for="venueNewDocType">ID document type</label>
+            <select id="venueNewDocType">
+              <option value="Passport">Passport</option>
+              <option value="Driver Licence">Driver Licence</option>
+              <option value="Medicare">Medicare</option>
+              <option value="Other ID">Other ID</option>
+            </select>
+          </div>
+          <div class="sa-field">
+            <label for="venueNewDocNumber">ID document number</label>
+            <input type="text" id="venueNewDocNumber" placeholder="e.g. PA9812401">
+          </div>
+          <div class="sa-field">
+            <label for="venueNewReasonCat">Reason category *</label>
+            <select id="venueNewReasonCat" required>
+              <option value="FrankieOne PEP Match">FrankieOne PEP Match</option>
+              <option value="FrankieOne Sanctions Match">FrankieOne Sanctions Match</option>
+              <option value="DVS Document Fraud / Fake ID">DVS Document Fraud / Fake ID</option>
+              <option value="Adverse Media Match">Adverse Media Match</option>
+              <option value="Self-Exclusion / Venue Barred">Self-Exclusion / Venue Barred</option>
+              <option value="Patron Misconduct / Barred">Patron Misconduct / Barred</option>
+            </select>
+          </div>
+          <div class="sa-field full">
+            <label for="venueNewFrankieRef">FrankieOne Entity / Search Ref</label>
+            <input type="text" id="venueNewFrankieRef" placeholder="e.g. Fr57rftufTKUYTF">
+          </div>
+          <div class="sa-field full">
+            <label for="venueNewNotes">Exclusion justification &amp; evidence notes *</label>
+            <textarea id="venueNewNotes" rows="3" placeholder="Provide detailed rationale and evidence reference..." required></textarea>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--sa-border); padding-top:16px;">
+          <button type="button" class="sa-btn sa-btn-secondary" onclick="closeVenueAddBlacklistModal()">Cancel</button>
+          <button type="submit" class="sa-btn sa-btn-primary">Save Blacklist Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Remove Blacklist Modal (Venue Admin) -->
+  <div class="modal-backdrop" id="venueRemoveBlacklistModal" tabindex="-1" style="display:none; position:fixed; inset:0; background:rgba(16,42,67,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; border:1px solid var(--sa-border); box-shadow:0 20px 40px rgba(0,0,0,0.18); width:100%; max-width:500px; padding:24px 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--sa-border); padding-bottom:12px;">
+        <h2 style="margin:0; font-size:18px; color:var(--sa-red);">Remove from Venue Blacklist</h2>
+        <button type="button" onclick="closeVenueRemoveBlacklistModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--sa-muted);">&times;</button>
+      </div>
+      <p style="font-size:13.5px; color:var(--sa-muted); margin-bottom:14px;">
+        You are about to remove <strong id="venueRemovePatronName" style="color:var(--sa-ink);">-</strong> from this venue's active exclusion register.
+      </p>
+      <form id="venueRemoveBlacklistForm" onsubmit="handleVenueRemoveBlacklist(event)">
+        <input type="hidden" id="venueRemoveRecordId">
+        <div class="sa-field">
+          <label for="venueRemovalReason">Removal rationale &amp; statutory justification *</label>
+          <textarea id="venueRemovalReason" rows="3" placeholder="State reasons for lifting the venue barring (e.g. Identity verified via statutory appeal, court discharge, mistaken identity)..." required></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--sa-border); padding-top:14px;">
+          <button type="button" class="sa-btn sa-btn-secondary" onclick="closeVenueRemoveBlacklistModal()">Cancel</button>
+          <button type="submit" class="sa-btn sa-btn-danger">Confirm Removal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script src="disbursement-policy.js"></script>
+  <script>
+    const STORAGE_KEY = 'venueConfigData';
+    const DEFAULT_VENUE = {
+      venueName: 'Riverside RSL Club',
+      orgName: 'Riverside Group',
+      venueEmail: 'admin@riversidersl.com.au',
+      abn: '55 123 456 789',
+      venueAddress: '102 Riverside Drive, Parramatta NSW 2150',
+      contactName: 'Jonathan Chen',
+      contactEmail: 'j.chen@riversidersl.com.au',
+      contactPhone: '+61 2 9876 5432',
+      approvers: 2,
+      delayHours: 24,
+      minWaitTime: 24,
+      maxPerTransaction: 5000,
+      maxDaily: 30000,
+      allowNoEFTPayout: false,
+      noEFTLimit: 500,
+      IdentityVerifiedEnabled: true,
+      skipIdEnabled: true,
+      frankieOneEnabled: true,
+      skipIdThreshold: 500,
+      suspiciousAnalysisEnabled: true,
+      disbursementPolicy: { chequeEnabled: false, allowedMethods: ['cash', 'bank_transfer'] },
+      bankDetails: {
+        partyName: 'Riverside RSL Club Gaming Acc',
+        bsb: '082-901',
+        accountNumber: '44887890'
+      }
+    };
+
+    function loadVenueData() {
+      try {
+        let ctx = {};
+        const ctxStr = sessionStorage.getItem('selectedVenueContext');
+        if (ctxStr) {
+          try { ctx = JSON.parse(ctxStr); } catch (e) {}
+        }
+        const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {};
+        return { ...DEFAULT_VENUE, ...ctx, ...stored };
+      } catch (error) {
+        return { ...DEFAULT_VENUE };
+      }
+    }
+
+    function saveVenueData(patch) {
+      const data = loadVenueData();
+      const next = { ...data, ...patch };
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    }
+
+    function setSwitch(button, enabled) {
+      if (button) button.setAttribute('aria-checked', String(Boolean(enabled)));
+    }
+    function getSwitch(button) {
+      return button ? button.getAttribute('aria-checked') === 'true' : false;
+    }
+
+    function setSettingsEditing(editing) {
+      const main = document.getElementById('settingsMain');
+      document.querySelectorAll('#profileForm input, #payoutForm input').forEach(field => {
+        let value = field.nextElementSibling;
+        if (!value || !value.classList.contains('sa-readonly-value')) {
+          value = document.createElement('span');
+          value.className = 'sa-readonly-value';
+          field.insertAdjacentElement('afterend', value);
+        }
+        value.textContent = field.value || 'Not configured';
+      });
+      const controls = document.querySelectorAll('#profileForm input, #payoutForm input, #profileForm button[type="submit"], #payoutForm button[type="submit"], #payoutForm .sa-choice-btn, #payoutForm .sa-switch-toggle');
+      controls.forEach(control => { control.disabled = !editing; });
+      main.classList.toggle('settings-readonly', !editing);
+      document.getElementById('editSettingsBtn').hidden = editing;
+      document.getElementById('cancelSettingsBtn').hidden = !editing;
+      document.getElementById('saveSettingsBtn').hidden = !editing;
+    }
+
+    function setApprovers(value) {
+      const oneBtn = document.getElementById('oneApproverBtn');
+      const twoBtn = document.getElementById('twoApproverBtn');
+      if (oneBtn) oneBtn.setAttribute('aria-checked', String(value === 1));
+      if (twoBtn) twoBtn.setAttribute('aria-checked', String(value === 2));
+    }
+
+    function maskValue(value, visibleEnd) {
+      if (!value) return 'Not configured';
+      const stringValue = String(value);
+      return stringValue.length <= visibleEnd ? stringValue : '••••••' + stringValue.slice(-visibleEnd);
+    }
+
+    function populatePage() {
+      const data = loadVenueData();
+      const role = sessionStorage.getItem('userRole') || 'admin';
+      const isSuperAdmin = role === 'superadmin';
+
+      const roleBadge = document.getElementById('settings-role-badge');
+      const switchLink = document.getElementById('settings-switch-link');
+      const adminNav = document.getElementById('settings-admin-nav');
+      const backBtn = document.getElementById('backToDashboardBtn');
+      if (isSuperAdmin) {
+        if (roleBadge) {
+          roleBadge.textContent = 'SUPER ADMIN';
+          roleBadge.className = 'role-badge super-admin';
+        }
+        if (switchLink) {
+          switchLink.href = 'dashboard.html';
+          switchLink.textContent = '→ Switch to Admin';
+          switchLink.onclick = () => sessionStorage.setItem('userRole', 'admin');
+        }
+        if (adminNav) {
+          adminNav.innerHTML = `
+            <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+            <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+            <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+            <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+            <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+            <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+            <a href="super-admin-smr.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+            <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+            <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+          `;
+        }
+        if (backBtn) {
+          backBtn.style.display = 'inline-flex';
+          backBtn.onclick = () => { window.location.href = 'super-admin.html'; };
+        }
+      } else {
+        if (roleBadge) {
+          roleBadge.textContent = 'ADMIN';
+          roleBadge.className = 'role-badge admin';
+        }
+        if (switchLink) {
+          switchLink.href = 'super-admin.html';
+          switchLink.textContent = '→ Switch to Super Admin';
+          switchLink.onclick = () => sessionStorage.setItem('userRole', 'superadmin');
+        }
+        if (backBtn) backBtn.style.display = 'none';
+      }
+
+      const venueName = data.venueName || DEFAULT_VENUE.venueName;
+      document.title = venueName + ' - Venue settings';
+      document.getElementById('venueTitle').textContent = venueName;
+
+      const profileFields = ['venueName', 'orgName', 'venueEmail', 'abn', 'venueAddress', 'contactName', 'contactEmail', 'contactPhone'];
+      profileFields.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.value = data[id] || '';
+      });
+
+      setApprovers(Number(data.approvers) === 1 ? 1 : 2);
+      document.getElementById('delayHours').value = data.minWaitTime ?? data.delayHours ?? 24;
+      document.getElementById('maxPerTransaction').value = data.maxPerTransaction ?? 5000;
+      document.getElementById('maxDaily').value = data.maxDaily ?? 30000;
+      document.getElementById('skipIdThreshold').value = data.skipIdThreshold ?? 500;
+      document.getElementById('noEFTLimit').value = data.noEFTLimit ?? 500;
+
+      setSwitch(document.getElementById('allowNoEftSwitch'), data.allowNoEFTPayout === true);
+      setSwitch(document.getElementById('identityVerifiedSwitch'), data.IdentityVerifiedEnabled !== false);
+      setSwitch(document.getElementById('skipIdSwitch'), data.skipIdEnabled !== false);
+      setSwitch(document.getElementById('suspiciousSwitch'), data.suspiciousAnalysisEnabled !== false);
+
+      const policy = RiversideDisbursement.readVenuePolicy(data.venueId || data.venueName, data.disbursementPolicy);
+      document.querySelectorAll('#disbursementMethods [data-method]').forEach(button => {
+        const active = policy.allowedMethods.includes(button.dataset.method);
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+
+      const bank = data.bankDetails || {};
+      const bankName = bank.partyName || bank.name || 'Riverside RSL Club Gaming Acc';
+      const bsb = bank.bsb || '082-901';
+      const acc = bank.accountNumber || '44887890';
+
+      document.getElementById('bankName').textContent = bankName;
+      document.getElementById('bankBsb').textContent = bsb;
+      document.getElementById('bankAccount').textContent = maskValue(acc, 4);
+    }
+
+    // Tab Navigation Logic
+    const tabs = document.querySelectorAll('.sa-side-nav button[data-tab]');
+    tabs.forEach(button => {
+      button.addEventListener('click', () => {
+        tabs.forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.sa-tab-panel').forEach(item => item.classList.remove('active'));
+        
+        button.classList.add('active');
+        const targetPanel = document.getElementById(`tab-${button.dataset.tab}`);
+        if (targetPanel) targetPanel.classList.add('active');
+        history.replaceState(null, '', `#${button.dataset.tab}`);
+      });
+    });
+
+    // Check URL Hash on Load
+    const requestedTab = location.hash.replace('#', '').replace('tab-', '');
+    if (requestedTab && document.querySelector(`.sa-side-nav button[data-tab="${requestedTab}"]`)) {
+      document.querySelector(`.sa-side-nav button[data-tab="${requestedTab}"]`).click();
+    }
+
+    // Choice buttons for Approvers
+    document.getElementById('oneApproverBtn').addEventListener('click', () => setApprovers(1));
+    document.getElementById('twoApproverBtn').addEventListener('click', () => setApprovers(2));
+
+    // Toggle switch click events
+    document.querySelectorAll('.sa-switch-toggle').forEach(sw => {
+      sw.addEventListener('click', () => {
+        const current = sw.getAttribute('aria-checked') === 'true';
+        sw.setAttribute('aria-checked', String(!current));
+      });
+    });
+
+    function validateDisbursementSelection() {
+      const methods = [...document.querySelectorAll('#disbursementMethods [data-method][aria-pressed="true"]')].map(item => item.dataset.method);
+      const validation = RiversideDisbursement.validate({ chequeEnabled: methods.includes('cheque'), allowedMethods: methods });
+      const group = document.getElementById('disbursementMethods');
+      const message = document.getElementById('disbursementValidation');
+      group.classList.toggle('has-error', !validation.valid);
+      message.textContent = validation.valid ? '' : validation.errors.join(' ');
+      return validation;
+    }
+
+    document.querySelectorAll('#disbursementMethods [data-method]').forEach(button => {
+      button.addEventListener('click', () => {
+        const active = button.getAttribute('aria-pressed') === 'true';
+        button.setAttribute('aria-pressed', String(!active));
+        validateDisbursementSelection();
+      });
+    });
+
+    // Forms submission
+    document.getElementById('profileForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const patch = {
+        venueName: document.getElementById('venueName').value.trim(),
+        venueEmail: document.getElementById('venueEmail').value.trim(),
+        abn: document.getElementById('abn').value.trim(),
+        venueAddress: document.getElementById('venueAddress').value.trim(),
+        contactName: document.getElementById('contactName').value.trim(),
+        contactEmail: document.getElementById('contactEmail').value.trim(),
+        contactPhone: document.getElementById('contactPhone').value.trim()
+      };
+      saveVenueData(patch);
+      document.getElementById('venueTitle').textContent = patch.venueName;
+      document.getElementById('profileMessage').textContent = 'Profile changes saved successfully.';
+      setTimeout(() => { document.getElementById('profileMessage').textContent = ''; }, 3000);
+      showToast('Venue profile updated.');
+    });
+
+    document.getElementById('payoutForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const approvers = document.getElementById('oneApproverBtn').getAttribute('aria-checked') === 'true' ? 1 : 2;
+      const patch = {
+        approvers,
+        delayHours: Number(document.getElementById('delayHours').value),
+        minWaitTime: Number(document.getElementById('delayHours').value),
+        maxPerTransaction: Number(document.getElementById('maxPerTransaction').value),
+        maxDaily: Number(document.getElementById('maxDaily').value),
+        skipIdThreshold: Number(document.getElementById('skipIdThreshold').value),
+        noEFTLimit: Number(document.getElementById('noEFTLimit').value),
+        allowNoEFTPayout: getSwitch(document.getElementById('allowNoEftSwitch')),
+        IdentityVerifiedEnabled: getSwitch(document.getElementById('identityVerifiedSwitch')),
+        skipIdEnabled: getSwitch(document.getElementById('skipIdSwitch')),
+        suspiciousAnalysisEnabled: getSwitch(document.getElementById('suspiciousSwitch'))
+      };
+      const methods = [...document.querySelectorAll('#disbursementMethods [data-method][aria-pressed="true"]')].map(item => item.dataset.method);
+      const policy = validateDisbursementSelection();
+      if (!policy.valid) {
+        document.getElementById('disbursementValidation').textContent = policy.errors.join(' ');
+        return;
+      }
+      const currentVenue = loadVenueData();
+      patch.disbursementPolicy = RiversideDisbursement.saveVenuePolicy(currentVenue.venueId || currentVenue.venueName, policy.policy).policy;
+      saveVenueData(patch);
+      document.getElementById('payoutMessage').textContent = 'Payout controls saved successfully.';
+      setTimeout(() => { document.getElementById('payoutMessage').textContent = ''; }, 3000);
+      showToast('Payout & compliance settings saved.');
+    });
+
+    document.getElementById('editSettingsBtn').addEventListener('click', () => setSettingsEditing(true));
+    document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
+      populatePage();
+      setSettingsEditing(false);
+      showToast('Changes discarded.');
+    });
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      const policy = validateDisbursementSelection();
+      if (!policy.valid) {
+        document.querySelector('[data-tab="payouts"]').click();
+        return;
+      }
+      document.getElementById('profileForm').requestSubmit();
+      document.getElementById('payoutForm').requestSubmit();
+      setSettingsEditing(false);
+      showToast('Venue settings saved.');
+    });
+
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'sa-toast';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s';
+        setTimeout(() => toast.remove(), 250);
+      }, 2500);
+    }
+
+    // --- Venue Blacklist Tab Logic ---
+    function renderVenueBlacklist() {
+      if (!window.VenueBlacklistService) return;
+      const venue = loadVenueData();
+      const venueName = venue.venueName || 'Riverside RSL Club';
+      const statusFilter = document.getElementById('venueBlacklistStatusFilter').value;
+      const search = (document.getElementById('venueBlacklistSearch').value || '').toLowerCase().trim();
+
+      const records = VenueBlacklistService.getRecordsByVenue(venueName, statusFilter);
+      const filtered = records.filter(r => {
+        if (!search) return true;
+        return (
+          r.patronName.toLowerCase().includes(search) ||
+          r.id.toLowerCase().includes(search) ||
+          (r.docNumber && r.docNumber.toLowerCase().includes(search)) ||
+          (r.searchRef && r.searchRef.toLowerCase().includes(search)) ||
+          (r.reasonCategory && r.reasonCategory.toLowerCase().includes(search))
+        );
+      });
+
+      const tbody = document.getElementById('venueBlacklistRows');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="sa-empty">No blacklist records found for ${venueName}.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const isActive = r.status === 'Active';
+        return `
+          <tr>
+            <td class="sa-mono" style="font-weight:700; color:var(--sa-ink);">${r.id}</td>
+            <td>
+              <div class="sa-primary-text">${SuperAdminData.escapeHtml(r.patronName)}</div>
+              <div class="sa-secondary-text">DOB: ${r.dob} · ${r.docType || 'ID'}: ${r.docNumber || '-'}</div>
+            </td>
+            <td>
+              <div class="sa-mono" style="font-size:12px; color:var(--sa-ink);">${SuperAdminData.escapeHtml(r.searchRef || r.frankieEntityId || '-')}</div>
+            </td>
+            <td>
+              <span class="sa-status ${isActive ? 'required' : 'pending'}" style="font-size:11px;">
+                ${SuperAdminData.escapeHtml(r.reasonCategory)}
+              </span>
+              <div class="sa-secondary-text" style="max-width:260px; white-space:normal; line-height:1.3; margin-top:4px;">
+                ${SuperAdminData.escapeHtml(r.notes)}
+              </div>
+            </td>
+            <td>
+              <div class="sa-primary-text" style="font-size:12.5px;">${SuperAdminData.escapeHtml(r.addedBy)} <span style="font-size:11px; color:var(--sa-muted);">(${r.addedRole})</span></div>
+              <div class="sa-secondary-text">${r.addedAt}</div>
+            </td>
+            <td>
+              <span class="sa-status ${isActive ? 'required' : 'inactive'}">
+                ${isActive ? 'Active' : 'Removed'}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              ${isActive ? `
+                <button class="sa-btn sa-btn-danger" style="min-height:30px; padding:0 10px; font-size:12px;" onclick="openVenueRemoveBlacklistModal('${r.id}')">
+                  Remove
+                </button>
+              ` : `
+                <span class="sa-secondary-text" style="font-size:11px;">Removed on ${r.removedAt || '-'}</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('venueBlacklistStatusFilter')?.addEventListener('change', renderVenueBlacklist);
+    document.getElementById('venueBlacklistSearch')?.addEventListener('input', renderVenueBlacklist);
+
+    document.getElementById('openVenueAddBlacklistModalBtn')?.addEventListener('click', () => {
+      document.getElementById('venueAddBlacklistModal').style.display = 'flex';
+    });
+
+    function closeVenueAddBlacklistModal() {
+      document.getElementById('venueAddBlacklistModal').style.display = 'none';
+      document.getElementById('venueAddBlacklistForm').reset();
+    }
+
+    function handleVenueAddBlacklist(e) {
+      e.preventDefault();
+      const current = loadVenueData();
+      const record = VenueBlacklistService.addBlacklistRecord({
+        venueId: current.venueId || 'venue-riverside-rsl',
+        venueName: current.venueName || 'Riverside RSL Club',
+        patronName: document.getElementById('venueNewPatronName').value,
+        dob: document.getElementById('venueNewDob').value || '-',
+        docType: document.getElementById('venueNewDocType').value,
+        docNumber: document.getElementById('venueNewDocNumber').value || '-',
+        reasonCategory: document.getElementById('venueNewReasonCat').value,
+        searchRef: document.getElementById('venueNewFrankieRef').value || '',
+        notes: document.getElementById('venueNewNotes').value,
+        actor: current.contactName || 'Venue Admin',
+        role: 'Venue Admin'
+      });
+
+      closeVenueAddBlacklistModal();
+      renderVenueBlacklist();
+      showToast(`Added ${record.patronName} to venue blacklist.`);
+    }
+
+    function openVenueRemoveBlacklistModal(recordId) {
+      const records = VenueBlacklistService.readRecords();
+      const rec = records.find(r => r.id === recordId);
+      if (!rec) return;
+      document.getElementById('venueRemoveRecordId').value = rec.id;
+      document.getElementById('venueRemovePatronName').textContent = rec.patronName;
+      document.getElementById('venueRemoveBlacklistModal').style.display = 'flex';
+    }
+
+    function closeVenueRemoveBlacklistModal() {
+      document.getElementById('venueRemoveBlacklistModal').style.display = 'none';
+      document.getElementById('venueRemoveBlacklistForm').reset();
+    }
+
+    function handleVenueRemoveBlacklist(e) {
+      e.preventDefault();
+      const recordId = document.getElementById('venueRemoveRecordId').value;
+      const reason = document.getElementById('venueRemovalReason').value;
+      const current = loadVenueData();
+
+      const updated = VenueBlacklistService.removeBlacklistRecord(recordId, {
+        reason: reason,
+        actor: current.contactName || 'Venue Admin',
+        role: 'Venue Admin'
+      });
+
+      closeVenueRemoveBlacklistModal();
+      renderVenueBlacklist();
+      showToast(`Removed ${updated.patronName} from venue blacklist.`);
+    }
+
+    document.getElementById('venueExportBlacklistBtn')?.addEventListener('click', () => {
+      const current = loadVenueData();
+      VenueBlacklistService.exportCSV(current.venueName || 'Riverside RSL Club');
+    });
+
+    // Handle tab clicking
+    document.querySelectorAll('.sa-side-nav button[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sa-side-nav button[data-tab]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sa-tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const targetPanel = document.getElementById(`tab-${btn.dataset.tab}`);
+        if (targetPanel) targetPanel.classList.add('active');
+        if (btn.dataset.tab === 'blacklist') renderVenueBlacklist();
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      populatePage();
+      setSettingsEditing(false);
+      renderVenueBlacklist();
+    });
+  </script>
+</body>
+</html>

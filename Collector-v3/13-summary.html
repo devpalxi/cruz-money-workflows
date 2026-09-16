@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payout Summary</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-border:#dcdfe6;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --success:#1e7d4b;
+    --error:#c0392b;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{ color:var(--brand); }
+  .pending-tag{
+    font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--warn, #a15c07); background:#faf1e0;
+    padding:2px 7px; border-radius:5px; margin-left:6px;
+  }
+
+  .main{ flex:1; min-width:0; max-width:680px; }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 6px; }
+  .timestamp{ font-size:14px; color:var(--text-secondary); margin:0 0 24px; }
+
+  /* accordion */
+  .accordion{
+    background:var(--panel);
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:var(--gap-lg);
+  }
+  .accordion-item + .accordion-item{ border-top:1px solid #eceef2; }
+  .accordion-trigger{
+    width:100%;
+    display:flex; align-items:center; justify-content:space-between;
+    background:none; border:none; cursor:pointer;
+    padding:18px 22px;
+    font-size:16px; font-weight:700; color:var(--text-primary);
+    font-family:inherit;
+    text-align:left;
+  }
+  .accordion-item.open .accordion-trigger{ color:var(--text-primary); }
+  .accordion-item:not(.open) .accordion-trigger{ color:var(--text-secondary); }
+  .accordion-chevron{
+    flex-shrink:0; color:var(--text-secondary);
+    transition:transform .15s ease;
+  }
+  .accordion-item.open .accordion-chevron{ transform:rotate(180deg); color:var(--text-primary); }
+
+  .accordion-panel{
+    display:none;
+    padding:0 22px 20px;
+  }
+  .accordion-item.open .accordion-panel{ display:block; }
+
+  .detail-row{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:16px;
+    padding:8px 0;
+    font-size:14.5px;
+  }
+  .detail-row dt{ color:var(--text-primary); font-weight:700; flex-shrink:0; }
+  .detail-row dd{
+    margin:0; color:var(--text-primary); text-align:right;
+    flex:1; min-width:0; word-break:break-word;
+  }
+  .detail-row dd.muted{ color:var(--text-secondary); }
+
+  /* stacked read-only box for long-text fields like Notes */
+  .detail-block-text{ padding:8px 0; }
+  .detail-block-text dt{ font-size:14.5px; font-weight:700; color:var(--text-primary); margin-bottom:6px; }
+  .detail-block-text dd{
+    margin:0; font-size:14.5px; color:var(--text-primary);
+    background:#f8f9fb; border:1px solid #eceef2; border-radius:8px;
+    padding:10px 12px; line-height:1.5; text-align:left;
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  /* plain section labels — separation via typography/spacing only, no card treatment */
+  .detail-group-title{
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-secondary);
+    margin:18px 0 4px;
+  }
+
+  /* CoP validation card */
+  .cop-card{
+    background:var(--panel);
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:var(--gap-lg);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+  }
+  .cop-label{ font-size:16px; font-weight:800; color:var(--text-primary); }
+  .cop-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px;
+    border-radius:20px;
+    font-size:13.5px; font-weight:700;
+    border:1.5px solid;
+  }
+  .cop-badge.match{ color:var(--success); border-color:#bfe6cf; background:#eefaf2; }
+  .cop-badge.fail{ color:var(--error); border-color:#f0bdb5; background:#fdecea; }
+
+  /* prototype toggle */
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-bottom:14px;
+  }
+  .proto-toggle-label{ font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:12.5px; font-weight:600; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:8px; }
+  button.btn-back, button.btn-next{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:240px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+
+  .accordion-trigger:focus-visible, button:focus-visible, .close-btn:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  /* submit confirmation modal */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:100; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff; border-radius:16px;
+    max-width:440px; width:100%;
+    padding:28px 30px;
+    box-shadow:0 20px 60px rgba(20,20,50,0.25);
+  }
+  .modal-box h2{ font-size:20px; font-weight:800; color:var(--brand); margin:0 0 12px; }
+  .modal-body{ font-size:14.5px; color:var(--text-secondary); line-height:1.55; margin:0 0 22px; }
+  .modal-actions{ display:flex; gap:var(--gap-md); }
+  .modal-actions .btn-back{ flex:1; }
+  .modal-actions .btn-next{ flex:1; max-width:none; }
+
+  /* submitted status panel */
+  .submitted-panel{
+    display:none;
+    text-align:center;
+    background:#eefaf2;
+    border:1px solid #bfe6cf;
+    border-radius:14px;
+    padding:36px 24px;
+  }
+  .submitted-panel.show{ display:block; }
+  .submitted-icon{
+    width:44px; height:44px; border-radius:50%;
+    background:#fff; border:1.5px solid #bfe6cf;
+    color:var(--success);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 16px;
+  }
+  .submitted-title{ font-size:18px; font-weight:800; color:var(--success); margin:0 0 6px; }
+  .submitted-sub{ font-size:14px; color:var(--text-secondary); margin:0; }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+    .detail-row{ flex-direction:column; gap:2px; }
+    .detail-row dd{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email Address</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Bank Account</div></div>
+    <div class="step active" id="stepSummary"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step" id="stepApproval"><div class="step-dot"></div><div class="step-label">Approval <span class="pending-tag" id="pendingTag" style="display:none">Pending</span></div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Payout #590</h1>
+    <p class="timestamp">21/07/2026, 8:24:58 am</p>
+
+    <div id="summaryContent">
+    <div class="accordion">
+      <div class="accordion-item open" data-item>
+        <button class="accordion-trigger" aria-expanded="true">
+          <span>Payment Breakdown</span>
+          <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="accordion-panel">
+          <div class="detail-row"><dt>Cash Amount</dt><dd>AUD 234.00</dd></div>
+          <div class="detail-row"><dt>Transfer Amount</dt><dd>AUD 1,999,766.00</dd></div>
+          <div class="detail-row"><dt>Internal Transaction ID</dt><dd>778859595</dd></div>
+          <div class="detail-row"><dt>Machine ID</dt><dd>EGM-003</dd></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-item>
+        <button class="accordion-trigger" aria-expanded="false">
+          <span>Member Identification</span>
+          <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="accordion-panel">
+          <div class="detail-row"><dt>Membership #</dt><dd>1234</dd></div>
+          <div class="detail-row"><dt>Email</dt><dd>uat@palxi.com</dd></div>
+          <div class="detail-row"><dt>Full Name</dt><dd>test test</dd></div>
+          <div class="detail-row"><dt>Document Type</dt><dd>No ID document</dd></div>
+
+          <div class="detail-block-text">
+            <dt>Notes</dt>
+            <dd>test</dd>
+          </div>
+
+          <p class="detail-group-title">Identity Confirmation</p>
+          <div class="detail-row"><dt>Identity Documents Provided to Staff Member</dt><dd>No</dd></div>
+          <div class="detail-row"><dt>Identity Manually Verified</dt><dd>No</dd></div>
+
+          <p class="detail-group-title">Address</p>
+          <div class="detail-row"><dt>Street</dt><dd class="muted">—</dd></div>
+          <div class="detail-row"><dt>Suburb</dt><dd class="muted">—</dd></div>
+          <div class="detail-row"><dt>State</dt><dd class="muted">—</dd></div>
+          <div class="detail-row"><dt>Post Code</dt><dd class="muted">—</dd></div>
+          <div class="detail-row"><dt>Country of Issue</dt><dd>Australia</dd></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" data-item>
+        <button class="accordion-trigger" aria-expanded="false">
+          <span>Bank Account Details</span>
+          <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="accordion-panel">
+          <div class="detail-row"><dt>Account Name</dt><dd>Test Testerson</dd></div>
+          <div class="detail-row"><dt>BSB Number</dt><dd>062-000</dd></div>
+          <div class="detail-row"><dt>Account Number</dt><dd>12345678</dd></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Prototype preview only:</span>
+      <button type="button" class="proto-btn active" id="protoMatch">CoP: Match</button>
+      <button type="button" class="proto-btn" id="protoFail">CoP: Fail</button>
+    </div>
+
+    <div class="cop-card">
+      <span class="cop-label">CoP Validation</span>
+      <span class="cop-badge match" id="copBadge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        <span id="copBadgeText">Match</span>
+      </span>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-back">Back</button>
+      <button type="button" class="btn-next" id="submitBtn">Submit</button>
+    </div>
+    </div>
+
+    <div class="submitted-panel" id="submittedPanel">
+      <div class="submitted-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <p class="submitted-title">Payout #590 Submitted for Approval</p>
+      <p class="submitted-sub">This payout is now awaiting approval and can no longer be viewed or edited.</p>
+    </div>
+  </main>
+</div>
+
+<!-- Submit confirmation modal -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="submitModalTitle">
+    <h2 id="submitModalTitle">Submit for Approval?</h2>
+    <p class="modal-body">Once submitted, this payout moves to Approval and can no longer be viewed or edited.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-back" id="modalCancelBtn">Cancel</button>
+      <button type="button" class="btn-next" id="modalConfirmBtn">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-item]').forEach(item=>{
+    const trigger = item.querySelector('.accordion-trigger');
+    trigger.addEventListener('click', ()=>{
+      const isOpen = item.classList.contains('open');
+      item.classList.toggle('open', !isOpen);
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  const copBadge = document.getElementById('copBadge');
+  const copBadgeText = document.getElementById('copBadgeText');
+  const protoMatch = document.getElementById('protoMatch');
+  const protoFail = document.getElementById('protoFail');
+
+  protoMatch.addEventListener('click', ()=>{
+    protoMatch.classList.add('active');
+    protoFail.classList.remove('active');
+    copBadge.classList.remove('fail');
+    copBadge.classList.add('match');
+    copBadgeText.textContent = 'Match';
+    copBadge.querySelector('svg').innerHTML = '<path d="M5 13l4 4L19 7"/>';
+  });
+  protoFail.addEventListener('click', ()=>{
+    protoFail.classList.add('active');
+    protoMatch.classList.remove('active');
+    copBadge.classList.remove('match');
+    copBadge.classList.add('fail');
+    copBadgeText.textContent = 'Fail';
+    copBadge.querySelector('svg').innerHTML = '<path d="M7 7L17 17M17 7L7 17"/>';
+  });
+
+  // ---- submit confirmation flow ----
+  const submitBtn = document.getElementById('submitBtn');
+  const submitModal = document.getElementById('submitModal');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+  const summaryContent = document.getElementById('summaryContent');
+  const submittedPanel = document.getElementById('submittedPanel');
+
+  submitBtn.addEventListener('click', ()=>{
+    submitModal.classList.add('open');
+  });
+  modalCancelBtn.addEventListener('click', ()=>{
+    submitModal.classList.remove('open');
+  });
+  submitModal.addEventListener('click', (e)=>{
+    if(e.target === submitModal) submitModal.classList.remove('open');
+  });
+  modalConfirmBtn.addEventListener('click', ()=>{
+    submitModal.classList.remove('open');
+    summaryContent.style.display = 'none';
+    submittedPanel.classList.add('show');
+
+    const summaryStep = document.getElementById('stepSummary');
+    const approvalStep = document.getElementById('stepApproval');
+    summaryStep.classList.remove('active');
+    summaryStep.classList.add('done');
+    approvalStep.classList.add('active');
+    document.getElementById('pendingTag').style.display = 'inline-block';
+  });
+</script>
+
+</body>
+</html>

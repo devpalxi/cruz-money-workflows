@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users - Admin | Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <link rel="stylesheet" href="pill-colors.css">
+  <script src="admin-shell.js" defer></script>
+  <!-- Import Google Fonts: JetBrains Mono for tabular numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Specific table & detail helpers aligned with dashboard design system */
+    #usersTable tbody tr {
+      cursor: pointer;
+      transition: background-color var(--t) var(--ease);
+    }
+    #usersTable tbody tr:hover {
+      background: var(--bg-hover) !important;
+    }
+
+    .user-name-title {
+      font-weight: 700;
+      color: var(--text-hi);
+      font-size: 14px;
+      line-height: 1.3;
+    }
+    .cell-email {
+      font-size: 13.5px;
+      color: var(--text-hi);
+    }
+    .cell-phone {
+      font-size: 12px;
+      color: var(--text-mid);
+      font-family: var(--font-mono);
+      margin-top: 1px;
+    }
+
+    .venue-name-clean {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-hi);
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    /* Modal wide & details */
+    .modal-card.wide {
+      max-width: 620px;
+    }
+    #addUserModal .modal-card {
+      max-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #addUserForm {
+      min-height: 0;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #addUserForm > div:first-child {
+      min-height: 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    #addUserForm textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
+    #addUserForm .form-group input,
+    #addUserForm .form-group select,
+    #addUserForm .form-group textarea {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--text-hi);
+      font: inherit;
+      font-size: 13.5px;
+      outline: none;
+    }
+    #addUserForm .form-group textarea {
+      padding-top: 10px;
+    }
+    #addUserForm .form-group input:focus,
+    #addUserForm .form-group select:focus,
+    #addUserForm .form-group textarea:focus {
+      border-color: var(--blue);
+    }
+    #addUserForm .form-group input[readonly] {
+      background: var(--bg-page);
+      color: var(--text-mid);
+    }
+    #addUserForm .form-group select {
+      appearance: none;
+      padding-right: 36px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2.2 4.2 6 8l3.8-3.8.9.9L6 9.8 1.3 5.1z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    .required-mark {
+      color: #dc2626;
+      margin-left: 2px;
+    }
+    .role-toggle-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .role-toggle {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--text-mid);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease);
+    }
+    .role-toggle[aria-pressed="true"] {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #ffffff;
+    }
+    @media (max-width: 640px) {
+      .role-toggle-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 20px;
+      margin-top: 4px;
+    }
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .detail-item.full {
+      grid-column: 1 / -1;
+    }
+    .detail-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.08em;
+      color: var(--text-lo);
+    }
+    .detail-value {
+      font-size: 14px;
+      color: var(--text-hi);
+      font-weight: 600;
+    }
+    .boolean-field {
+      display: flex;
+      gap: 8px;
+    }
+    .boolean-field select {
+      flex: 1;
+    }
+    .field-help {
+      font-size: 11px;
+      color: var(--text-mid);
+      margin-top: 2px;
+    }
+
+    /* Password Input Wrapper with Show/Hide Eye Toggle */
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .password-input-wrapper input {
+      width: 100%;
+      padding-right: 38px !important;
+    }
+    .password-toggle-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      padding: 6px;
+      color: var(--text-mid);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: color var(--t) var(--ease);
+    }
+    .password-toggle-btn:hover {
+      color: var(--text-hi);
+    }
+    .password-toggle-btn:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 1px;
+    }
+
+    /* Segmented Boolean Toggle (FALSE / TRUE) */
+    .bool-toggle-group {
+      display: flex;
+      width: 100%;
+      height: 40px;
+      padding: 3px;
+      background: #f8fafc;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      gap: 4px;
+      box-sizing: border-box;
+    }
+    .bool-toggle-btn {
+      flex: 1;
+      height: 100%;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-mid);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background-color var(--t) var(--ease), color var(--t) var(--ease), border-color var(--t) var(--ease);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bool-toggle-btn:hover:not(.active) {
+      color: var(--text-hi);
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .bool-toggle-btn.active.is-false {
+      background: #fef2f2;
+      color: #dc2626;
+      border-color: #fecaca;
+      box-shadow: 0 1px 2px rgba(220, 38, 38, 0.08);
+    }
+    .bool-toggle-btn.active.is-true {
+      background: var(--blue);
+      color: #ffffff;
+      border-color: var(--blue);
+      box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+    }
+    .bool-toggle-btn:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 1px;
+    }
+
+    /* Dedicated 4 Role Badges: Blue, Yellow, Purple, Brown */
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .role-pill.role-admin {
+      background: var(--true-blue-bg);
+      color: var(--true-blue-text);
+      border: 1px solid var(--true-blue-border);
+    }
+    .role-pill.role-authoriser {
+      background: #fefce8;
+      color: #a16207;
+      border: 1px solid #fde047;
+    }
+    .role-pill.role-approver {
+      background: #faf5ff;
+      color: #7e22ce;
+      border: 1px solid #e9d5ff;
+    }
+    .role-pill.role-collector {
+      background: #fdf8f6;
+      color: #78350f;
+      border: 1px solid #e7d5cd;
+    }
+
+    /* Precise SVG Icon Positioning (Preserving Layout) */
+    .search-wrapper #userSearchInput {
+      padding-left: 36px !important;
+    }
+    .search-wrapper .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .select-wrapper select {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      padding-right: 28px !important;
+      padding-left: 10px !important;
+    }
+    .select-wrapper .select-chevron {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    @media (max-width: 640px) {
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content Dashboard -->
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      
+      <!-- Hero Intro Section -->
+      <section class="dashboard-intro" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h1 class="dashboard-title" id="pageTitle">Staff &amp; User Accounts</h1>
+          <p class="dashboard-subtitle" id="pageSub" style="margin-bottom: 0;">Compliance access tiers, supervisory approvals, and floor collector security roles.</p>
+        </div>
+        
+        <div class="actions-group table-actions">
+          <button id="exportUsersBtn" class="btn-action">
+            <svg class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export CSV
+          </button>
+          <button id="addUserBtn" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add User
+          </button>
+        </div>
+      </section>
+
+      <!-- Filters & Actions (Double Bezel Outer) -->
+      <section class="controls-card double-bezel-outer">
+        <div class="double-bezel-inner controls-inner">
+          <div class="filters-row" style="flex-wrap: wrap; gap: 12px;">
+            <div class="search-wrapper" style="max-width: 320px;">
+              <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="userSearchInput" placeholder="Search by name, username, email, venue..." aria-label="Search staff">
+            </div>
+
+            <div class="filters-group" style="width: auto; gap: 10px;">
+              <div class="select-wrapper">
+                <select id="roleFilter">
+                  <option value="all">All Roles</option>
+                  <option value="Venue Admin">Venue Admin</option>
+                  <option value="Authoriser">Authoriser</option>
+                  <option value="Approver">Approver</option>
+                  <option value="Collector">Collector</option>
+                </select>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="userVenueFilter">
+                  <option value="all">All Venues</option>
+                  <option value="Riverside RSL Club">Riverside RSL Club</option>
+                  <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+                  <option value="Northside Leagues Club">Northside Leagues Club</option>
+                  <option value="Northside Sports Club">Northside Sports Club</option>
+                  <option value="Harbourview Hotel">Harbourview Hotel</option>
+                </select>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="userStatusFilter">
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+
+            <div class="actions-group" style="margin-left: auto;">
+              <button id="resetUserFiltersBtn" class="btn-ghost" style="display:none;">Clear Filters</button>
+              <div class="divider-vertical"></div>
+              <span id="userResultsCount" class="results-count">Showing 16 staff members</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section (Double Bezel Outer) -->
+      <section class="table-card double-bezel-outer">
+        <div class="double-bezel-inner table-inner">
+          <div class="table-responsive">
+            <table class="payouts-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Staff member</th>
+                  <th style="width: 24%;">Email &amp; contact</th>
+                  <th style="width: 22%;">Assigned venue</th>
+                  <th style="width: 11%;">Role</th>
+                  <th style="width: 10%;">Status</th>
+                  <th style="width: 8%;">Last active</th>
+                </tr>
+              </thead>
+              <tbody id="usersBody">
+                <!-- Dynamically populated via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="userEmptyState" style="display:none; text-align:center; padding: 56px 20px; color: var(--text-mid);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;color:var(--text-lo);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <p style="margin:0;font-weight:700;color:var(--text-hi);font-size:15px;">No staff members match your criteria</p>
+            <p style="margin:4px 0 0;font-size:13.5px;color:var(--text-mid);">Try adjusting your search terms or filter selections.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- User Detail Modal -->
+  <div class="modal-overlay" id="userDetailModal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <div>
+          <h2 id="detailUserFullName" style="font-size:18px;margin:0;">Jonathan Chen</h2>
+          <p id="detailUsername" style="font-size:12.5px;color:var(--text-mid);margin:2px 0 0;font-family:var(--font-mono);">@j.chen</p>
+        </div>
+        <button class="modal-close" id="detailCloseBtn" onclick="closeModal('userDetailModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div style="padding: 20px 24px;">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">User ID</div>
+            <div class="detail-value font-mono" style="color:var(--text-mid);" id="detailUserId">usr-01</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Primary Role</div>
+            <div class="detail-value" id="detailRoleBadge"><span class="role-pill role-admin">Venue Admin</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Email Address</div>
+            <div class="detail-value" id="detailUserEmail">j.chen@riversidersl.com.au</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Mobile Phone</div>
+            <div class="detail-value font-mono" id="detailUserPhone">+61 412 889 012</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Account Status</div>
+            <div class="detail-value" id="detailUserStatus"><span class="badge badge-green">Active</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">2-Factor Authentication</div>
+            <div class="detail-value" style="color:var(--green-text);font-weight:700;">Enforced (SMS)</div>
+          </div>
+          <div class="detail-item full">
+            <div class="detail-label">Assigned Venue</div>
+            <div class="detail-value" id="detailUserVenue" style="margin-top:2px;">Riverside RSL Club</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Collector IP Allowlist</div>
+            <div class="detail-value font-mono" id="detailUserAllowlist">203.0.113.0/24</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Last Session IP</div>
+            <div class="detail-value font-mono" id="detailUserLastIp">203.0.113.14</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="padding: 16px 24px; background: var(--bg-th); border-top: 1px solid var(--border);">
+        <button type="button" class="btn-secondary" id="resetPasswordBtn" style="margin-right:auto;">Reset Password</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('userDetailModal')">Close</button>
+        <button type="button" class="btn-primary" id="detailUserEditBtn">Edit User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit User Modal -->
+  <div class="modal-overlay" id="addUserModal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h2 id="addUserModalTitle">Add Staff Member</h2>
+        <button class="modal-close" onclick="closeModal('addUserModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="addUserForm">
+          <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label for="formUsername">Username<span class="required-mark">*</span></label>
+                <input type="text" id="formUsername" required minlength="3" placeholder="e.g. j.chen" />
+                <span class="field-help">Minimum 3 characters</span>
+              </div>
+              <div class="form-group">
+                <label for="formEmail">Email<span class="required-mark">*</span></label>
+                <input type="email" id="formEmail" required minlength="6" placeholder="e.g. j.chen@riversidersl.com.au" />
+                <span class="field-help">Minimum 6 characters</span>
+              </div>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label for="formPassword">Password</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="formPassword" minlength="6" placeholder="Leave blank to keep current password" />
+                  <button type="button" class="password-toggle-btn" id="togglePasswordBtn" aria-label="Toggle password visibility" title="Show/Hide password">
+                    <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+                <span class="field-help" id="formPasswordHelp">Minimum 6 characters</span>
+              </div>
+              <div class="form-group">
+                <label for="formConfirmed">Confirmed</label>
+                <div class="bool-toggle-group" id="formConfirmedGroup" role="group" aria-label="Confirmed status">
+                  <button type="button" class="bool-toggle-btn" data-field="confirmed" data-value="false" id="btnConfirmedFalse">FALSE</button>
+                  <button type="button" class="bool-toggle-btn active is-true" data-field="confirmed" data-value="true" id="btnConfirmedTrue">TRUE</button>
+                </div>
+                <input type="hidden" id="formConfirmed" value="true" />
+              </div>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="form-group">
+                <label for="formBlocked">Blocked</label>
+                <div class="bool-toggle-group" id="formBlockedGroup" role="group" aria-label="Blocked status">
+                  <button type="button" class="bool-toggle-btn active is-false" data-field="blocked" data-value="false" id="btnBlockedFalse">FALSE</button>
+                  <button type="button" class="bool-toggle-btn" data-field="blocked" data-value="true" id="btnBlockedTrue">TRUE</button>
+                </div>
+                <input type="hidden" id="formBlocked" value="false" />
+              </div>
+              <div class="form-group">
+                <label for="formClient">Client</label>
+                <select id="formClient">
+                  <option value="Riverside Group">Riverside Group</option>
+                  <option value="Northside Community Club">Northside Community Club</option>
+                  <option value="Harbourview Hospitality Group">Harbourview Hospitality Group</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="role-toggle-row">
+              <div class="form-group">
+                <label for="formCollector">Collector<span class="required-mark">*</span></label>
+                <button type="button" class="role-toggle" id="formCollector" aria-pressed="false">Collector</button>
+              </div>
+              <div class="form-group">
+                <label for="formApprover">Approver<span class="required-mark">*</span></label>
+                <button type="button" class="role-toggle" id="formApprover" aria-pressed="false">Approver</button>
+              </div>
+              <div class="form-group">
+                <label for="formAuthoriser">Authoriser<span class="required-mark">*</span></label>
+                <button type="button" class="role-toggle" id="formAuthoriser" aria-pressed="false">Authoriser</button>
+              </div>
+              <div class="form-group">
+                <label for="formAdmin">Admin<span class="required-mark">*</span></label>
+                <button type="button" class="role-toggle" id="formAdmin" aria-pressed="false">Admin</button>
+              </div>
+            </div>
+
+            <div class="form-row" style="display:grid;grid-template-columns:1fr;gap:14px;">
+              <div class="form-group">
+                <label for="formLastIpAddress">Last IP Address</label>
+                <input type="text" id="formLastIpAddress" placeholder="e.g. 203.0.113.14" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="formVenues">Venues<span class="required-mark">*</span></label>
+              <select id="formVenues" required>
+                <option value="" disabled selected>Select a venue...</option>
+                <option value="Riverside RSL Club">Riverside RSL Club</option>
+                <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+                <option value="Northside Leagues Club">Northside Leagues Club</option>
+                <option value="Northside Sports Club">Northside Sports Club</option>
+                <option value="Harbourview Hotel">Harbourview Hotel</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="formIpAllowlist">Collector IP Allowlist</label>
+              <textarea id="formIpAllowlist" rows="3" placeholder="e.g. 203.0.113.0/24"></textarea>
+            </div>
+        </div>
+
+        <div class="modal-actions" style="padding: 16px 24px; background: var(--bg-th); border-top: 1px solid var(--border);">
+          <button type="button" class="btn-modal-cancel" onclick="closeModal('addUserModal')">Cancel</button>
+          <button type="submit" class="btn-modal-submit" id="saveUserSubmitBtn">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 16 Standard Staff Profiles - Strictly Single Venue Assignment
+    const defaultUsers = [
+      { uuid: 'usr-01', username: 'j.chen', fullName: 'Jonathan Chen', email: 'admin@riversiderg.com.au', phone: '+61 412 889 012', role: 'Admin', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.14', collectorIpAllowlist: '203.0.113.0/24', lastActive: 'Today, 08:36', created: '2025-01-05T09:00:00Z' },
+      { uuid: 'usr-02', username: 'v.thornton', fullName: 'Victoria Thornton', email: 'v.thornton@riversidersl.com.au', phone: '+61 401 223 944', role: 'Admin', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.10', collectorIpAllowlist: '', lastActive: 'Today, 09:15', created: '2025-01-05T09:30:00Z' },
+      { uuid: 'usr-03', username: 'r.patel', fullName: 'Rohan Patel', email: 'r.patel@northsideclub.com.au', phone: '+61 433 112 870', role: 'Admin', confirmed: true, status: 'active', venue: 'Northside Leagues Club', lastIpAddress: '203.0.113.88', collectorIpAllowlist: '', lastActive: 'Yesterday, 17:40', created: '2025-01-06T10:00:00Z' },
+      { uuid: 'usr-04', username: 'k.lee', fullName: 'Kylie Lee', email: 'k.lee@riversidersl.com.au', phone: '+61 422 901 345', role: 'Authoriser', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.56', collectorIpAllowlist: '', lastActive: 'Today, 11:20', created: '2025-01-06T11:00:00Z' },
+      { uuid: 'usr-05', username: 'r.nguyen', fullName: 'Raymond Nguyen', email: 'r.nguyen@riversidersl.com.au', phone: '+61 418 456 789', role: 'Authoriser', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.88', collectorIpAllowlist: '', lastActive: '30 Jul 2026', created: '2025-01-07T08:00:00Z' },
+      { uuid: 'usr-06', username: 's.oconnor', fullName: 'Sean O\'Connor', email: 's.oconnor@northsideclub.com.au', phone: '+61 409 678 123', role: 'Authoriser', confirmed: true, status: 'active', venue: 'Northside Leagues Club', lastIpAddress: '203.0.113.91', collectorIpAllowlist: '', lastActive: '01 Aug 2026', created: '2025-01-07T08:30:00Z' },
+      { uuid: 'usr-07', username: 'd.walsh', fullName: 'David Walsh', email: 'd.walsh@riversidersl.com.au', phone: '+61 411 234 567', role: 'Approver', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.45', collectorIpAllowlist: '', lastActive: 'Today, 07:50', created: '2025-01-08T09:00:00Z' },
+      { uuid: 'usr-08', username: 'h.park', fullName: 'Hannah Park', email: 'h.park@riversidersl.com.au', phone: '+61 425 678 901', role: 'Approver', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.61', collectorIpAllowlist: '', lastActive: 'Yesterday, 22:15', created: '2025-01-08T10:00:00Z' },
+      { uuid: 'usr-09', username: 'c.watts', fullName: 'Cameron Watts', email: 'c.watts@northsideclub.com.au', phone: '+61 431 345 678', role: 'Approver', confirmed: true, status: 'active', venue: 'Northside Sports Club', lastIpAddress: '203.0.113.62', collectorIpAllowlist: '', lastActive: 'Yesterday, 19:30', created: '2025-01-08T10:30:00Z' },
+      { uuid: 'usr-10', username: 'l.campbell', fullName: 'Liam Campbell', email: 'l.campbell@harbourview.com.au', phone: '+61 450 789 012', role: 'Approver', confirmed: true, status: 'active', venue: 'Harbourview Hotel', lastIpAddress: '203.0.114.22', collectorIpAllowlist: '', lastActive: '02 Aug 2026', created: '2025-01-09T14:00:00Z' },
+      { uuid: 'usr-11', username: 'm.santos', fullName: 'Maria Santos', email: 'm.santos@riversidersl.com.au', phone: '+61 402 111 222', role: 'Collector', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.12', collectorIpAllowlist: '203.0.113.0/24', lastActive: 'Today, 08:42', created: '2025-01-10T08:00:00Z' },
+      { uuid: 'usr-12', username: 'p.sharma', fullName: 'Priya Sharma', email: 'p.sharma@riversidersl.com.au', phone: '+61 403 333 444', role: 'Collector', confirmed: true, status: 'active', venue: 'Riverside RSL Club', lastIpAddress: '203.0.113.19', collectorIpAllowlist: '203.0.113.0/24', lastActive: 'Today, 06:30', created: '2025-01-10T08:30:00Z' },
+      { uuid: 'usr-13', username: 't.obrien', fullName: 'Timothy O\'Brien', email: 't.obrien@northsideclub.com.au', phone: '+61 404 555 666', role: 'Collector', confirmed: true, status: 'active', venue: 'Northside Sports Club', lastIpAddress: '203.0.113.22', collectorIpAllowlist: '203.0.113.0/24', lastActive: 'Yesterday, 21:00', created: '2025-01-10T09:00:00Z' },
+      { uuid: 'usr-14', username: 'a.taylor', fullName: 'Amy Taylor', email: 'a.taylor@northsideclub.com.au', phone: '+61 405 777 888', role: 'Collector', confirmed: true, status: 'active', venue: 'Northside Leagues Club', lastIpAddress: '203.0.113.28', collectorIpAllowlist: '203.0.113.0/24', lastActive: '31 Jul 2026', created: '2025-01-11T10:00:00Z' },
+      { uuid: 'usr-15', username: 'e.davies', fullName: 'Ethan Davies', email: 'e.davies@harbourview.com.au', phone: '+61 406 999 000', role: 'Collector', confirmed: false, status: 'pending', venue: 'Harbourview Hotel', lastIpAddress: '-', collectorIpAllowlist: '203.0.114.0/24', lastActive: 'Never', created: '2025-01-12T11:00:00Z' },
+      { uuid: 'usr-16', username: 'g.wilson', fullName: 'Grace Wilson', email: 'g.wilson@riversidersl.com.au', phone: '+61 407 123 456', role: 'Collector', confirmed: true, status: 'blocked', venue: 'Riverside Bowling Club', lastIpAddress: '203.0.113.99', collectorIpAllowlist: '203.0.113.0/24', lastActive: '18 Jul 2026', created: '2025-01-05T12:00:00Z' }
+    ];
+
+    let users = [];
+    try {
+      const stored = sessionStorage.getItem('usersData');
+      if (stored) {
+        users = JSON.parse(stored);
+        // Normalize any old data that had venues array or missing confirmed
+        users = users.map(u => {
+          if (!u.venue && u.venues && u.venues.length > 0) {
+            u.venue = u.venues[0];
+          }
+          if (u.confirmed === undefined) {
+            u.confirmed = u.status !== 'pending';
+          }
+          return u;
+        });
+      } else {
+        users = defaultUsers;
+        sessionStorage.setItem('usersData', JSON.stringify(users));
+      }
+    } catch(e) {
+      users = defaultUsers;
+    }
+
+    let editUserMode = false;
+    let editUserRecord = null;
+    let currentFilteredUsers = [...users];
+
+    const usersBody = document.getElementById('usersBody');
+    const userSearchInput = document.getElementById('userSearchInput');
+    const roleFilter = document.getElementById('roleFilter');
+    const userVenueFilter = document.getElementById('userVenueFilter');
+    const userStatusFilter = document.getElementById('userStatusFilter');
+    const userResultsCount = document.getElementById('userResultsCount');
+    const resetUserFiltersBtn = document.getElementById('resetUserFiltersBtn');
+    const userEmptyState = document.getElementById('userEmptyState');
+    const usersTable = document.getElementById('usersTable');
+
+    function generateUserUuid() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+        const random = Math.random() * 16 | 0;
+        const value = character === 'x' ? random : (random & 0x3 | 0x8);
+        return value.toString(16);
+      });
+    }
+
+    function roleFlags(role) {
+      return {
+        collector: role === 'Collector',
+        approver: role === 'Approver',
+        authoriser: role === 'Authoriser',
+        admin: role === 'Admin' || role === 'Venue Admin'
+      };
+    }
+
+    function roleFromFlags(user) {
+      if (user.admin) return 'Venue Admin';
+      if (user.authoriser) return 'Authoriser';
+      if (user.approver) return 'Approver';
+      return 'Collector';
+    }
+
+    users = users.map(user => {
+      const flags = roleFlags(user.role);
+      const venueList = Array.isArray(user.venues) ? user.venues : (user.venue ? [user.venue] : ['Riverside RSL Club']);
+      const blocked = user.blocked === true || user.status === 'blocked';
+      const confirmed = user.confirmed !== undefined ? user.confirmed === true : (user.status !== 'pending');
+      return {
+        ...user,
+        uuid: user.uuid || generateUserUuid(),
+        fullName: user.fullName || user.username,
+        role: user.role === 'Admin' ? 'Venue Admin' : user.role,
+        ...flags,
+        collector: user.collector ?? flags.collector,
+        approver: user.approver ?? flags.approver,
+        authoriser: user.authoriser ?? flags.authoriser,
+        admin: user.admin ?? flags.admin,
+        confirmed,
+        blocked,
+        status: blocked ? 'blocked' : (user.status || (confirmed ? 'active' : 'pending')),
+        client: user.client || 'Riverside Group',
+        venues: venueList,
+        venue: venueList[0]
+      };
+    });
+
+    function getRoleBadgeHtml(role) {
+      if (role === 'Admin' || role === 'Venue Admin') return '<span class="role-pill role-admin">Venue Admin</span>';
+      if (role === 'Authoriser') return '<span class="role-pill role-authoriser">Authoriser</span>';
+      if (role === 'Approver') return '<span class="role-pill role-approver">Approver</span>';
+      return '<span class="role-pill role-collector">Collector</span>';
+    }
+
+    function getStatusBadgeHtml(status) {
+      if (status === 'active') return '<span class="badge badge-green">Active</span>';
+      if (status === 'pending') return '<span class="badge badge-amber">Pending</span>';
+      return '<span class="badge badge-red">Blocked</span>';
+    }
+
+    function renderUsersTable(data) {
+      if (!usersBody) return;
+      usersBody.innerHTML = '';
+      currentFilteredUsers = data;
+
+      if (!data || data.length === 0) {
+        if (userEmptyState) userEmptyState.style.display = 'block';
+        if (usersTable) usersTable.style.display = 'none';
+        if (userResultsCount) userResultsCount.textContent = 'Showing 0 staff members';
+        return;
+      }
+
+      if (userEmptyState) userEmptyState.style.display = 'none';
+      if (usersTable) usersTable.style.display = 'table';
+      if (userResultsCount) {
+        userResultsCount.textContent = 'Showing ' + data.length + ' of ' + users.length + ' staff member' + (users.length === 1 ? '' : 's');
+      }
+
+      data.forEach(user => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>
+            <div class="user-name-title">${user.fullName || user.username}</div>
+          </td>
+          <td>
+            <div class="cell-email">${user.email || '-'}</div>
+            <div class="cell-phone font-mono">${user.phone || '-'}</div>
+          </td>
+          <td>
+            <div class="venue-name-clean">${user.venue || '-'}</div>
+          </td>
+          <td>${getRoleBadgeHtml(user.role)}</td>
+          <td>${getStatusBadgeHtml(user.status)}</td>
+          <td class="font-mono" style="font-size:12.5px;color:var(--text-mid);">${user.lastActive || 'Never'}</td>
+        `;
+
+        tr.addEventListener('click', () => {
+          openUserDetailModal(user);
+        });
+
+        usersBody.appendChild(tr);
+      });
+    }
+
+    function applyUserFilters() {
+      const q = userSearchInput ? userSearchInput.value.toLowerCase().trim() : '';
+      const role = roleFilter ? roleFilter.value : 'all';
+      const venue = userVenueFilter ? userVenueFilter.value : 'all';
+      const status = userStatusFilter ? userStatusFilter.value : 'all';
+
+      const isFiltered = q !== '' || role !== 'all' || venue !== 'all' || status !== 'all';
+      if (resetUserFiltersBtn) {
+        resetUserFiltersBtn.style.display = isFiltered ? 'inline-flex' : 'none';
+      }
+
+      const filtered = users.filter(u => {
+        const matchesQuery = !q || (
+          (u.username && u.username.toLowerCase().includes(q)) ||
+          (u.fullName && u.fullName.toLowerCase().includes(q)) ||
+          (u.email && u.email.toLowerCase().includes(q)) ||
+          (u.phone && u.phone.includes(q)) ||
+          (u.role && u.role.toLowerCase().includes(q)) ||
+          (u.venue && u.venue.toLowerCase().includes(q))
+        );
+        const matchesRole = role === 'all' || u.role === role;
+        const matchesVenue = venue === 'all' || u.venue === venue;
+        const matchesStatus = status === 'all' || u.status === status;
+
+        return matchesQuery && matchesRole && matchesVenue && matchesStatus;
+      });
+
+      renderUsersTable(filtered);
+    }
+
+    if (userSearchInput) userSearchInput.addEventListener('input', applyUserFilters);
+    if (roleFilter) roleFilter.addEventListener('change', applyUserFilters);
+    if (userVenueFilter) userVenueFilter.addEventListener('change', applyUserFilters);
+    if (userStatusFilter) userStatusFilter.addEventListener('change', applyUserFilters);
+
+    if (resetUserFiltersBtn) {
+      resetUserFiltersBtn.addEventListener('click', () => {
+        if (userSearchInput) userSearchInput.value = '';
+        if (roleFilter) roleFilter.value = 'all';
+        if (userVenueFilter) userVenueFilter.value = 'all';
+        if (userStatusFilter) userStatusFilter.value = 'all';
+        applyUserFilters();
+      });
+    }
+
+    // User Detail Modal
+    window.openUserDetailModal = function(record) {
+      document.getElementById('detailUserFullName').textContent = record.fullName || record.username;
+      document.getElementById('detailUsername').textContent = `@${record.username}`;
+      document.getElementById('detailUserId').textContent = record.uuid || 'usr-default';
+      document.getElementById('detailRoleBadge').innerHTML = getRoleBadgeHtml(record.role);
+      document.getElementById('detailUserEmail').textContent = record.email || '-';
+      document.getElementById('detailUserPhone').textContent = record.phone || '+61 400 000 000';
+      document.getElementById('detailUserStatus').innerHTML = getStatusBadgeHtml(record.status);
+      document.getElementById('detailUserVenue').textContent = record.venue || 'Riverside RSL Club';
+      document.getElementById('detailUserAllowlist').textContent = record.collectorIpAllowlist || 'None (Unrestricted)';
+      document.getElementById('detailUserLastIp').textContent = record.lastIpAddress || '203.0.113.1';
+
+      document.getElementById('detailUserEditBtn').onclick = () => {
+        closeModal('userDetailModal');
+        openAddUserModal(record);
+      };
+
+      document.getElementById('resetPasswordBtn').onclick = () => {
+        showToast(`Temporary reset link sent to ${record.email}`);
+      };
+
+      openModal('userDetailModal');
+    };
+
+    function setRoleToggle(id, active) {
+      const button = document.getElementById(id);
+      if (button) button.setAttribute('aria-pressed', String(active === true));
+    }
+
+    function getRoleToggle(id) {
+      return document.getElementById(id)?.getAttribute('aria-pressed') === 'true';
+    }
+
+    document.querySelectorAll('.role-toggle').forEach(button => {
+      button.addEventListener('click', () => {
+        const active = button.getAttribute('aria-pressed') === 'true';
+        button.setAttribute('aria-pressed', String(!active));
+      });
+    });
+
+    // Segmented Boolean Toggle Helpers
+    function setBoolToggle(field, value) {
+      const boolVal = String(value) === 'true';
+      const capitalized = field.charAt(0).toUpperCase() + field.slice(1);
+      const hiddenInput = document.getElementById(`form${capitalized}`);
+      if (hiddenInput) hiddenInput.value = String(boolVal);
+
+      const btnFalse = document.getElementById(`btn${capitalized}False`);
+      const btnTrue = document.getElementById(`btn${capitalized}True`);
+
+      if (btnFalse && btnTrue) {
+        btnFalse.classList.toggle('active', !boolVal);
+        btnFalse.classList.toggle('is-false', !boolVal);
+        btnFalse.setAttribute('aria-pressed', String(!boolVal));
+
+        btnTrue.classList.toggle('active', boolVal);
+        btnTrue.classList.toggle('is-true', boolVal);
+        btnTrue.setAttribute('aria-pressed', String(boolVal));
+      }
+    }
+
+    document.querySelectorAll('.bool-toggle-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const field = button.dataset.field;
+        const val = button.dataset.value === 'true';
+        if (field) setBoolToggle(field, val);
+      });
+    });
+
+    // Password Visibility Toggle
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener('click', () => {
+        const pwdInput = document.getElementById('formPassword');
+        const eyeOpen = togglePasswordBtn.querySelector('.eye-open');
+        const eyeClosed = togglePasswordBtn.querySelector('.eye-closed');
+        if (pwdInput.type === 'password') {
+          pwdInput.type = 'text';
+          if (eyeOpen) eyeOpen.style.display = 'none';
+          if (eyeClosed) eyeClosed.style.display = 'block';
+        } else {
+          pwdInput.type = 'password';
+          if (eyeOpen) eyeOpen.style.display = 'block';
+          if (eyeClosed) eyeClosed.style.display = 'none';
+        }
+      });
+    }
+
+    // Add / Edit User Modal
+    window.openAddUserModal = function(record = null) {
+      editUserMode = !!record;
+      editUserRecord = record;
+      const form = document.getElementById('addUserForm');
+      form.reset();
+
+      // Reset password toggle view
+      const pwdInput = document.getElementById('formPassword');
+      if (pwdInput) pwdInput.type = 'password';
+      if (togglePasswordBtn) {
+        const eyeOpen = togglePasswordBtn.querySelector('.eye-open');
+        const eyeClosed = togglePasswordBtn.querySelector('.eye-closed');
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+      }
+
+      const isSuperAdmin = (sessionStorage.getItem('userRole') || 'admin') === 'superadmin';
+
+      if (editUserMode) {
+        document.getElementById('addUserModalTitle').textContent = `Edit Staff Member (@${record.username})`;
+        document.getElementById('formUsername').value = record.username || '';
+        document.getElementById('formEmail').value = record.email || '';
+        document.getElementById('formPassword').value = '';
+        document.getElementById('formPasswordHelp').textContent = 'Leave blank to keep current password';
+        setBoolToggle('confirmed', record.confirmed !== false);
+        setBoolToggle('blocked', record.blocked === true || record.status === 'blocked');
+        document.getElementById('formClient').value = record.client || 'Riverside Group';
+        setRoleToggle('formCollector', record.collector === true);
+        setRoleToggle('formApprover', record.approver === true);
+        setRoleToggle('formAuthoriser', record.authoriser === true);
+        setRoleToggle('formAdmin', record.admin === true || record.role === 'Venue Admin');
+        document.getElementById('formLastIpAddress').value = record.lastIpAddress || '';
+        document.getElementById('formVenues').value = record.venue || '';
+        document.getElementById('formIpAllowlist').value = record.collectorIpAllowlist || '';
+      } else {
+        document.getElementById('addUserModalTitle').textContent = 'Add Staff Member';
+        document.getElementById('formPasswordHelp').textContent = 'Minimum 6 characters';
+        setBoolToggle('confirmed', true);
+        setBoolToggle('blocked', false);
+        document.getElementById('formClient').value = 'Riverside Group';
+        setRoleToggle('formCollector', true);
+        setRoleToggle('formApprover', false);
+        setRoleToggle('formAuthoriser', false);
+        setRoleToggle('formAdmin', false);
+        document.getElementById('formLastIpAddress').value = '';
+        
+        if (isSuperAdmin) {
+          // Super Admin view: Venue should not be assigned by default
+          document.getElementById('formVenues').value = '';
+        } else {
+          // Admin view: default to current venue context
+          const contextStr = sessionStorage.getItem('selectedVenueContext');
+          let activeVenue = 'Riverside RSL Club';
+          if (contextStr) {
+            try { activeVenue = JSON.parse(contextStr).venueName || activeVenue; } catch (e) {}
+          }
+          document.getElementById('formVenues').value = activeVenue;
+        }
+      }
+
+      openModal('addUserModal');
+    };
+
+    document.getElementById('addUserBtn').addEventListener('click', () => {
+      openAddUserModal();
+    });
+
+    document.getElementById('addUserForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('formUsername').value.trim().toLowerCase();
+      const email = document.getElementById('formEmail').value.trim();
+      const password = document.getElementById('formPassword').value;
+      const confirmed = document.getElementById('formConfirmed').value === 'true';
+      const blocked = document.getElementById('formBlocked').value === 'true';
+      const client = document.getElementById('formClient').value;
+      const collector = getRoleToggle('formCollector');
+      const approver = getRoleToggle('formApprover');
+      const authoriser = getRoleToggle('formAuthoriser');
+      const admin = getRoleToggle('formAdmin');
+      const venue = document.getElementById('formVenues').value;
+      const lastIpAddress = document.getElementById('formLastIpAddress').value.trim();
+      const collectorIpAllowlist = document.getElementById('formIpAllowlist').value.trim();
+      const role = roleFromFlags({ collector, approver, authoriser, admin });
+      const status = blocked ? 'blocked' : (confirmed ? (editUserMode && editUserRecord.status === 'pending' ? 'active' : (editUserRecord?.status || 'active')) : 'pending');
+
+      if (!username || username.length < 3 || !email || email.length < 6) {
+        alert('Please provide a username with at least 3 characters and a valid email address.');
+        return;
+      }
+      if (!venue) {
+        alert('Please select an assigned venue for this staff member.');
+        return;
+      }
+      if (!editUserMode && password && password.length < 6) {
+        alert('Password must be at least 6 characters.');
+        return;
+      }
+
+      const newRecord = {
+        uuid: editUserMode ? editUserRecord.uuid : generateUserUuid(),
+        username,
+        fullName: editUserMode ? (editUserRecord.fullName || username) : username,
+        email,
+        role,
+        status,
+        confirmed,
+        blocked,
+        collector,
+        approver,
+        authoriser,
+        admin,
+        client,
+        venues: [venue],
+        venue,
+        collectorIpAllowlist,
+        lastIpAddress: lastIpAddress || (editUserMode ? (editUserRecord.lastIpAddress || '') : ''),
+        lastActive: editUserMode ? editUserRecord.lastActive : 'Never',
+        created: editUserMode ? editUserRecord.created : new Date().toISOString()
+      };
+
+      if (password) newRecord.passwordSet = true;
+
+      if (editUserMode) {
+        const idx = users.findIndex(u => u.uuid === editUserRecord.uuid);
+        if (idx !== -1) users[idx] = newRecord;
+      } else {
+        users.unshift(newRecord);
+      }
+
+      sessionStorage.setItem('usersData', JSON.stringify(users));
+      closeModal('addUserModal');
+      showToast(editUserMode ? `Staff profile for @${username} updated` : `Staff member @${username} enrolled successfully`);
+      applyUserFilters();
+    });
+
+    // Export Users to CSV
+    document.getElementById('exportUsersBtn').addEventListener('click', () => {
+      let csv = 'User ID,Full Name,Username,Email,Phone,Role,Status,Assigned Venue,IP Allowlist,Last Active\n';
+      currentFilteredUsers.forEach(u => {
+        csv += `"${u.uuid}","${u.fullName || u.username}","${u.username}","${u.email}","${u.phone || ''}","${u.role}","${u.status}","${u.venue || ''}","${u.collectorIpAllowlist || ''}","${u.lastActive || ''}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `riverside_staff_roster_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+      showToast(`Exported ${currentFilteredUsers.length} staff accounts to CSV`);
+    });
+
+    // Modal Helpers
+    window.openModal = function(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add('active');
+    };
+    window.closeModal = function(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.remove('active');
+    };
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+    });
+
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.textContent = msg;
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600;z-index:2100;box-shadow:0 10px 25px rgba(0,0,0,0.2);display:flex;align-items:center;gap:8px;';
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.25s';
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    }
+
+    // Role & Venue Context Setup on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      const userRole = sessionStorage.getItem('userRole') || 'admin';
+      const isSuperAdmin = userRole === 'superadmin';
+
+      if (isSuperAdmin) {
+        // Super Admin View: Global overview of all staff across all venues
+        document.getElementById('pageTitle').textContent = 'Staff & User Accounts';
+        document.getElementById('pageSub').textContent = 'Compliance access tiers, supervisory approvals, and floor collector security roles across all venues.';
+        if (userVenueFilter) userVenueFilter.value = 'all';
+
+        const roleBadge = document.getElementById('settings-role-badge') || document.querySelector('.role-badge');
+        if (roleBadge) {
+          roleBadge.textContent = 'SUPER ADMIN';
+          roleBadge.className = 'role-badge super-admin';
+        }
+
+        const switchLink = document.getElementById('settings-switch-link');
+        if (switchLink) {
+          switchLink.href = 'dashboard.html';
+          switchLink.textContent = '\u2192 Switch to Admin';
+          switchLink.onclick = () => sessionStorage.setItem('userRole', 'admin');
+        }
+
+        const nav = document.getElementById('settings-admin-nav');
+        if (nav) {
+          nav.innerHTML = `
+            <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+            <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+            <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+            <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+            <a href="admin-users.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+            <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+            <a href="super-admin-smr.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+            <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+            <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+          `;
+        }
+      } else {
+        // Admin View: Scoped to specific venue
+        const contextStr = sessionStorage.getItem('selectedVenueContext');
+        let selectedVenueContext = null;
+        if (contextStr) {
+          try { selectedVenueContext = JSON.parse(contextStr); } catch (e) {}
+        }
+        const venueName = selectedVenueContext ? selectedVenueContext.venueName : 'Riverside RSL Club';
+        if (userVenueFilter) {
+          const hasOption = Array.from(userVenueFilter.options).some(opt => opt.value === venueName);
+          userVenueFilter.value = hasOption ? venueName : 'Riverside RSL Club';
+        }
+        document.getElementById('pageTitle').textContent = `${venueName} \u2014 Staff & Users`;
+        document.getElementById('pageSub').textContent = `Staff members assigned to ${venueName}.`;
+        if (userVenueFilter) {
+          const venueFilterWrapper = userVenueFilter.closest('.select-wrapper');
+          if (venueFilterWrapper) venueFilterWrapper.remove();
+        }
+      }
+
+      applyUserFilters();
+    });
+  </script>
+</body>
+</html>

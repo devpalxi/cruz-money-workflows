@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email address</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --error-bg:#fff5f5;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+    position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:13.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{ display:block; }
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  .title-row{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    gap:28px;
+    margin:0 0 22px;
+  }
+  .back-link{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:15.5px;
+    font-weight:600;
+    line-height:1;
+    color:var(--text-primary);
+    padding:0;
+    margin-left:-4px;
+    text-decoration:underline;
+  }
+  .back-link svg{flex-shrink:0; color:var(--accent);}
+  h1{ font-size:22px; font-weight:600; color:var(--text-primary); line-height:1; margin:0; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:var(--radius);
+    padding:24px 26px;
+  }
+
+  form{ display:flex; flex-direction:column; gap:var(--gap-lg); }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:15.5px; font-weight:600; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+
+  input[type="text"], input[type="email"]{
+    height:var(--field-h);
+    width:100%;
+    padding:0 18px;
+    display:flex;
+    align-items:center;
+    border-radius:var(--radius);
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
+    font-size:17px;
+    color:var(--text-primary);
+    font-family:inherit;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+    font-variant-numeric:tabular-nums;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff;
+  }
+  input.has-error{
+    border-color:var(--error);
+    background:var(--error-bg);
+  }
+  .error-msg{
+    font-size:12.5px; color:var(--error); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  .actions{ display:flex; justify-content:space-between; align-items:center; gap:var(--gap-md); margin-top:6px; }
+  button{
+    border-radius:var(--radius); font-size:16px; font-weight:600;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-next{ height:60px; width:100%; background:var(--accent); color:#fff; padding:0 32px; font-size:19px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:active{ background:#095e56; }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+
+  button:focus-visible, .close-btn:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px fields below are touch-target sizing. On a
+     mouse/keyboard viewport that reads as oversized, so scale it down. */
+  @media (min-width:1025px){
+    :root{
+      --field-h:52px;
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    input[type="text"], input[type="email"]{font-size:15.5px; padding:0 16px;}
+    .btn-next{height:52px; font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Email address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <div class="title-row" id="titleRow">
+      <button type="button" class="back-link" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <h1>Email address</h1>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <div class="content-card">
+    <form id="emailForm" novalidate>
+
+      <div class="field">
+        <label for="email" class="req">Email</label>
+        <input type="email" id="email" placeholder="name@example.com" aria-required="true" aria-describedby="emailError" autocomplete="email" />
+        <div class="error-msg" id="emailError" role="alert" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          <span id="emailErrorText">Enter a valid email address.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="membership" class="req">Membership number</label>
+        <input type="text" id="membership" placeholder="Membership number" aria-required="true" aria-describedby="membershipError" />
+        <div class="error-msg" id="membershipError" role="alert" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          Membership number is required.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-next" id="nextBtn" disabled>Next</button>
+      </div>
+    </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ---- Cross-page data persistence ----
+  const STORAGE_KEY = 'payoutFormData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  const editingFromSummary = new URLSearchParams(location.search).get('from') === 'summary';
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = '03-before-you-start.html';
+  });
+
+  const email = document.getElementById('email');
+  const emailError = document.getElementById('emailError');
+  const emailErrorText = document.getElementById('emailErrorText');
+  const membership = document.getElementById('membership');
+  const membershipError = document.getElementById('membershipError');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function validateEmail(showError){
+    const val = email.value.trim();
+    let valid = true;
+    let message = '';
+    if(val === ''){
+      valid = false;
+      message = 'Email is required.';
+    } else if(!emailPattern.test(val)){
+      valid = false;
+      message = 'Enter a valid email address.';
+    }
+    if(showError){
+      email.classList.toggle('has-error', !valid);
+      emailError.style.display = valid ? 'none' : 'flex';
+      emailErrorText.textContent = message;
+    } else if(valid){
+      email.classList.remove('has-error');
+      emailError.style.display = 'none';
+    }
+    return valid;
+  }
+
+  function validateMembership(showError){
+    const val = membership.value.trim();
+    const valid = val !== '';
+    if(showError){
+      membership.classList.toggle('has-error', !valid);
+      membershipError.style.display = valid ? 'none' : 'flex';
+    } else if(valid){
+      membership.classList.remove('has-error');
+      membershipError.style.display = 'none';
+    }
+    return valid;
+  }
+
+  function updateNextState(){
+    const emailOk = emailPattern.test(email.value.trim());
+    const membershipOk = membership.value.trim() !== '';
+    nextBtn.disabled = !(emailOk && membershipOk);
+  }
+
+  email.addEventListener('blur', ()=> validateEmail(true));
+  email.addEventListener('input', ()=>{ validateEmail(false); updateNextState(); saveStoredData({ email: email.value }); });
+
+  membership.addEventListener('blur', ()=> validateMembership(true));
+  membership.addEventListener('input', ()=>{ validateMembership(false); updateNextState(); saveStoredData({ membership: membership.value }); });
+
+  // restore previously entered data when navigating back to this step
+  (function restoreStoredData(){
+    const data = loadStoredData();
+    if(data.email) email.value = data.email;
+    if(data.membership) membership.value = data.membership;
+  })();
+
+  if(editingFromSummary){
+    nextBtn.textContent = 'Save and return to summary';
+  }
+
+  updateNextState();
+
+  nextBtn.addEventListener('click', ()=>{
+    if(nextBtn.disabled) return;
+    window.location.href = editingFromSummary ? '13-summary.html' : '05-primary-id-document.html';
+  });
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

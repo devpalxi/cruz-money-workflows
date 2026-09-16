@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client - Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <link rel="stylesheet" href="super-admin-ui.css">
+  <script src="admin-shell.js" defer></script>
+  <script src="super-admin-mock-data.js"></script>
+  <style>
+    .client-workspace { max-width:1180px; margin:0 auto; padding:32px 28px 72px; }
+    .client-back { display:inline-flex; align-items:center; gap:6px; border:0; padding:0; margin:0 0 14px; background:transparent; color:var(--blue); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+    .client-back:hover { color:var(--blue-dark); }
+    .client-page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:24px; }
+    .client-page-head h1 { margin:0; font-size:28px; letter-spacing:-.025em; }
+    .client-page-head p { margin:7px 0 0; color:var(--sa-muted); max-width:68ch; }
+    .client-status-line { display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .client-id { color:var(--sa-muted); font:12px var(--font-mono); }
+    .client-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .client-form-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-sm); overflow:hidden; }
+    .client-section { padding:22px 24px; border-bottom:1px solid var(--border); }
+    .client-section:last-child { border-bottom:0; }
+    .client-section-head { margin-bottom:18px; }
+    .client-section-head h2 { margin:0; font-size:16px; }
+    .client-section-head p { margin:4px 0 0; color:var(--text-mid); font-size:13px; }
+    .client-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 16px; }
+    .client-grid .full { grid-column:1 / -1; }
+    .client-field { display:grid; gap:6px; }
+    .client-field label { color:var(--text-mid); font-size:12px; font-weight:700; }
+    .client-field label span { color:var(--red-text); }
+    .client-field input, .client-field select { width:100%; min-height:42px; padding:0 11px; border:1px solid var(--border-mid); border-radius:var(--r-sm); background:var(--bg-card); color:var(--text-hi); font:inherit; font-size:13.5px; }
+    .client-field input:focus, .client-field select:focus { border-color:var(--blue); outline:3px solid rgba(13,148,136,.14); }
+    .client-field input:disabled, .client-field select:disabled { background:var(--bg-th); color:var(--text-mid); cursor:default; }
+    .client-hint { color:var(--text-mid); font-size:12px; }
+    .relation-panel { min-height:112px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:18px; border:1px solid var(--border); border-radius:var(--r-md); background:var(--bg-page); color:var(--text-mid); text-align:center; }
+    .relation-panel strong { color:var(--text-hi); font-size:13px; }
+    .relation-panel p { margin:0; font-size:12.5px; }
+    .relation-add { min-height:30px; padding:0 11px; border:1px solid var(--blue-border); border-radius:var(--r-sm); background:var(--blue-light); color:var(--blue-dark); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+    .relation-add:hover { background:#ccfbf1; }
+    .boolean-group { display:flex; gap:4px; padding:3px; border:1px solid var(--border-mid); border-radius:var(--r-sm); background:var(--bg-page); }
+    .boolean-group button { flex:1; min-height:36px; border:0; border-radius:3px; background:transparent; color:var(--text-mid); font:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+    .boolean-group button.active { background:var(--bg-card); color:var(--blue-dark); box-shadow:var(--shadow-sm); }
+    .read-only .client-field input, .read-only .client-field select { border-color:transparent; padding-left:0; background:transparent; }
+    .read-only .relation-add { display:none; }
+    .client-footer { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 24px; background:var(--bg-th); border-top:1px solid var(--border); }
+    .client-footer-note { color:var(--text-mid); font-size:12.5px; }
+    .client-message { color:var(--green-text); font-size:13px; font-weight:700; }
+    @media (max-width:700px) {
+      .client-workspace { padding:24px 16px 48px; }
+      .client-page-head { align-items:flex-start; flex-direction:column; }
+      .client-grid { grid-template-columns:1fr; }
+      .client-grid .full { grid-column:auto; }
+      .client-footer { align-items:flex-start; flex-direction:column; }
+      .client-actions, .client-actions .sa-btn { width:100%; }
+      .client-actions .sa-btn { flex:1; }
+    }
+  </style>
+  <link rel="stylesheet" href="super-admin-detail.css">
+</head>
+<body class="admin-shell-page">
+  <div class="header-nav-wrapper"><header class="app-header"><div class="header-container">
+    <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <div class="logo-area"><div class="logo-text"><div class="logo-badge-row"><span class="role-badge super-admin">SUPER ADMIN</span></div><span class="logo-title">RIVERSIDE PAYOUTS</span><span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span></div></div>
+    <nav class="header-nav"><a href="super-admin-dashboard.html" class="nav-link">Dashboard</a><a href="super-admin.html" class="nav-link">Venues</a><a href="super-admin-clients.html" class="nav-link active">Clients</a><a href="admin-machines.html" class="nav-link">Machines</a><a href="admin-users.html" class="nav-link">Users</a><a href="super-admin-payouts.html" class="nav-link">Payouts</a>
+          <a href="super-admin-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venue Blacklist</a><a href="super-admin-smr.html" class="nav-link">AUSTRAC / SMRs</a><a href="billing.html" class="nav-link">Billing</a><a href="super-admin-administration.html" class="nav-link">Administration</a></nav>
+    <div class="user-profile"><a href="dashboard.html" class="switch-role-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a><span class="user-name">J.Chen</span><div class="avatar"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s1.79-4 4-4 4 1.79 4 4 4 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div></div>
+  </div></header></div>
+
+  <main class="client-workspace" id="clientWorkspace">
+    <button class="client-back" type="button" id="backToClientsBtn"><span aria-hidden="true">&larr;</span> All clients</button>
+    <div class="client-page-head"><div><h1 id="pageTitle">Client details</h1><p id="pageSubtitle">Review the client record and connected operational relationships.</p><div class="client-status-line"><span class="sa-status active" id="clientStatusBadge">Active</span><span class="client-id" id="clientIdLabel">client-</span></div></div><div class="client-actions"><button class="sa-btn sa-btn-secondary" id="editClientBtn" type="button">Edit client</button><button class="sa-btn sa-btn-primary" id="saveClientBtn" type="button" hidden>Save client</button></div></div>
+
+    <form class="client-form-card" id="clientForm" novalidate>
+      <section class="client-section"><div class="client-section-head"><h2>Client identity</h2><p>Core client credentials and approval configuration.</p></div><div class="client-grid">
+        <div class="client-field"><label for="clientName">Name <span>*</span></label><input id="clientName" required></div>
+        <div class="client-field"><label for="numberOfApprovals">Number of approvals</label><input id="numberOfApprovals" type="number" min="1" max="2"><span class="client-hint">Minimum 1 / maximum 2.</span></div>
+        <div class="client-field"><label for="tenancyClientId">Tenancy client ID</label><input id="tenancyClientId"></div>
+        <div class="client-field"><label for="email">Email <span>*</span></label><input id="email" type="email" required></div>
+        <div class="client-field"><label for="clientId">Client ID</label><input id="clientId"></div>
+        <div class="client-field"><label for="clientSecret">Client secret</label><input id="clientSecret" type="password"></div>
+      </div></section>
+
+      <section class="client-section"><div class="client-section-head"><h2>Bank details</h2><p>Banking records connected to this client.</p></div><div class="relation-panel"><strong>No bank details added</strong><p>Click below to add a banking relationship.</p><button class="relation-add" type="button">Add bank details</button></div></section>
+      <section class="client-section"><div class="client-section-head"><h2>PayTo agreement</h2><p>Settlement agreement records associated with this client.</p></div><div class="relation-panel"><strong>No PayTo agreement added</strong><p>Click below to add an agreement relationship.</p><button class="relation-add" type="button">Add PayTo agreement</button></div></section>
+
+      <section class="client-section"><div class="client-section-head"><h2>Relationships</h2><p>Connected users, jackpots, venues, and notification policies.</p></div><div class="client-grid">
+        <div class="client-field"><label for="users">Users</label><select id="users"></select></div>
+        <div class="client-field"><label for="jackpots">Jackpots</label><select id="jackpots"></select></div>
+        <div class="client-field"><label for="venues">Venues</label><select id="venues"></select></div>
+        <div class="client-field"><label for="clientNotifications">Client notifications</label><select id="clientNotifications"></select></div>
+      </div></section>
+
+      <section class="client-section"><div class="client-section-head"><h2>Payout controls</h2><p>Limits and unresolved payment handling for this client.</p></div><div class="client-grid">
+        <div class="client-field"><label for="dailyLimit">Daily limit <span>*</span></label><input id="dailyLimit" type="number" min="0" required></div>
+        <div class="client-field"><label for="minWaitTime">Minimum wait time <span>*</span></label><input id="minWaitTime" type="number" min="0" max="64" required><span class="client-hint">Minimum 0 / maximum 64.</span></div>
+        <div class="client-field"><label for="delayUnresolvedPaymentItems">Delay unresolved payment items</label><input id="delayUnresolvedPaymentItems" type="number" min="10" max="180"><span class="client-hint">Minimum 10 / maximum 180.</span></div>
+        <div class="client-field"><label>No EFT payout</label><div class="relation-panel" style="min-height:42px;padding:0 12px;flex-direction:row;justify-content:space-between;text-align:left;"><strong>No EFT payout record</strong><button class="relation-add" type="button">Add relation</button></div></div>
+      </div></section>
+
+      <section class="client-section"><div class="client-section-head"><h2>Branding and validation</h2><p>Client-facing brand asset and COP validation settings.</p></div><div class="client-grid">
+        <div class="client-field"><label>Logo</label><div class="relation-panel"><strong>No logo uploaded</strong><p>Click to add an asset or drag and drop one here.</p><button class="relation-add" type="button">Add logo</button></div></div>
+        <div class="client-field"><label for="acceptPartialCOPValidation">Accept partial COP validation <span>*</span></label><div class="boolean-group" id="acceptPartialCOPValidation"><button type="button" data-value="false" class="active">False</button><button type="button" data-value="true">True</button></div></div>
+        <div class="client-field"><label for="acceptNoMatchCOPValidation">Accept no-match COP validation <span>*</span></label><div class="boolean-group" id="acceptNoMatchCOPValidation"><button type="button" data-value="false" class="active">False</button><button type="button" data-value="true">True</button></div></div>
+      </div></section>
+      <div class="client-footer"><span class="client-footer-note" id="clientFooterNote">Read-only client record. Select Edit client to change these fields.</span><span class="client-message" id="clientMessage" aria-live="polite"></span></div>
+    </form>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const isCreate = params.get('mode') === 'create';
+    const context = SuperAdminData.getContext('selectedClientContext') || {};
+    const data = SuperAdminData.read();
+    const client = !isCreate && (data.clients.find(item => item.id === context.clientId || item.name === context.clientName) || { id:context.clientId || 'client-new', name:context.clientName || '', status:'Draft' }) || { id:'client-new', name:'', status:'Draft' };
+    const ids = ['clientName','numberOfApprovals','tenancyClientId','email','clientId','clientSecret','users','jackpots','venues','clientNotifications','dailyLimit','minWaitTime','delayUnresolvedPaymentItems'];
+    const fields = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    let editing = isCreate;
+    let validationState = { partial:false, noMatch:false };
+    function addOptions(select, options, emptyLabel) { select.innerHTML=''; if(emptyLabel) select.add(new Option(emptyLabel,'')); options.forEach(item => select.add(new Option(item.label,item.value))); }
+    const relatedUsers = data.users.filter(item => item.clientId === client.id).map(item => ({label:`${item.username} (${item.role})`,value:item.id}));
+    const relatedVenues = data.venues.filter(item => item.clientId === client.id).map(item => ({label:item.name,value:item.id}));
+    addOptions(fields.users, relatedUsers, 'Add relation'); addOptions(fields.jackpots, [], 'Add relation'); addOptions(fields.venues, relatedVenues, 'Add relation'); addOptions(fields.clientNotifications, [{label:'Default client notification policy',value:'default'}], 'Add relation');
+    fields.clientName.value=client.name||''; fields.numberOfApprovals.value=client.numberOfApprovals??1; fields.tenancyClientId.value=client.tenancyClientId||''; fields.email.value=client.email||''; fields.clientId.value=client.clientId||client.id||''; fields.clientSecret.value=client.clientSecret||''; fields.dailyLimit.value=client.dailyLimit??30000; fields.minWaitTime.value=client.minWaitTime??0; fields.delayUnresolvedPaymentItems.value=client.delayUnresolvedPaymentItems??10;
+    document.getElementById('pageTitle').textContent=isCreate?'Create client':(client.name||'Client details'); document.getElementById('pageSubtitle').textContent=isCreate?'Create the client record, then connect users, venues, and payout relationships.':'Review the client record and connected operational relationships.'; document.getElementById('clientStatusBadge').textContent=client.status||'Draft'; document.getElementById('clientStatusBadge').className=`sa-status ${SuperAdminData.statusClass(client.status||'draft')}`; document.getElementById('clientIdLabel').textContent=client.id; document.title=`${isCreate?'Create client':client.name||'Client details'} - Riverside Payouts`;
+    function setBoolean(id,value){ const group=document.getElementById(id); group.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button.dataset.value===String(value))); validationState[id==='acceptPartialCOPValidation'?'partial':'noMatch']=value; }
+    ['acceptPartialCOPValidation','acceptNoMatchCOPValidation'].forEach(id=>document.getElementById(id).addEventListener('click',event=>{ if(!editing)return; setBoolean(id,event.target.dataset.value==='true'); }));
+    function setEditing(next){ editing=next; document.querySelectorAll('.client-field input, .client-field select').forEach(field=>{ let value=field.nextElementSibling; if(!value||!value.classList.contains('detail-readonly-value')){ value=document.createElement('span'); value.className='detail-readonly-value'; field.insertAdjacentElement('afterend',value); } value.textContent=field.type==='password' ? (field.value ? 'Configured' : 'Not configured') : field.tagName==='SELECT' ? (field.selectedOptions[0]?.textContent || 'Not configured') : (field.value || 'Not configured'); }); document.getElementById('clientWorkspace').classList.toggle('read-only',!editing); ids.forEach(id=>fields[id].disabled=!editing); document.querySelectorAll('.boolean-group button').forEach(button=>button.disabled=!editing); document.getElementById('editClientBtn').hidden=editing; document.getElementById('saveClientBtn').hidden=!editing; document.getElementById('clientFooterNote').textContent=editing?'Changes are saved to this client record.':'Read-only client record. Select Edit client to change these fields.'; }
+    function saveClient(){ if(!fields.clientName.value.trim()||!fields.email.value.trim()){ fields.clientName.focus(); return; } const next=SuperAdminData.read(); const record={...client,id:client.id==='client-new'?`client-${Date.now()}`:client.id,name:fields.clientName.value.trim(),contact:client.contact||'',email:fields.email.value.trim(),numberOfApprovals:Number(fields.numberOfApprovals.value)||1,tenancyClientId:fields.tenancyClientId.value.trim(),clientId:fields.clientId.value.trim(),clientSecret:fields.clientSecret.value.trim(),dailyLimit:Number(fields.dailyLimit.value)||0,minWaitTime:Number(fields.minWaitTime.value)||0,delayUnresolvedPaymentItems:Number(fields.delayUnresolvedPaymentItems.value)||0,status:client.status||'Draft'}; const index=next.clients.findIndex(item=>item.id===client.id); if(index>=0)next.clients[index]=record;else next.clients.unshift(record); SuperAdminData.write(next); SuperAdminData.setContext('selectedClientContext',{clientId:record.id,clientName:record.name}); document.getElementById('clientMessage').textContent='Client saved'; setTimeout(()=>window.location.href='super-admin-clients.html',450); }
+    document.getElementById('backToClientsBtn').addEventListener('click',()=>window.location.href='super-admin-clients.html'); document.getElementById('editClientBtn').addEventListener('click',()=>setEditing(true)); document.getElementById('saveClientBtn').addEventListener('click',saveClient); document.getElementById('clientForm').addEventListener('submit',event=>{event.preventDefault();if(editing)saveClient();}); setEditing(editing);
+  </script>
+</body>
+</html>

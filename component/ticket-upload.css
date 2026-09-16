@@ -1,0 +1,167 @@
+/* 
+  Ticket Image Upload Component Styling
+  Designed to integrate with Riverside Hotel Approver Portal
+*/
+
+/* Drag and Drop States */
+.upload-dropzone.dragover {
+    border-color: #005d90 !important;
+    background-color: rgba(0, 93, 144, 0.05) !important;
+    box-shadow: 0 0 0 4px rgba(0, 93, 144, 0.1);
+}
+
+.upload-dropzone.dragover #idle-view {
+    opacity: 0.3;
+    transform: scale(0.95);
+}
+
+.upload-dropzone.dragover #drag-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Glassmorphic Ticket Preview Cards */
+.ticket-preview-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.ticket-preview-card:hover {
+    border-color: #005d90;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* Image Thumbnail Container */
+.ticket-thumb-container {
+    position: relative;
+    height: 140px;
+    background-color: #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ticket-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.ticket-preview-card:hover .ticket-thumb {
+    transform: scale(1.05);
+}
+
+/* Delete Button on Card */
+.ticket-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.ticket-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.9);
+    transform: scale(1.1);
+}
+
+.ticket-delete-btn .material-symbols-outlined {
+    font-size: 16px;
+    font-variation-settings: 'wght' 600;
+}
+
+/* Progress bar animation */
+@keyframes progress-shine {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.upload-progress-fill {
+    background: linear-gradient(90deg, #005d90 0%, #007c95 50%, #005d90 100%);
+    background-size: 200% 200%;
+    animation: progress-shine 2s linear infinite;
+    transition: width 0.3s ease-out;
+}
+
+/* Glassmorphic Status Badges */
+.glass-badge-premium {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    user-select: none;
+    line-height: 1.2;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.status-dot-pulse {
+    position: relative;
+    display: inline-flex;
+    width: 7px;
+    height: 7px;
+    margin-right: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.status-dot-pulse::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation: status-ping 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    transition: all 0.3s ease;
+}
+
+@keyframes status-ping {
+    75%, 100% {
+        transform: scale(2.8);
+        opacity: 0;
+    }
+}
+
+.glass-badge-cyan {
+    background-color: rgba(105, 229, 255, 0.12);
+    border: 1px solid rgba(105, 229, 255, 0.35);
+    color: #006575;
+    box-shadow: 0 2px 4px rgba(105, 229, 255, 0.04);
+}
+.glass-badge-cyan .status-dot-pulse,
+.glass-badge-cyan .status-dot-pulse::after {
+    background-color: #00a4cc;
+}
+

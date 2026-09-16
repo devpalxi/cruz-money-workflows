@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clients - Super Admin</title>
+  <link rel="stylesheet" href="dashboard-style.css"><link rel="stylesheet" href="super-admin-ui.css">
+  <script src="admin-shell.js" defer></script>
+  <link rel="stylesheet" href="pill-colors.css">
+  <style>
+    .sa-table tbody tr { cursor: pointer; }
+  </style>
+</head>
+<body class="super-admin-ui">
+      <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge super-admin" id="settings-role-badge">SUPER ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="super-admin-dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venue Blacklist</a>
+          <a href="super-admin-smr.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="dashboard.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+  <main class="sa-main">
+    <div class="sa-page-head"><div><h1>Clients</h1><p>Manage customer organisations and the venues, users, and subscriptions they own.</p></div><div class="sa-actions"><button class="sa-btn sa-btn-primary" id="createClientBtn" type="button">Create client</button></div></div>
+    <section class="sa-section"><div class="sa-section-body"><div class="sa-toolbar"><input class="sa-input" id="searchInput" type="search" placeholder="Search clients, contacts, or email"><select class="sa-select" id="statusFilter"><option value="">All statuses</option><option>Active</option><option>Draft</option><option>Inactive</option></select><span class="sa-secondary-text" id="resultCount"></span></div><div class="sa-table-wrap"><table class="sa-table"><thead><tr><th>Client</th><th>Primary contact</th><th>Venues</th><th>Plan</th><th>Status</th></tr></thead><tbody id="clientRows"></tbody></table></div><div class="sa-empty" id="emptyState" hidden>No clients match these filters.</div></div></section>
+  </main>
+  <script src="super-admin-mock-data.js"></script><script>
+    let data = SuperAdminData.read();
+    const rows = document.getElementById('clientRows');
+    function render() { const query = document.getElementById('searchInput').value.trim().toLowerCase(); const status = document.getElementById('statusFilter').value; const filtered = data.clients.filter(item => (!status || item.status === status) && [item.name, item.contact || '', item.email || ''].some(value => value.toLowerCase().includes(query))); document.getElementById('resultCount').textContent = `${filtered.length} client${filtered.length === 1 ? '' : 's'}`; document.getElementById('emptyState').hidden = filtered.length !== 0; rows.innerHTML = filtered.map(item => `<tr data-id="${item.id}"><td><div class="sa-primary-text">${SuperAdminData.escapeHtml(item.name)}</div><div class="sa-secondary-text">${item.id}</div></td><td><div class="sa-primary-text">${SuperAdminData.escapeHtml(item.contact || 'Not assigned')}</div><div class="sa-secondary-text">${SuperAdminData.escapeHtml(item.email || '')}</div></td><td class="sa-mono">${item.venues || 0}</td><td>${SuperAdminData.escapeHtml(item.plan || 'PAYG')}</td><td><span class="sa-status ${SuperAdminData.statusClass(item.status)}">${SuperAdminData.escapeHtml(item.status)}</span></td></tr>`).join(''); }
+    function openClientPage(record, mode) { SuperAdminData.setContext('selectedClientContext', { clientId:record.id, clientName:record.name }); sessionStorage.setItem('userRole','superadmin'); window.location.href = `super-admin-client.html?mode=${mode || 'view'}`; }
+    document.getElementById('createClientBtn').addEventListener('click', () => { sessionStorage.removeItem('selectedClientContext'); sessionStorage.setItem('userRole','superadmin'); window.location.href = 'super-admin-client.html?mode=create'; });
+    rows.addEventListener('click', event => { const row = event.target.closest('tr[data-id]'); if (!row) return; const record = data.clients.find(item => item.id === row.dataset.id); if (record) openClientPage(record, 'view'); });
+    document.getElementById('searchInput').addEventListener('input', render); document.getElementById('statusFilter').addEventListener('change', render); render();
+  </script><script src="dashboard-app.js"></script>
+</body></html>

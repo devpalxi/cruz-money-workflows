@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   RIVERSIDE PAYOUTS — Canonical Design System Tokens
+   Matching Collector-v4, Approver-v3, and Admin Dashboard
+   ================================================================ */
+
+:root {
+  /* Brand Tokens (Collector Teal) */
+  --primary: #0d9488;
+  --primary-dark: #0b7a6f;
+  --primary-light: #f0fdfa;
+  --primary-border: #99f6e4;
+  --primary-ring: rgba(13, 148, 136, 0.18);
+
+  /* Surface / Background Tokens */
+  --bg-page: #f7fafc;
+  --bg-card: #ffffff;
+  --bg-th: #f8f9fb;
+  --bg-row-alt: #fafbfc;
+  --bg-hover: #f0fdfa;
+
+  /* Ink / Typography Colors */
+  --text-hi: #0f172a;
+  --text-mid: #475569;
+  --text-lo: #94a3b8;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-mid: #cbd5e1;
+  --border-focus: #0f172a;
+
+  /* State Colors: PASS / SUCCESS / LOW RISK */
+  --state-pass-bg: #ecfdf5;
+  --state-pass-text: #065f46;
+  --state-pass-border: #a7f3d0;
+  --state-pass-dot: #059669;
+
+  /* State Colors: WARN / REVIEW REQUIRED / MEDIUM RISK */
+  --state-warn-bg: #fffbeb;
+  --state-warn-text: #78350f;
+  --state-warn-border: #fde68a;
+  --state-warn-dot: #b45309;
+
+  /* State Colors: FAIL / DANGER / HIGH RISK */
+  --state-fail-bg: #fef2f2;
+  --state-fail-text: #991b1b;
+  --state-fail-border: #fca5a5;
+  --state-fail-dot: #e53e3e;
+
+  /* State Colors: INFO / AWAITING */
+  --state-info-bg: #eff6ff;
+  --state-info-text: #1d4ed8;
+  --state-info-border: #93c5fd;
+  --state-info-dot: #3182ce;
+
+  /* State Colors: NEUTRAL / SKIPPED */
+  --state-neutral-bg: #f8fafc;
+  --state-neutral-text: #475569;
+  --state-neutral-border: #cbd5e1;
+  --state-neutral-dot: #64748b;
+
+  /* Super Admin & Admin Suite Tokens (matching deploy/super-admin-ui.css) */
+  --sa-ink: #102a43;
+  --sa-muted: #627d98;
+  --sa-border: #d9e2ec;
+  --sa-surface: #ffffff;
+  --sa-bg: #f4f7f9;
+  --sa-teal: #1a6b6b;
+  --sa-teal-soft: #e7f4f2;
+  --sa-amber: #f5a623;
+  --sa-amber-soft: #fff4d6;
+  --sa-red: #b42318;
+  --sa-red-soft: #feeceb;
+  --sa-green: #147d64;
+  --sa-green-soft: #e7f6ef;
+  --shell-sidebar-width: 236px;
+
+  /* Typography Stacks */
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-pill: 9999px;
+
+  /* Animation */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t: 0.18s;
+}
+
+/* Global Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-page);
+  color: var(--text-hi);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* Tabular numbers for financial amounts, IDs, timestamps */
+.font-mono, .tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulsing Status Dot Indicator */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s infinite var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-dot {
+    animation: none;
+  }
+}

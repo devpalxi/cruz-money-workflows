@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard - Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <link rel="stylesheet" href="super-admin-ui.css">
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body class="super-admin-ui">
+      <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge super-admin" id="settings-role-badge">SUPER ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="super-admin-dashboard.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venue Blacklist</a>
+          <a href="super-admin-smr.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="dashboard.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <main class="sa-main">
+    <div class="sa-page-head"><div><h1>Platform dashboard</h1><p>Monitor clients, venues, payouts, compliance activity, and operational risk from one place.</p></div><div class="sa-actions"><a class="sa-btn sa-btn-secondary" href="super-admin-payouts.html">Review payouts</a><a class="sa-btn sa-btn-primary" href="super-admin-clients.html?create=1">Create client</a></div></div>
+
+    <section class="sa-grid" aria-label="Platform snapshot">
+      <div class="sa-stat"><div class="sa-stat-label">Total clients</div><div class="sa-stat-value" id="statClients">-</div><div class="sa-stat-meta positive">+1 this month</div></div>
+      <div class="sa-stat"><div class="sa-stat-label">Active venues</div><div class="sa-stat-value" id="statVenues">-</div><div class="sa-stat-meta">of <span id="statVenueTotal">-</span> total venues</div></div>
+      <div class="sa-stat"><div class="sa-stat-label">Payout volume</div><div class="sa-stat-value" id="statVolume">-</div><div class="sa-stat-meta positive">+12.4% versus July</div></div>
+      <div class="sa-stat"><div class="sa-stat-label">Open SMRs</div><div class="sa-stat-value" id="statSmrs">-</div><div class="sa-stat-meta warning">Requires review</div></div>
+    </section>
+
+    <section class="sa-section"><div class="sa-section-head"><div><h2>Attention required</h2><p>Items that need a Super Admin decision.</p></div><a class="sa-icon-link" href="super-admin-payouts.html">View all</a></div><div class="sa-section-body"><div class="sa-alerts" id="alerts"></div></div></section>
+
+    <div class="sa-chart-grid">
+      <section class="sa-section"><div class="sa-section-head"><div><h2>Payout volume</h2><p>Mock monthly volume across all venues.</p></div><span class="sa-status active">Last 6 months</span></div><div class="sa-section-body"><div class="sa-bars" id="volumeChart" aria-label="Payout volume bar chart"></div></div></section>
+      <section class="sa-section"><div class="sa-section-head"><div><h2>Recent activity</h2><p>Latest platform events.</p></div><a class="sa-icon-link" href="super-admin-administration.html#audit">Audit log</a></div><div class="sa-section-body"><div class="sa-activity" id="activityList"></div></div></section>
+    </div>
+
+  </main>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script>
+    const data = SuperAdminData.read();
+    const totalVolume = data.payouts.reduce((sum, item) => sum + item.amount, 0);
+    document.getElementById('statClients').textContent = SuperAdminData.formatNumber(data.clients.length);
+    document.getElementById('statVenues').textContent = SuperAdminData.formatNumber(data.venues.filter(item => item.status === 'Active').length);
+    document.getElementById('statVenueTotal').textContent = SuperAdminData.formatNumber(data.venues.length);
+    document.getElementById('statVolume').textContent = SuperAdminData.formatCurrency(totalVolume);
+    document.getElementById('statSmrs').textContent = SuperAdminData.formatNumber(data.smrs.filter(item => item.status !== 'Submitted').length);
+    const alerts = [
+      [data.payouts.filter(item => item.status === 'Failed').length, 'Failed payments', 'danger', 'super-admin-payouts.html'],
+      [data.smrs.filter(item => item.status === 'Draft').length, 'Draft SMRs', 'warning', 'super-admin-smr.html'],
+      [data.venues.filter(item => item.status === 'Inactive').length, 'Inactive venues', 'danger', 'super-admin.html'],
+      [data.users.filter(item => item.status === 'Blocked').length, 'Blocked users', 'warning', 'admin-users.html']
+    ];
+    document.getElementById('alerts').innerHTML = alerts.map(item => `<a class="sa-alert" href="${item[3]}" style="text-decoration:none;color:inherit"><strong>${item[0]}</strong><span>${item[1]}</span><span class="sa-status ${item[2]}" style="margin-top:10px">Review</span></a>`).join('');
+    const chartValues = [58, 72, 64, 88, 78, 100];
+    document.getElementById('volumeChart').innerHTML = chartValues.map((value, index) => `<div class="sa-bar" style="height:${value}%"><span>${['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'][index]}</span></div>`).join('');
+    document.getElementById('activityList').innerHTML = data.activity.map(item => `<div class="sa-activity-item"><span class="sa-activity-dot ${item.tone}"></span><div><div class="sa-primary-text">${SuperAdminData.escapeHtml(item.action)}</div><div class="sa-secondary-text">${SuperAdminData.escapeHtml(item.entity)} · ${SuperAdminData.escapeHtml(item.actor)}</div></div><span class="sa-activity-time">${SuperAdminData.escapeHtml(item.time)}</span></div>`).join('');
+  </script>
+  <script src="dashboard-app.js"></script>
+</body>
+</html>

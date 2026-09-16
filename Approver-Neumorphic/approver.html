@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Payout Review Portal (Neumorphic) | RIVERSIDE HOTEL</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <!-- GSAP for Cinematic Motion -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "nm-bg": "#ebecf0",
+                        "nm-shadow-dark": "#babecc",
+                        "nm-shadow-light": "#ffffff",
+                        "nm-blue": "#2563eb",
+                        "nm-blue-hover": "#1d4ed8",
+                        "primary": "#2563eb",
+                        "on-surface": "#2d3748",
+                        "on-background": "#2d3748"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-md": ["Outfit"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "title-sm": ["Outfit"],
+                        "label-sm": ["Hanken Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --nm-bg: #ebecf0;
+            --nm-shadow-dark: #babecc;
+            --nm-shadow-light: #ffffff;
+            --nm-blue: #2563eb;
+            --nm-red: #ef4444;
+            --nm-green: #10b981;
+            --nm-orange: #f59e0b;
+        }
+
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: var(--nm-bg);
+            color: #2d3748;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Neumorphic Flat Shadow (Outset Card/Button) */
+        .nm-flat {
+            background: var(--nm-bg);
+            box-shadow: 6px 6px 12px var(--nm-shadow-dark), -6px -6px 12px var(--nm-shadow-light);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nm-flat:hover {
+            box-shadow: 4px 4px 8px var(--nm-shadow-dark), -4px -4px 8px var(--nm-shadow-light);
+        }
+
+        /* Neumorphic Pressed/Sunken (Inset Card/Input) */
+        .nm-sunken {
+            background: var(--nm-bg);
+            box-shadow: inset 4px 4px 8px var(--nm-shadow-dark), inset -4px -4px 8px var(--nm-shadow-light);
+            border: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Neumorphic Buttons */
+        .nm-btn {
+            background: var(--nm-bg);
+            box-shadow: 5px 5px 10px var(--nm-shadow-dark), -5px -5px 10px var(--nm-shadow-light);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .nm-btn:hover {
+            box-shadow: 2px 2px 5px var(--nm-shadow-dark), -2px -2px 5px var(--nm-shadow-light);
+            transform: translateY(1px);
+            color: #1a202c;
+        }
+
+        .nm-btn:active, .nm-btn.active {
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light);
+            transform: translateY(2px);
+            color: var(--nm-blue);
+        }
+
+        /* Neumorphic Inputs */
+        .nm-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: var(--nm-bg);
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nm-input:focus {
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light), 0 0 0 2px rgba(37, 99, 235, 0.2);
+            outline: none;
+        }
+
+        /* Custom Risk selector styles */
+        .risk-pills {
+            display: inline-flex;
+            background: var(--nm-bg);
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light);
+            border-radius: 9999px;
+            padding: 5px;
+            gap: 4px;
+        }
+
+        .risk-pills input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .risk-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .risk-pills input:checked+.risk-pill {
+            background: var(--nm-bg);
+            box-shadow: 3px 3px 6px var(--nm-shadow-dark), -3px -3px 6px var(--nm-shadow-light);
+            color: #1a202c;
+            font-weight: 700;
+        }
+
+        .rpill-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--nm-bg);
+            box-shadow: inset 1px 1px 3px var(--nm-shadow-dark), inset -1px -1px 3px var(--nm-shadow-light);
+            transition: all 0.2s;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .risk-pills input:checked+.risk-pill .rpill-dot {
+            box-shadow: none;
+        }
+
+        #risk-low:checked+.risk-pill {
+            color: var(--nm-green);
+        }
+
+        #risk-low:checked+.risk-pill .rpill-dot {
+            background: var(--nm-green);
+        }
+
+        #risk-medium:checked+.risk-pill {
+            color: var(--nm-orange);
+        }
+
+        #risk-medium:checked+.risk-pill .rpill-dot {
+            background: var(--nm-orange);
+        }
+
+        #risk-high:checked+.risk-pill {
+            color: var(--nm-red);
+        }
+
+        #risk-high:checked+.risk-pill .rpill-dot {
+            background: var(--nm-red);
+        }
+
+        /* Neumorphic Checkboxes */
+        .check-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            cursor: pointer;
+        }
+
+        .hidden-check {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .check-box {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--nm-bg);
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 2px;
+        }
+
+        .check-box svg {
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .check-box.checked {
+            background: var(--nm-blue);
+            box-shadow: 2px 2px 5px var(--nm-shadow-dark), -2px -2px 5px var(--nm-shadow-light);
+        }
+
+        .check-box.checked svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Neumorphic Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            border-radius: 9999px;
+            background: var(--nm-bg);
+            box-shadow: inset 3px 3px 6px var(--nm-shadow-dark), inset -3px -3px 6px var(--nm-shadow-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-handle {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--nm-bg);
+            box-shadow: 2px 2px 5px var(--nm-shadow-dark), -2px -2px 5px var(--nm-shadow-light);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        input:checked + .toggle-switch {
+            background: var(--nm-blue);
+        }
+
+        input:checked + .toggle-switch .toggle-handle {
+            transform: translateX(24px);
+            box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.15), 2px 2px 5px var(--nm-shadow-dark);
+        }
+
+        /* Scrollbar Neumorphism */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--nm-bg);
+            box-shadow: inset 2px 2px 5px var(--nm-shadow-dark), inset -2px -2px 5px var(--nm-shadow-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+            border: 2px solid var(--nm-bg);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen overflow-x-hidden w-full max-w-full">
+
+    <!-- Floating Glass Navigation (gpt-taste split nav style) -->
+    <nav class="sticky top-4 z-50 mx-auto max-w-[1280px] px-8 mt-6">
+        <div class="nm-flat rounded-2xl py-4 px-8 flex justify-between items-center">
+            <div class="flex items-center gap-12">
+                <span class="text-xl font-black tracking-widest text-nm-blue font-sans">RIVERSIDE HOTEL</span>
+                <div class="hidden md:flex gap-8 items-center h-full">
+                    <a class="text-slate-500 font-semibold hover:text-nm-blue transition-colors duration-200"
+                        href="#">Dashboard</a>
+                    <a class="text-nm-blue font-bold border-b-2 border-nm-blue pb-1" href="#">Payouts Review</a>
+                    <a class="text-slate-500 font-semibold hover:text-nm-blue transition-colors duration-200"
+                        href="#">Audits</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <!-- Neumorphic Icon Button -->
+                <button class="nm-btn w-10 h-10 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                </button>
+                <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                    <img class="w-full h-full object-cover" alt="User avatar"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkz4OKSaTPNJCLoM1i7QE-ccwLdr56eYzdCTMZBJxSQMMeaphlufM-VSU7RteHAt6lWs07Iyw83xtcxS-PvAFVw4RjXFuwtUGdjVjcRsQzBn8SHMYEECL2agn-DITIk0BJ_vl0tbn7aN8l0Vyb1UHp-bHZMOCc_Ta5WiA_fYHTZmWO8qvmikidF582kG-eRNijVBNlWpHnWIZYtg_RWc3Gj3Cu3haojLKiR8FGaG_PMHYVA1U1bROJ" />
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1280px] mx-auto px-8 pt-12 pb-32 flex flex-col gap-12">
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-300">
+            <div>
+                <a class="flex items-center gap-2 text-nm-blue font-bold mb-4 hover:opacity-80 transition-all" href="#">
+                    <span class="material-symbols-outlined text-base">arrow_back</span>
+                    <span class="text-xs uppercase tracking-wider font-sans">Back to Dashboard</span>
+                </a>
+                <div class="flex items-center gap-6">
+                    <h1 class="text-headline-md text-on-surface font-headline-md font-bold">Payout #574</h1>
+                    <span id="status-badge"
+                        class="px-5 py-2 rounded-full text-label-sm font-bold uppercase tracking-widest font-sans transition-all duration-300">
+                        Awaiting Approval
+                    </span>
+                </div>
+            </div>
+            <div class="text-left md:text-right">
+                <span class="text-label-caps block opacity-60 mb-2 font-label-caps text-xs tracking-wider">SETTLEMENT AMOUNT</span>
+                <!-- Sunken Amount Tag -->
+                <div class="nm-sunken px-6 py-2 rounded-xl inline-block">
+                    <span class="text-3xl font-extrabold text-nm-blue font-mono">$50.00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bento-Grid Layout -->
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- Bento Cell 1: Payout Details -->
+            <section
+                class="bento-cell nm-flat col-span-12 md:col-span-5 p-8 rounded-2xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                        <span class="material-symbols-outlined text-nm-blue text-2xl">payments</span>
+                        Payout Details
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Cash Amount</span>
+                            <span class="font-bold text-slate-800 font-mono">$50.00</span>
+                        </div>
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Transfer Amount</span>
+                            <span class="font-bold text-slate-800 font-mono">$50.00</span>
+                        </div>
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Internal Transaction ID</span>
+                            <span class="font-bold text-slate-800 font-mono">123456</span>
+                        </div>
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Machine ID</span>
+                            <span class="font-bold text-slate-800 font-mono">EGM-001</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 2: Member Identification -->
+            <section
+                class="bento-cell nm-flat col-span-12 md:col-span-7 p-8 rounded-2xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                        <span class="material-symbols-outlined text-nm-blue text-2xl">badge</span>
+                        Member Identification
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Membership #</span>
+                            <span class="font-bold text-slate-800 font-mono">123456</span>
+                        </div>
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Full Name (System)</span>
+                            <span class="font-bold text-nm-blue">Dineth Nimsara</span>
+                        </div>
+                        <div class="detail-row flex justify-between border-b border-slate-300/40 pb-3">
+                            <span class="text-slate-500 text-body-md">Email Address</span>
+                            <span class="font-bold text-slate-800">dineth75nimsara75@gmail.com</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center pb-1">
+                            <span class="text-slate-500 text-body-md">Member Status</span>
+                            <span class="nm-sunken px-4 py-1.5 rounded-full text-nm-blue font-bold text-xs uppercase tracking-wider">
+                                Active Member
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 3: Bank Account Details -->
+            <section
+                class="bento-cell nm-flat col-span-12 p-8 rounded-2xl">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                    <span class="material-symbols-outlined text-nm-blue text-2xl">account_balance</span>
+                    Bank Account Details
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="nm-sunken p-6 rounded-xl">
+                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-sans block mb-2">ACCOUNT NAME</span>
+                        <span class="text-[18px] font-bold text-nm-blue font-sans">Dineth Nimsara</span>
+                    </div>
+                    <div class="nm-sunken p-6 rounded-xl">
+                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-sans block mb-2">BSB</span>
+                        <span class="text-[18px] font-bold text-nm-blue font-mono">453-653</span>
+                    </div>
+                    <div class="nm-sunken p-6 rounded-xl">
+                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-sans block mb-2">ACCOUNT NUMBER</span>
+                        <span class="text-[18px] font-bold text-nm-blue font-mono">134 243 536</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 4: Name Verification Mismatch Banner -->
+            <section
+                class="bento-cell nm-flat col-span-12 p-8 rounded-2xl">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                    <span class="material-symbols-outlined text-nm-blue text-2xl">gavel</span>
+                    Name Verification
+                </h2>
+                <div class="nm-sunken p-8 flex flex-col gap-6 rounded-2xl">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <h3 class="text-label-caps font-bold text-slate-500 tracking-widest font-sans text-xs">NAME MATCH VERIFICATION</h3>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-nm-red uppercase tracking-widest flex items-center gap-2 rounded-full font-sans bg-rose-50 border-rose-200">
+                            <span class="material-symbols-outlined text-sm font-bold">cancel</span>
+                            MISMATCH
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name on ID -->
+                        <div class="nm-flat p-6 rounded-xl flex flex-col gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Name on ID Document</span>
+                            <span class="text-[18px] font-bold text-slate-700 font-sans">Dineth N. Wijetunga</span>
+                        </div>
+
+                        <!-- Bank Account Name -->
+                        <div class="nm-flat p-6 rounded-xl flex flex-col gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Bank Account Name</span>
+                            <span class="text-[18px] font-bold text-slate-700 font-sans">Dineth Nimsara</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 5: Status Indicators Stack -->
+            <section
+                class="bento-cell nm-flat col-span-12 md:col-span-8 p-8 rounded-2xl">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                    <span class="material-symbols-outlined text-nm-blue text-2xl">verified</span>
+                    Verification Status
+                </h2>
+                <div class="flex flex-col gap-4">
+                    <!-- Government ID -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">Government ID</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-red-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">cancel</span>
+                            FAIL
+                        </span>
+                    </div>
+
+                    <!-- ID Validation -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">ID Validation</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-red-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">cancel</span>
+                            FAIL
+                        </span>
+                    </div>
+
+                    <!-- Blacklist Check -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">Blacklist Check</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-emerald-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">check_circle</span>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- Name Match -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">Name Match</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-emerald-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">check_circle</span>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- DOB Match -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">DOB Match</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-emerald-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">check_circle</span>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- AML: PEP Screening -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">AML: PEP Screening</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-amber-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">warning</span>
+                            ACTIVE HITS
+                        </span>
+                    </div>
+
+                    <!-- AML: Sanctions -->
+                    <div
+                        class="status-row flex items-center justify-between px-6 py-4 nm-sunken rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <span class="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-700 tracking-wider font-sans uppercase">AML: Sanctions</span>
+                        </div>
+                        <span
+                            class="nm-flat px-[18px] py-[6px] text-xs font-bold text-white bg-amber-500 rounded-full font-sans uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">warning</span>
+                            ACTIVE HITS
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 6: Collector Details -->
+            <section
+                class="bento-cell nm-flat col-span-12 md:col-span-4 p-8 rounded-2xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3 font-bold text-lg">
+                        <span class="material-symbols-outlined text-nm-blue text-2xl">group</span>
+                        Collector
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="nm-sunken p-6 rounded-xl">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">COLLECTOR</span>
+                            <span class="text-[18px] font-bold text-nm-blue font-sans">M. Santos</span>
+                        </div>
+                        <div class="nm-sunken p-6 rounded-xl">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">COLLECTION TIME</span>
+                            <span class="text-[17px] font-bold text-slate-700 font-sans">13 July 2026 at 5:22 pm</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 7: IDV History Logs -->
+            <section
+                class="bento-cell nm-flat col-span-12 p-8 rounded-2xl">
+                <h2 class="text-title-sm font-title-md mb-8 font-bold text-lg">IDV HISTORY (RECENT ATTEMPTS)</h2>
+                <div class="flex flex-col gap-4 overflow-x-auto">
+                    <!-- Table Header -->
+                    <div class="min-w-[640px] grid grid-cols-12 gap-4 px-8 py-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-sans">
+                        <div class="col-span-2">COUNTRY</div>
+                        <div class="col-span-2">DOCUMENT TYPE</div>
+                        <div class="col-span-2">METHOD</div>
+                        <div class="col-span-3">DATE &amp; TIME</div>
+                        <div class="col-span-2">STATUS</div>
+                        <div class="col-span-1">ACTION</div>
+                    </div>
+                    <!-- Table Body Rows -->
+                    <div class="min-w-[640px] grid grid-cols-12 gap-4 items-center nm-sunken rounded-xl px-8 py-5">
+                        <div class="col-span-2 font-bold text-slate-700">Australia</div>
+                        <div class="col-span-2 text-slate-600">Drivers Licence</div>
+                        <div class="col-span-2 text-slate-600 font-mono">IDV</div>
+                        <div class="col-span-3 text-slate-700 font-sans">13 July 2026, 9:50 pm</div>
+                        <div class="col-span-2">
+                            <span class="flex items-center gap-2 text-nm-red font-bold font-sans">
+                                <span class="material-symbols-outlined text-base">cancel</span>
+                                Failed
+                            </span>
+                        </div>
+                        <div class="col-span-1">
+                            <button class="text-nm-blue hover:underline font-bold font-sans">View Logs</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 8: Final Review Decision Form -->
+            <section
+                class="bento-cell nm-flat col-span-12 p-8 rounded-2xl">
+                <h2 class="text-title-sm font-title-md mb-10 text-center uppercase tracking-widest text-nm-blue font-bold text-xl">
+                    Final Review Decision
+                </h2>
+
+                <!-- Previous Approvals -->
+                <div class="flex flex-col gap-4 mb-10">
+                    <h3 class="text-label-caps font-bold text-slate-400 tracking-widest text-xs">PREVIOUS APPROVALS</h3>
+                    <div class="nm-sunken rounded-xl p-6">
+                        <div class="flex justify-between items-center nm-flat pl-6 pr-4 py-4 rounded-xl flex-wrap gap-4">
+                            <div class="flex flex-col">
+                                <span class="text-[15px] font-bold text-slate-700 font-sans">M. Santos</span>
+                                <span class="text-xs text-slate-500 font-mono mt-1">13 July 2026 at 5:43 pm</span>
+                            </div>
+                            <div class="flex items-center gap-4 font-sans flex-wrap">
+                                <span class="px-3.5 py-1 text-xs font-bold text-white bg-emerald-500 rounded-full tracking-wider">RISK: LOW</span>
+                                <span class="text-sm font-bold text-emerald-600">✓ Approved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="flex flex-col gap-10">
+                    <!-- Name Mismatch Confirmation -->
+                    <label class="check-toggle p-6 nm-sunken rounded-2xl cursor-pointer hover:opacity-90 transition-all" for="idConfirm">
+                        <input type="checkbox" id="idConfirm" class="hidden-check">
+                        <span class="check-box" aria-hidden="true">
+                            <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="white"
+                                stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="2 7 5.5 10.5 12 3" />
+                            </svg>
+                        </span>
+                        <div class="flex flex-col select-none">
+                            <span class="font-bold text-slate-700 font-sans">Confirm Name Mismatch</span>
+                            <p class="text-body-md text-slate-500 mt-1 text-sm leading-relaxed">I acknowledge that the account name
+                                provided does not match the system record and assume responsibility for this override.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Risk Assessment -->
+                    <div class="flex flex-col gap-4">
+                        <span class="text-xs font-extrabold text-slate-400 tracking-widest font-sans uppercase" id="risk-label">RISK LEVEL ASSESSMENT</span>
+                        <div class="risk-pills-container">
+                            <div class="risk-pills" role="group" aria-labelledby="risk-label">
+                                <input type="radio" name="riskLevel" id="risk-low" value="low">
+                                <label for="risk-low" class="risk-pill">
+                                    <span class="rpill-dot" aria-hidden="true"></span>Low
+                                </label>
+                                <input type="radio" name="riskLevel" id="risk-medium" value="medium">
+                                <label for="risk-medium" class="risk-pill">
+                                    <span class="rpill-dot" aria-hidden="true"></span>Medium
+                                </label>
+                                <input type="radio" name="riskLevel" id="risk-high" value="high">
+                                <label for="risk-high" class="risk-pill">
+                                    <span class="rpill-dot" aria-hidden="true"></span>High
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final payment confirmation checkbox -->
+                    <div class="flex flex-col gap-4">
+                        <label class="check-toggle p-6 nm-sunken rounded-2xl cursor-pointer hover:opacity-90 transition-all" for="approvalConfirm">
+                            <input type="checkbox" id="approvalConfirm" class="hidden-check">
+                            <span class="check-box" aria-hidden="true">
+                                <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="white"
+                                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="2 7 5.5 10.5 12 3" />
+                                </svg>
+                            </span>
+                            <span class="font-bold text-slate-700 select-none font-sans">I confirm this transaction is ready for payment</span>
+                        </label>
+                    </div>
+
+                    <!-- Approver Note -->
+                    <div class="flex flex-col gap-4">
+                        <label class="text-xs font-extrabold text-slate-400 tracking-widest font-sans uppercase">APPROVER COMMENTS &amp; AUDIT TRAIL</label>
+                        <textarea id="approvalNote"
+                            class="nm-input min-h-[160px]"
+                            placeholder="Provide detailed reasoning for your final decision..."></textarea>
+                    </div>
+
+                    <!-- Primary Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-6 mt-6">
+                        <button id="btn-approve"
+                            class="flex-1 py-5 nm-btn font-bold text-base tracking-wider flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed font-sans rounded-full"
+                            type="button">
+                            <span class="material-symbols-outlined text-xl">verified_user</span>
+                            APPROVE PAYOUT
+                        </button>
+                        <button id="btn-reject"
+                            class="flex-1 py-5 nm-btn text-nm-red border-red-200/50 font-bold text-base tracking-wider hover:text-white hover:bg-red-500 hover:border-red-500 flex items-center justify-center gap-3 font-sans rounded-full"
+                            type="button">
+                            <span class="material-symbols-outlined text-xl">block</span>
+                            REJECT TRANSACTION
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-4 pb-12">
+                        <p class="text-xs opacity-50 font-bold uppercase tracking-widest font-mono">Logged: Admin
+                            ID ADM-94 • IP: 192.168.1.45</p>
+                    </div>
+                </form>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Continuous Audit Log Marquee -->
+    <footer class="w-full bg-slate-200 border-t border-slate-300 py-6 overflow-hidden mt-12">
+        <div
+            class="flex whitespace-nowrap gap-16 animate-[marquee_30s_linear_infinite] hover:[animation-play-state:paused] cursor-default select-none text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AUDIT
+                LOG: TXN-123456 SIGNED BY M. SANTOS</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> KYC FAIL:
+                GOVERNMENT ID FAILURE FOR MEMBER 123456</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AML
+                SCRUB COMPLETE: PEP SCREENING COMPLETED AT 22:11</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> COP
+                MATCH VALIDATED FOR BSB 453-653</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AUDIT
+                LOG: TXN-123456 SIGNED BY M. SANTOS</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> KYC FAIL:
+                GOVERNMENT ID FAILURE FOR MEMBER 123456</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AML
+                SCRUB COMPLETE: PEP SCREENING COMPLETED AT 22:11</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> COP
+                MATCH VALIDATED FOR BSB 453-653</span>
+        </div>
+    </footer>
+
+    <style>
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Checkbox visual sync
+            document.querySelectorAll('.hidden-check').forEach(cb => {
+                function sync() {
+                    const box = cb.nextElementSibling;
+                    if (box) box.classList.toggle('checked', cb.checked);
+                }
+                cb.addEventListener('change', sync);
+                sync(); // initial state
+            });
+
+            const idConfirm = document.getElementById('idConfirm');
+            const approvalConfirm = document.getElementById('approvalConfirm');
+            const btnApprove = document.getElementById('btn-approve');
+
+            function validateForm() {
+                if (idConfirm.checked && approvalConfirm.checked) {
+                    btnApprove.disabled = false;
+                    btnApprove.classList.remove('opacity-40', 'cursor-not-allowed');
+                    // Add bright blue active style to approved button
+                    btnApprove.classList.add('active', 'text-white', 'bg-nm-blue');
+                } else {
+                    btnApprove.disabled = true;
+                    btnApprove.classList.add('opacity-40', 'cursor-not-allowed');
+                    btnApprove.classList.remove('active', 'text-white', 'bg-nm-blue');
+                }
+            }
+
+            idConfirm.addEventListener('change', validateForm);
+            approvalConfirm.addEventListener('change', validateForm);
+
+            validateForm(); // initial state
+
+            // Dynamic status badge theme according to selected risk level
+            const statusBadge = document.getElementById('status-badge');
+            const riskRadios = document.querySelectorAll('input[name="riskLevel"]');
+
+            function updateStatusTheme() {
+                const checkedRadio = document.querySelector('input[name="riskLevel"]:checked');
+                if (!statusBadge) return;
+
+                // Clear previous color classes
+                statusBadge.classList.remove(
+                    'bg-slate-200', 'text-slate-600',
+                    'bg-emerald-500', 'text-white',
+                    'bg-amber-500', 'text-white',
+                    'bg-red-500', 'text-white',
+                    'nm-flat', 'nm-sunken'
+                );
+
+                if (checkedRadio) {
+                    statusBadge.classList.add('text-white', 'nm-flat');
+                    if (checkedRadio.value === 'low') {
+                        statusBadge.classList.add('bg-emerald-500');
+                        statusBadge.textContent = 'LOW RISK';
+                    } else if (checkedRadio.value === 'medium') {
+                        statusBadge.classList.add('bg-amber-500');
+                        statusBadge.textContent = 'MEDIUM RISK';
+                    } else if (checkedRadio.value === 'high') {
+                        statusBadge.classList.add('bg-red-500');
+                        statusBadge.textContent = 'HIGH RISK';
+                    }
+                } else {
+                    // Default fallback
+                    statusBadge.classList.add('nm-sunken', 'text-slate-600');
+                    statusBadge.textContent = 'Awaiting Approval';
+                }
+            }
+
+            riskRadios.forEach(radio => {
+                radio.addEventListener('change', updateStatusTheme);
+            });
+
+            // Initialize status theme on load
+            updateStatusTheme();
+
+            // GSAP Scroll Animations
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Staggered Bento Cell Load Reveal
+            gsap.fromTo(".bento-cell", 
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power2.out" }
+            );
+
+            // Detail rows slide reveal
+            gsap.fromTo(".detail-row",
+                { opacity: 0, x: -16 },
+                { opacity: 1, x: 0, duration: 0.6, stagger: 0.04, ease: "power1.out", delay: 0.4 }
+            );
+
+            // Status rows entry
+            gsap.fromTo(".status-row",
+                { opacity: 0.4, x: 15 },
+                { opacity: 1, x: 0, duration: 0.5, stagger: 0.05, ease: "sine.out",
+                  scrollTrigger: {
+                      trigger: ".status-row",
+                      start: "top 85%"
+                  }
+                }
+            );
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Address</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --error:#c0392b;
+    --error-bg:#fdecea;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+    position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{ color:var(--brand); }
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 22px; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+
+  form{ display:flex; flex-direction:column; gap:var(--gap-lg); }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+
+  input[type="text"], input[type="email"]{
+    height:var(--field-h);
+    width:100%;
+    padding:0 14px;
+    border-radius:var(--radius);
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
+    font-size:15px;
+    color:var(--text-primary);
+    font-family:inherit;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  input.has-error{
+    border-color:var(--error);
+    background:var(--error-bg);
+  }
+  .error-msg{
+    font-size:12.5px; color:var(--error); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:6px; }
+  button{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:220px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:#c3c2e0; cursor:not-allowed; }
+
+  input:focus-visible, button:focus-visible, .close-btn:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Email Address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Email Address</h1>
+    <div class="content-card">
+    <form id="emailForm" novalidate>
+
+      <div class="field">
+        <label for="email" class="req">Email</label>
+        <input type="email" id="email" placeholder="name@example.com" aria-required="true" aria-describedby="emailError" autocomplete="email" />
+        <div class="error-msg" id="emailError" role="alert" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          <span id="emailErrorText">Enter a valid email address.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="membership" class="req">Membership Number</label>
+        <input type="text" id="membership" placeholder="Membership Number" aria-required="true" aria-describedby="membershipError" />
+        <div class="error-msg" id="membershipError" role="alert" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          Membership number is required.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-back">Back</button>
+        <button type="button" class="btn-next" id="nextBtn" disabled>Next</button>
+      </div>
+    </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  const email = document.getElementById('email');
+  const emailError = document.getElementById('emailError');
+  const emailErrorText = document.getElementById('emailErrorText');
+  const membership = document.getElementById('membership');
+  const membershipError = document.getElementById('membershipError');
+  const nextBtn = document.getElementById('nextBtn');
+
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function validateEmail(showError){
+    const val = email.value.trim();
+    let valid = true;
+    let message = '';
+    if(val === ''){
+      valid = false;
+      message = 'Email is required.';
+    } else if(!emailPattern.test(val)){
+      valid = false;
+      message = 'Enter a valid email address.';
+    }
+    if(showError){
+      email.classList.toggle('has-error', !valid);
+      emailError.style.display = valid ? 'none' : 'flex';
+      emailErrorText.textContent = message;
+    } else if(valid){
+      email.classList.remove('has-error');
+      emailError.style.display = 'none';
+    }
+    return valid;
+  }
+
+  function validateMembership(showError){
+    const val = membership.value.trim();
+    const valid = val !== '';
+    if(showError){
+      membership.classList.toggle('has-error', !valid);
+      membershipError.style.display = valid ? 'none' : 'flex';
+    } else if(valid){
+      membership.classList.remove('has-error');
+      membershipError.style.display = 'none';
+    }
+    return valid;
+  }
+
+  function updateNextState(){
+    const emailOk = emailPattern.test(email.value.trim());
+    const membershipOk = membership.value.trim() !== '';
+    nextBtn.disabled = !(emailOk && membershipOk);
+  }
+
+  email.addEventListener('blur', ()=> validateEmail(true));
+  email.addEventListener('input', ()=>{ validateEmail(false); updateNextState(); });
+
+  membership.addEventListener('blur', ()=> validateMembership(true));
+  membership.addEventListener('input', ()=>{ validateMembership(false); updateNextState(); });
+
+  updateNextState();
+</script>
+
+</body>
+</html>

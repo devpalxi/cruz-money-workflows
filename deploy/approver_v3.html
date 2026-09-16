@@ -1,0 +1,2656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approve payout #578 — Palxi</title>
+<script src="disbursement-policy.js"></script>
+<script src="blacklist-data.js"></script>
+
+
+  
+
+<style>
+:root {
+  --bg:#f7fafc; --panel:#ffffff; --surface:#ffffff;
+  --brand:#0f172a; --accent:#0f172a; --accent-h:#000000;
+  --al:rgba(13,148,136,.07); --ar:rgba(13,148,136,.16);
+  --t1:#0f172a; --t2:#334155; --tm:#475569;
+  --bd:#e2e8f0; --bdl:#edf2f7;
+  --ok:#059669; --ok-bg:#ecfdf5; --ok-b:#a7f3d0;
+  --wn:#b45309; --wn-bg:#fffbeb; --wn-b:#fde68a;
+  --er:#e53e3e; --er-bg:#fff5f5; --er-b:#fed7d7;
+  --in:#3182ce; --in-bg:#ebf8ff; --in-b:#bee3f8;
+  --r:6px; --rl:8px; --rx:10px;
+  --sh:none;
+  --shl:none;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --spring:cubic-bezier(.32,.72,0,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;color:var(--t1);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.page{max-width:840px;margin:0 auto;padding:24px 24px 80px}
+
+/* Scenario Switcher Bar */
+.scenario-nav{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:#fff; border:1px solid var(--bd); border-radius:6px;
+  padding:6px 8px; margin-bottom:28px; box-shadow:none;
+  flex-wrap:wrap;
+}
+.scenario-tag{font-size:13.5px; font-weight: 700; text-transform:uppercase; letter-spacing:.08em; color:var(--brand); padding-left:12px}
+.scenario-links{display:flex; gap:4px; flex-wrap:wrap}
+.scenario-btn{
+  font-size:14.5px; font-weight:700; text-decoration:none; color:var(--t2);
+  padding:6px 14px; border-radius:6px; border:1px solid transparent;
+  transition:all .15s var(--ease);
+}
+.scenario-btn:hover{color:var(--t1); background:var(--surface)}
+.scenario-btn.active{color:var(--brand); background:transparent; border-color:var(--ar)}
+
+/* Header */
+.page-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:32px}
+.hd-left{display:flex;flex-direction:column;gap:6px}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);background:transparent;border:1px solid var(--ar);border-radius:6px;padding:3px 10px;width:fit-content}
+.eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--brand)}
+h1{font-size:34px;font-weight: 700;color:var(--t1);letter-spacing:-.02em}
+.meta{font-size:15.5px;color:var(--t2);font-weight:500}
+
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--in);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* Toolbar */
+.toolbar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.btn-col{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;padding:6px 14px;border-radius:6px;color:var(--brand);background:transparent;border:1px solid var(--ar);transition:background .2s var(--ease),transform .15s var(--spring)}
+.btn-col:hover{background:rgba(13,148,136,.12);transform:translateY(-1px)}
+.col-icon{transition:transform .25s var(--spring)}
+.col-icon.flipped{transform:rotate(180deg)}
+
+/* Shell + accordion */
+.shell{background:rgba(255,255,255,.5);border:1px solid var(--bd);border-radius:var(--rx);padding:3px;margin-bottom:20px;box-shadow:none}
+.accordion{background:var(--panel);border-radius:calc(var(--rx) - 3px);overflow:hidden}
+.acc-item+.acc-item{border-top:1px solid var(--bdl)}
+
+.acc-trigger{width:100%;display:flex;align-items:center;gap:14px;background:none;border:none;cursor:pointer;padding:17px 22px;font-family:inherit;text-align:left;transition:background .15s var(--ease)}
+.acc-trigger:hover{background:var(--surface)}
+.acc-item.open .acc-trigger{background:var(--surface)}
+
+.acc-ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;color:#0f172a}
+.acc-item.open .acc-ic{background:transparent;color:#0f172a}
+.acc-ttl{font-size:18.5px;font-weight: 700;color:var(--t1);flex:1;letter-spacing:-.01em}
+.acc-chv{color:var(--tm);transition:transform .25s var(--spring);flex-shrink:0}
+.acc-item.open .acc-chv{transform:rotate(180deg);color:var(--t1)}
+
+.acc-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--spring)}
+.acc-item.open .acc-panel{grid-template-rows:1fr}
+.acc-inner{overflow:hidden}
+.acc-body{padding:4px 22px 20px}
+
+/* Detail grid */
+.detail-g{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.detail-g-3col{display:grid;grid-template-columns:1.2fr 0.9fr 1fr;gap:0}
+.di{padding:11px 14px;border-bottom:1px solid var(--bdl);display:flex;flex-direction:column;gap:3px}
+.di:nth-last-child(-n+2){border-bottom:none}
+.di:nth-child(odd){border-right:1px solid var(--bdl)}
+.detail-g-3col .di{border-bottom:none;border-right:1px solid var(--bdl)}
+.detail-g-3col .di:last-child{border-right:none}
+.di-lbl{font-size:14.5px;font-weight:700;color:var(--tm)}
+.di-val{font-size:16px;font-weight:500;color:var(--t1)}
+.di-val.mono{font-variant-numeric:tabular-nums;font-size:15.5px;letter-spacing:.02em}
+.no-sep .di{border:none!important}
+
+/* Identity verification row list */
+.idv-row-list{
+  display:flex; flex-direction:column;
+  margin-bottom:20px;
+}
+.idv-row-item{display:flex; align-items:center; justify-content:space-between; padding:11px 14px}
+.idv-row-item:last-child{}
+.idv-row-lbl{font-size:16.5px; font-weight:700; color:var(--t1)}
+
+/* AML Card */
+.aml-c{margin-bottom:0}
+.aml-c:last-child{}
+  button.aml-h { cursor:pointer; width:100%; text-align:left; transition:background 0.2s var(--ease); border:none; background:transparent; font-family:inherit; }
+  button.aml-h:focus-visible { outline:2px solid var(--ok); outline-offset:-2px; border-radius:4px; }
+  .aml-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px}
+.aml-info{display:flex;align-items:center;gap:12px}
+.aml-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--t3)}
+.aml-dot.warn{background:var(--wn);box-shadow:none}
+.aml-dot.danger{background:var(--er);box-shadow:none}
+.aml-t{font-size:16px;font-weight:700}
+.aml-t.warn{color:var(--wn)}
+.aml-t.danger{color:var(--er)}
+.aml-s{font-size:14.5px;color:var(--t2);margin-top:1px}
+
+/* CoP Card */
+.cop-card{background:var(--panel);border:1px solid var(--bd);border-radius:var(--rl);padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:none}
+.cop-lbl{font-size:17.5px;font-weight: 700;color:var(--t1)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:14.5px;font-weight:700;border:1.5px solid}
+.badge.pass{color:var(--ok);background:transparent;border-color:var(--ok)}
+.badge.warn{color:var(--wn);background:transparent;border-color:var(--wn)}
+.badge.fail{color:var(--er);background:transparent;border-color:var(--er)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:14.5px;font-weight:700;border:1.5px solid}
+.badge.pass{color:var(--ok);background:transparent;border-color:var(--ok)}
+.badge.warn{color:var(--wn);background:transparent;border-color:var(--wn)}
+.badge.fail{color:var(--er);background:transparent;border-color:var(--er)}
+
+/* Result Pills (Verification history - Collector Specification) */
+
+
+
+/* IDV History Table */
+.idv-t{width:100%;border-collapse:collapse;font-size:16px}
+.idv-t th{text-align:left;padding:9px 14px;font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--tm);}
+.idv-t td{padding:11px 14px;vertical-align:middle;color:var(--t1);font-weight:500}
+.idv-t tr:last-child td{}
+
+/* Person / Collector Row */
+.person-r{display:flex;align-items:center;gap:14px}
+.person-av{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;font-weight: 700;box-shadow:none}
+.person-n{font-size:17px;font-weight:700;color:var(--t1)}
+.person-s{font-size:16px;color:var(--t2);margin-top:2px}
+span.person-s{color:var(--t1);font-size:16px;line-height:1.5}
+
+/* Section head */
+.sec-h{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--tm);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-h::after{content:'';flex:1;height:1px;background:var(--bdl)}
+
+/* Action Shell */
+.action-shell{background:rgba(255,255,255,.5);border:1px solid var(--bd);border-radius:var(--rx);padding:3px;box-shadow:none}
+.action-card{background:var(--panel);border-radius:calc(var(--rx) - 3px);padding:28px 28px 24px}
+.action-ttl{font-size:18px;font-weight: 700;color:var(--t1);padding-bottom:12px;border-bottom:1px solid var(--bdl);margin-bottom:16px}
+.action-sub-panel{margin-bottom:36px}
+.action-sub-ttl{font-size:13.5px;font-weight: 700;letter-spacing:.08em;color:var(--brand);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+
+/* Risk level Segmented Track */
+.risk-sec{margin-bottom:36px}
+.risk-lbl-title{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:8px;display:block}
+.risk-lbl-title .req{color:var(--er)}
+
+.risk-pill-track{
+  display:flex; align-items:center; background:#edf0f5; border:1px solid #dbe0ea;
+  border-radius:6px; padding:4px; gap:4px; width:fit-content; min-width:320px; max-width:380px;
+}
+.risk-pill-btn{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+  height:40px; border-radius:6px; border:none; background:transparent;
+  font-family:inherit; font-size:16px; font-weight:700; color:#485268;
+  cursor:pointer; transition:all .2s var(--ease); padding:0 16px;
+}
+.risk-pill-btn:hover:not(.active){color:var(--t1); background:rgba(255,255,255,.4)}
+.risk-pill-btn .risk-dot{width:7px; height:7px; border-radius:50%; background:#b0b8c6; transition:background-color .2s}
+
+.risk-pill-btn.active{box-shadow:none}
+.risk-pill-btn.active.low{background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; box-shadow:0 2px 8px rgba(16,185,129,.12)}
+.risk-pill-btn.active.low .risk-dot{background:#10b981}
+.risk-pill-btn.active.medium{background:#fffbeb; border:1.5px solid #fde68a; color:#b45309; box-shadow:0 2px 8px rgba(245,158,11,.12)}
+.risk-pill-btn.active.medium .risk-dot{background:#f59e0b}
+.risk-pill-btn.active.high{background:#fef2f2; border:1.5px solid #fecaca; color:#b91c1c; box-shadow:0 2px 8px rgba(239,68,68,.12)}
+.risk-pill-btn.active.high .risk-dot{background:#ef4444}
+
+/* Resolution cards */
+.res-card{background:var(--surface);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:18px}
+.res-card-ttl{font-size:16.5px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.res-card-desc{font-size:15px;color:var(--t2);margin-bottom:12px}
+
+  /* === Resolution status Popups (Packed Segmented Control) === */
+  .btn-group, .opt-pill-track { display:flex; align-items:center; width:100%; gap:0; margin-top:8px; }
+  .opt-btn {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px; height:44px; padding:0 16px;
+    border:1px solid #dde1ea; background:#fff; cursor:pointer; font-family:inherit; font-size:15px; font-weight: 700; color:var(--t1); transition:all .18s var(--ease); position:relative; margin:0; box-shadow:none;
+  }
+  
+  /* Collapse overlapping borders */
+  .opt-btn + .opt-btn { margin-left: -1px; }
+  
+  /* Outer rounding */
+  .opt-btn:first-child { border-top-left-radius:8px; border-bottom-left-radius:8px; }
+  .opt-btn:last-child { border-top-right-radius:8px; border-bottom-right-radius:8px; }
+  
+  .opt-btn:hover:not([class*="sel-"]) { background:#f8fafc; }
+  
+  /* Active states bring the element forward to overlay borders */
+  .opt-btn.sel-pass, .opt-btn.sel-warn, .opt-btn.sel-fail { z-index: 1; font-weight: 700 !important; }
+  
+  .opt-btn.sel-pass { border-color:var(--ok) !important; background:var(--ok-bg) !important; color:var(--ok) !important; }
+  .opt-btn.sel-warn { border-color:var(--wn) !important; background:var(--wn-bg) !important; color:var(--wn) !important; }
+  .opt-btn.sel-fail { border-color:var(--er) !important; background:var(--er-bg) !important; color:var(--er) !important; }
+.field{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;width:100%}
+.field label{font-size:14px;font-weight: 700;letter-spacing:.06em;color:var(--t1);display:block}
+.field label .req{color:var(--er)}
+textarea{width:100%;min-height:88px;padding:12px 16px;border-radius:var(--r);border:1.5px solid var(--bd);background:#fff;font-size:16px;color:var(--t1);font-family:inherit;outline:none;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);resize:vertical;line-height:1.5;display:block}
+textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3.5px var(--al)}
+textarea::placeholder{color:var(--tm);font-weight:400}
+
+.upload-box{border:1.5px dashed var(--bd);border-radius:var(--r);background:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s var(--ease)}
+.upload-box:hover{border-color:var(--brand);background:var(--al)}
+.upload-box.has-file{border-style:solid;border-color:var(--ok);background:transparent}
+.upload-ic{width:32px;height:32px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--brand);flex-shrink:0}
+.upload-box.has-file .upload-ic{background:transparent;color:#0f172a}
+.upload-txt-m{font-size:15.5px;font-weight: 700;color:var(--t1)}
+.upload-txt-s{font-size:14px;color:var(--t2)}
+
+.confirm-box{display:flex;align-items:flex-start;gap:14px;padding:0;background:transparent;border:none;margin-bottom:32px;cursor:pointer;transition:opacity .2s var(--ease)}
+.confirm-box:hover{opacity:0.8}
+.confirm-box.checked{background:transparent;box-shadow:none}
+.confirm-box input[type=checkbox]{width:20px;height:20px;accent-color:#000;cursor:pointer;flex-shrink:0;margin-top:2px}
+.confirm-box-txt{display:flex;flex-direction:column;gap:4px;flex:1}
+.attest-badge{font-size:13.5px;font-weight: 700;text-transform:uppercase;letter-spacing:.08em;color:var(--brand);display:inline-flex;align-items:center;gap:6px;margin-bottom:2px}
+.attest-desc{font-size:16px;color:var(--t1);line-height:1.55;font-weight:500}
+
+.btn-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:36px;padding-top:24px;border-top:1px solid var(--bdl)}
+button{font-family:inherit}
+
+.btn-secondary:hover{background:#f4f4f4;border-color:#e2e8f0;color:#1a202c;transform:none}
+.btn-secondary.danger{border-color:#fca5a5;color:#ef4444;background:#fff;}
+.btn-secondary.danger:hover{background:#fef2f2;border-color:#f87171;color:#ef4444;transform:none;}
+
+
+.btn-primary:hover:not(:disabled){background:#0b7a6f;transform:none;box-shadow:none}
+.btn-primary:active:not(:disabled){background:#095e56;transform:none}
+.btn-primary.danger{background:#ef4444;color:#fff;border:none;}
+.btn-primary.danger:hover:not(:disabled){background:#dc2626;}
+
+.btn-primary:disabled{background:#0d9488;opacity:0.4;cursor:not-allowed;border:none;color:#fff}
+.btn-primary:disabled .btn-ic{background:#e2e8f0 !important; color:#64748b !important}
+.btn-primary.blocked{background:#dc2626 !important; border-color:#b91c1c !important; color:#fff !important; box-shadow:0 4px 14px rgba(220,38,38,.25) !important}
+.btn-ic{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;transition:transform .2s var(--spring)}
+.btn-primary:hover:not(:disabled) .btn-ic{transform:translateX(3px)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* Interactive Action Buttons for AML screening */
+
+  .btn-action-req.warn{color:var(--wn);background:transparent;border-color:var(--wn)}
+  .btn-action-req.warn:hover{background:var(--wn-bg);border-color:var(--wn);text-decoration:none}
+.btn-action-req.pass{color:var(--ok);background:transparent;border-color:var(--ok)}
+  .btn-action-req.pass:hover{background:var(--ok-bg);border-color:var(--ok);text-decoration:none}
+.btn-action-req.fail{color:var(--er);background:transparent;border-color:var(--er)}
+.btn-action-req.fail:hover{background:var(--er-bg);border-color:var(--er);transform:translateY(-1px)}
+
+/* AML Audit Summary Section */
+.aml-summary-sec{margin-top:36px}
+.aml-summary-hd{font-size:15px;font-weight: 700;color:var(--brand);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.aml-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.aml-sum-card{
+  background:var(--bg); border:none; border-radius:var(--r);
+  padding:16px 20px; display:flex; flex-direction:column; gap:8px;
+  transition:background .2s var(--ease); box-shadow:none;
+}
+.aml-sum-card:hover{background:var(--bdl)}
+.aml-sum-card-hd{display:flex;align-items:center;justify-content:space-between}
+.aml-sum-label{font-size:13.5px;font-weight: 700;letter-spacing:.06em;color:var(--tm)}
+.aml-sum-card-body{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+
+.aml-sum-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; border-radius:6px; font-size:14.5px; font-weight:700;
+  border:1.5px solid; transition:all .2s var(--ease);
+}
+.aml-sum-badge.unres{color:#b45309; background:#fffbeb; border-color:#fde68a}
+.aml-sum-badge.res{color:#047857; background:#ecfdf5; border-color:#a7f3d0}
+.aml-sum-badge.blocked{color:#b91c1c; background:#fef2f2; border-color:#fecaca}
+.aml-sum-badge.clear{color:#047857; background:#ecfdf5; border-color:#a7f3d0}
+
+.aml-sum-sub{font-size:14px;color:var(--t2);font-weight:500;line-height:1.4}
+
+/* Modal Overlay & Card */
+.modal-backdrop{position:fixed;inset:0;background:rgba(18,19,43,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;visibility:hidden;transition:opacity .25s var(--ease),visibility .25s var(--ease)}
+.modal-backdrop.active{opacity:1;visibility:visible}
+.modal-container{background:#fff;border-radius:20px;border:1px solid var(--bd);width:100%;max-width:750px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;box-shadow:0 20px 40px -10px rgba(18,19,43,.25);transform:scale(.95) translateY(10px);transition:transform .25s var(--spring);overflow:hidden}
+.modal-backdrop.active .modal-container{transform:scale(1) translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:24px 32px;border-bottom:1px solid var(--bdl);background:var(--surface);flex-shrink:0}
+.modal-title-group{display:flex;align-items:center;gap:12px}
+.modal-ic-badge{width:36px;height:36px;border-radius:10px;background:transparent;color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-title{font-size:19px;font-weight: 700;color:var(--t1);letter-spacing:-.01em}
+.modal-sub{font-size:14.5px;color:var(--t2)}
+.modal-close-btn{width:30px;height:30px;border:none;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:21px;line-height:1;transition:all .15s var(--ease)}
+.modal-close-btn:hover{color:#000;transform:scale(1.15);}
+.modal-body{padding:18px 22px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
+.modal-body::-webkit-scrollbar{width:6px;display:block}
+.modal-body::-webkit-scrollbar-track{background:transparent}
+.modal-body::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+.modal-body::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--bdl);background:var(--surface);display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0}
+.btn-save-modal{height:40px;padding:0 22px;border-radius:6px;font-size:16px;font-weight: 700;font-family:inherit;cursor:pointer;background:#0d9488;color:#fff;border:none;transition:background .15s var(--ease),transform .15s var(--spring)}
+.btn-save-modal:hover:not(:disabled){background:var(--accent-h);transform:translateY(-1px)}
+.btn-save-modal:disabled{background:#0d9488;opacity:0.4;cursor:not-allowed}
+
+/* Minimalist Resolution Component */
+.res-panel { display: flex; flex-direction: column; gap: 4px; padding: 4px 14px; margin: 4px 0; }
+
+/* Header */
+.res-header { display: flex; align-items: flex-start; gap: 16px; }
+.res-htext { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.res-htext-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: space-between; margin-bottom: 16px; }
+.res-htext h4 { margin: 0; font-size:17.5px; font-weight: 700; color: var(--t1); letter-spacing: -0.01em; }
+.res-htext p { margin: 0; font-size:16.5px; color: var(--t2); line-height: 1.6; }
+.res-badge { padding: 3px 8px; border-radius: 4px; font-size:13px; font-weight: 700;  letter-spacing: 0.06em; }
+.res-panel.mismatch .res-badge { background: var(--wn-bg); color: var(--wn); }
+.res-panel.match .res-badge { background: var(--ok-bg); color: var(--ok); }
+
+/* Body (String diff grid) */
+.res-body { padding: 0; }
+.res-diff-table { display: flex; flex-direction: column; gap: 16px; padding-left: 0; margin-left: 0; margin-top: 0; margin-bottom: 20px; }
+.res-row { display: flex; align-items: center; justify-content: flex-start; gap: 32px; }
+.res-lbl { font-size: 12.5px; font-weight: 700; color: var(--t3, #64748b); letter-spacing: 0.05em;  width: 220px; flex-shrink: 0; }
+.res-val { font-size: 15.5px; font-weight: 700; color: var(--t1, #0f172a); }
+.res-panel.mismatch .res-val.error { color: var(--wn); }
+
+/* Footer Action */
+.res-footer { padding: 0; margin-top: 8px; margin-left: 0; }
+.res-checkbox { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
+.res-checkbox input { width: 18px; height: 18px; accent-color: #000; margin-top: 2px; }
+.res-checkbox span { font-size:16.5px; font-weight: 700; color: var(--t1); line-height: 1.6; }
+
+/* Modal Comparison Grid & Modal Fields Fit */
+.modal-comp-grid{width:100%;border-collapse:collapse;margin-bottom:16px}
+.modal-comp-col{display:flex;flex-direction:column;gap:12px;background:transparent;border:none;padding:0}
+  .modal-comp-col.matched{background:transparent;border:none}
+  .modal-comp-col-ttl{font-size:13px;font-weight: 700;letter-spacing:.08em;color:var(--brand);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--bdl)}
+  .modal-comp-row{font-size:14.5px;display:flex;align-items:center;gap:6px;color:var(--t1)}
+  .modal-comp-row .lbl{color:var(--t2);font-weight:500;min-width:65px}
+  /* 3-col comparison table */
+  table.cmp-table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  table.cmp-table th{font-size:12.5px;font-weight: 700;letter-spacing:.08em;color:var(--brand);padding:0 12px 10px 12px;border-bottom:1.5px solid var(--bdl);text-align:left;white-space:nowrap}
+  table.cmp-table th:first-child{width:90px;color:var(--t3)}
+  table.cmp-table td{font-size:14.5px;padding:9px 12px;border-bottom:1px solid var(--bdl);vertical-align:middle;color:var(--t1);font-weight: 700}
+  table.cmp-table td:first-child{font-size:13px;font-weight: 700;letter-spacing:.05em;color:var(--t2);white-space:nowrap}
+  table.cmp-table tr:last-child td{border-bottom:none}
+  
+  
+  table.cmp-table .match-type-val{display:inline-flex;align-items:center;gap:6px}
+
+.modal-body .field{margin-bottom:0;gap:6px}
+.modal-body textarea{min-height:60px;padding:8px 12px;font-size:15.5px}
+.modal-body .btn-group{margin-bottom:0}
+.modal-body .upload-box{padding:8px 12px;gap:10px}
+.modal-body .upload-ic{width:28px;height:28px;border-radius:6px}
+.modal-body .upload-txt-m{font-size:15px}
+.modal-body .upload-txt-s{font-size:13.5px}
+
+/* ID Mismatch Box in Approval Shell */
+.id-mismatch-box{background:transparent;border:1.5px solid var(--wn-b);border-radius:var(--r);padding:16px 18px;margin-bottom:18px}
+.id-mismatch-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.id-mismatch-sub{font-size:14.5px;font-weight:700;color:var(--wn)}
+.id-mismatch-desc{font-size:15.5px;color:var(--t1);margin-bottom:12px;line-height:1.5}
+.id-confirm-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:15.5px;font-weight: 700;color:var(--t1)}
+.id-confirm-label input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);margin-top:1px;flex-shrink:0}
+
+@media(max-width:640px){
+  .page{padding:16px 16px 60px}
+  .scenario-nav{flex-direction:column; align-items:flex-start}
+  h1{font-size:26.5px}
+  .detail-g{grid-template-columns:1fr}
+  .di:nth-child(odd){border-right:none}
+  .di:nth-last-child(-n+2){border-bottom:1px solid var(--bdl)}
+  .di:last-child{border-bottom:none}
+  .btn-row{flex-direction:column}
+  
+  .acc-trigger{padding:14px 16px}
+  .acc-body{padding:4px 16px 18px}
+  .aml-summary-bar{grid-template-columns:1fr}
+  .name-comp-grid{grid-template-columns:1fr}
+  .modal-comp-grid{width:100%;border-collapse:collapse;margin-bottom:16px}
+  .risk-pill-track{width:100%;min-width:0;max-width:none}
+}
+/* Executive Summary Block */
+.exec-summary-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin-bottom: 36px; padding-bottom: 32px; border-bottom: 1px solid var(--bdl);
+}
+.exec-card {
+  background: var(--bg); border-radius: var(--r); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.exec-lbl {
+  font-size:13px; font-weight: 700; 
+  letter-spacing: .08em; color: var(--tm);
+}
+.exec-val {
+  font-size:16.5px; font-weight: 700; color: var(--t1);
+  display: flex; align-items: center; gap: 6px;
+}
+.exec-val.ok svg { color: #0f172a; }
+.exec-val.warn svg { color: var(--wn); }
+.exec-val.danger svg { color: var(--er); }
+
+      /* === Unified Packed Control (Segmented) === */
+  .seg-track, .risk-selector{display:flex;align-items:center;width:100%;margin-top:4px;margin-bottom:0}
+  
+  .seg-btn, .risk-option{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font-family:inherit;font-size:15px;font-weight: 700;color:var(--t1);transition:all .18s var(--ease);position:relative}
+  
+  /* Collapse overlapping borders */
+  .seg-btn + .seg-btn, .risk-option + .risk-option { margin-left: -1px; }
+  
+  /* Outer rounding */
+  .seg-btn:first-child, .risk-option:first-child { border-top-left-radius:8px; border-bottom-left-radius:8px; }
+  .seg-btn:last-child, .risk-option:last-child { border-top-right-radius:8px; border-bottom-right-radius:8px; }
+  
+  .seg-btn:hover:not(.selected), .risk-option:hover:not(.selected) { background:#f8fafc; }
+  
+  .risk-option .r-pip{width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex-shrink:0;transition:background .18s ease}
+  .risk-option .r-label{font-size:15px;font-weight:700}
+  
+  /* Active states bring the element forward to overlay borders */
+  .seg-btn.selected, .seg-btn.active { border-color:var(--brand); background:var(--brand); color:#fff; z-index:1; font-weight:700; }
+  
+  .risk-option.selected { z-index:1; font-weight:700; }
+  .risk-option.selected.low { border-color:var(--ok); background:var(--ok-bg); color:var(--ok); }
+  .risk-option.selected.low .r-pip { background:var(--ok); }
+
+  .risk-option.selected.medium { border-color:var(--wn); background:var(--wn-bg); color:var(--wn); }
+  .risk-option.selected.medium .r-pip { background:var(--wn); }
+
+  .risk-option.selected.high { border-color:var(--er); background:var(--er-bg); color:var(--er); }
+  .risk-option.selected.high .r-pip { background:var(--er); }
+
+/* Minimal Cancel Confirmation Modal (theme.minimal) */
+.modal-backdrop#cancelConfirmModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 19, 43, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop#cancelConfirmModal .cancel-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 30px -10px rgba(18, 19, 43, 0.15);
+  width: 100%;
+  max-width: 420px;
+  padding: 24px 28px;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-backdrop#cancelConfirmModal.active .cancel-card {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal .cancel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn:hover {
+  color: #1e293b;
+  transform: scale(1.1);
+}
+.modal-backdrop#cancelConfirmModal .cancel-body {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+
+/* ── Docket View Button ── */
+.docket-btn-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--b2,#e2e8f0)}
+.docket-lbl-wrap{display:flex;flex-direction:column;gap:3px}
+.docket-lbl{font-size:16px;font-weight: 700;color:var(--t1,#0f172a)}
+.docket-sub{font-size:14px;color:var(--t3,#64748b)}
+.btn-view-docket{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 20px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;color:#1a202c;font-size:15.5px;font-weight: 700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s,border-color 0.15s,color 0.15s}
+.btn-view-docket:hover{background:#f4f4f4;border-color:#e2e8f0}
+/* ── Docket Lightbox ── */
+#docketModal{position:fixed;inset:0;z-index:2000;background:rgba(18,19,43,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:opacity 0.25s ease,visibility 0.25s ease}
+#docketModal.active{opacity:1;visibility:visible}
+.docket-modal-card{background:#fff;border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.25);max-width:520px;width:100%;overflow:hidden;transform:scale(0.95) translateY(12px);transition:transform 0.25s ease;display:flex;flex-direction:column;max-height:calc(100vh - 48px)}
+#docketModal.active .docket-modal-card{transform:scale(1) translateY(0)}
+.docket-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;flex-shrink:0}
+.docket-modal-title{font-size:17px;font-weight:700;color:#0f172a}
+.docket-modal-close{background:transparent;border:none;cursor:pointer;color:#64748b;padding:4px;border-radius:6px;display:flex;align-items:center}
+.docket-modal-close:hover{color:#0f172a}
+.docket-modal-body{padding:16px;text-align:center;overflow:hidden;flex:1;display:flex;align-items:center;justify-content:center}
+.docket-modal-body img{max-width:100%;max-height:calc(100vh - 160px);width:auto;height:auto;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;display:block}
+
+
+/* STANDARDIZED UI STYLES */
+:root {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --t1: #0f172a;
+  --t2: #334155;
+  --tm: #475569;
+  --bd: #e2e8f0;
+  --ok: #059669; --ok-bg: #ecfdf5; --ok-b: #a7f3d0;
+  --wn: #b45309; --wn-bg: #fffbeb; --wn-b: #fde68a;
+  --er: #e53e3e; --er-bg: #fff5f5; --er-b: #fed7d7;
+  --in: #3182ce; --in-bg: #ebf8ff; --in-b: #bee3f8;
+}
+
+/* BUTTONS */
+.btn-primary {
+  height: 44px; padding: 0 28px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #0d9488; color: #fff; border: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover:not(:disabled) { background: #0b7a6f; }
+.btn-primary.danger { background: #ef4444; }
+.btn-primary.danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-secondary {
+  height: 44px; padding: 0 26px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #fff; border: 1px solid #e2e8f0; color: #1a202c;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover { background: #f4f4f4; border-color: #e2e8f0; }
+.btn-secondary.danger { border-color: #fca5a5; color: #ef4444; }
+.btn-secondary.danger:hover { background: #fef2f2; border-color: #f87171; }
+
+.btn-action-req {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 16px; width: 160px; min-width: 160px; border-radius: 6px; font-size: 15px; font-weight: 700;
+  border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease;
+  box-sizing: border-box; text-align: center; white-space: nowrap;
+}
+.btn-action-req.warn { color: var(--wn); background: transparent; border-color: var(--wn); }
+.btn-action-req.warn:hover { background: var(--wn-bg); }
+.btn-action-req.pass { color: var(--ok); background: transparent; border-color: var(--ok); }
+.btn-action-req.pass:hover { background: var(--ok-bg); }
+.btn-action-req.fail { color: var(--er); background: transparent; border-color: var(--er); }
+.btn-action-req.fail:hover { background: var(--er-bg); }
+
+/* PILLS */
+.pill {
+  font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.pill.pass { color: var(--ok); background: var(--ok-bg); border: 1px solid var(--ok-b); }
+.pill.fail { color: var(--er); background: var(--er-bg); border: 1px solid var(--er-b); }
+.pill.warn { color: var(--wn); background: var(--wn-bg); border: 1px solid var(--wn-b); }
+.pill.neutral { color: var(--t2); background: #f1f5f9; border: 1px solid var(--bd); }
+
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+  border-radius: 20px; font-size: 15.5px; font-weight: 700;
+  background: var(--in-bg); color: var(--in); border: 1.5px solid var(--in-b);
+}
+.status-pill .sdot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--in);
+  animation: pulse 2s infinite;
+}
+
+/* MISMATCH BOX */
+.id-mismatch-box {
+  background: transparent; border: 1.5px solid var(--wn-b);
+  border-radius: 8px; padding: 16px 18px; margin-bottom: 18px;
+}
+/* END STANDARDIZED UI STYLES */
+
+
+/* EXTENDED RESPONSIVE FIXES */
+@media (max-width: 768px) {
+  .detail-g-3col { grid-template-columns: 1fr 1fr; }
+  .detail-g-3col .di { border-right: none; border-bottom: 1px solid var(--bdl); }
+  .detail-g-3col .di:nth-child(odd) { border-right: 1px solid var(--bdl); }
+  .detail-g-3col .di:last-child { border-bottom: none; border-right: none; }
+  .risk-pill-track, .seg-track, .risk-selector { width: 100%; min-width: 0; max-width: none; }
+  .risk-pill-btn, .seg-btn, .risk-option { font-size: 14.5px; padding: 0 10px; }
+}
+
+@media (max-width: 480px) {
+  /* Scenario Switcher */
+  .scenario-nav { flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px 14px; }
+  .scenario-tag { padding-left: 0; }
+  .scenario-links { flex-wrap: wrap; }
+  .scenario-btn { font-size: 13.5px; padding: 5px 11px; }
+
+  /* Page Header */
+  .page-hd { flex-direction: row; flex-wrap: nowrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .page-hd h1 { font-size: 22px; }
+  .status-pill { font-size: 12.5px; padding: 5px 10px; text-align: center; line-height: 1.2; flex-shrink: 0; }
+
+  /* Bank Account 3-col */
+  .detail-g-3col { grid-template-columns: 1fr; }
+  .detail-g-3col .di { border-right: none !important; border-bottom: 1px solid var(--bdl); }
+  .detail-g-3col .di:last-child { border-bottom: none; }
+
+  /* Name mismatch rows */
+  .name-mismatch-row, .res-row { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .name-mismatch-lbl, .res-lbl { width: auto; font-size: 12px; }
+  .res-htext-row { flex-wrap: wrap; gap: 8px; }
+
+  /* IDV History Table */
+  .idv-t, .idv-t tbody, .idv-t th { display: block; width: 100%; }
+  .idv-t thead { display: none; }
+  .idv-t tr { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--bdl); }
+  .idv-t tr:last-child { border-bottom: none; }
+  .idv-t td { display: block; padding: 2px 0; font-size: 14.5px; }
+  .idv-t td:nth-child(1) { grid-column: 1; grid-row: 1; font-weight: 500; }
+  .idv-t td:nth-child(2) { grid-column: 1; grid-row: 2; font-size: 13.5px; color: var(--t2); }
+  .idv-t td:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; justify-self: end; }
+
+  /* AML Screening rows */
+  .aml-h { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .btn-action-req { font-size: 14px; padding: 0 14px; height: 34px; }
+
+  /* Action button groups (Option B Stack) */
+  .btn-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-row > .btn-secondary { grid-column: 1; width: 100%; justify-content: center; margin-bottom: 0; }
+  .btn-row > div { display: contents !important; }
+  .btn-row > div > .btn-secondary.danger { grid-column: 2; width: 100%; justify-content: center; }
+  .btn-row > div > .btn-primary { grid-column: 1 / span 2; width: 100%; justify-content: center; margin-top: 2px; }
+
+
+
+  /* Modal header and tables */
+  .modal-header { padding: 16px 18px; }
+  .modal-title { font-size: 17px; }
+  .modal-body { padding: 12px 14px; }
+  .modal-footer { padding: 12px 14px; }
+    /* Mobile comparison table optimization (No horizontal scroll) */
+  .cmp-table-wrap { overflow: visible !important; width: 100%; margin-bottom: 16px; }
+  table.cmp-table { min-width: 100% !important; width: 100%; table-layout: fixed; margin-bottom: 0 !important; }
+  table.cmp-table th, table.cmp-table td:first-child { white-space: normal !important; }
+  table.cmp-table th { padding: 8px 4px !important; font-size: 11px !important; letter-spacing: 0 !important; line-height: 1.3; }
+  table.cmp-table td { padding: 10px 4px !important; font-size: 12.5px !important; line-height: 1.3; word-wrap: break-word; hyphens: auto; }
+  table.cmp-table th:first-child, table.cmp-table td:first-child { width: 22% !important; padding-left: 0 !important; }
+  table.cmp-table th:last-child, table.cmp-table td:last-child { padding-right: 0 !important; }
+  
+  .audit-grid { grid-template-columns: 1fr; gap: 4px; }
+  .audit-lbl { font-size: 12px; }
+
+  /* Prevent summary value wrapping */
+  .aml-summary-sec .di-lbl, .action-shell .di-lbl { flex: 1; padding-right: 12px; line-height: 1.4; }
+  .aml-summary-sec .di-val, .aml-summary-sec .pill, .aml-summary-sec .btn-action-req, .action-shell .di-val { flex-shrink: 0; white-space: nowrap; text-align: right; }
+
+  /* Docket row */
+  .docket-btn-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .btn-view-docket { width: 100%; justify-content: center; }
+
+  /* Segmented control buttons in modals */
+  .opt-btn { font-size: 13px !important; padding: 0 4px !important; white-space: nowrap !important; }
+}
+  /* Payout details 2-col on mobile */
+  .payout-grid { grid-template-columns: 1fr 1fr !important; gap: 12px; }
+/* PEP Multi-Guess Styling */
+.pep-result-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+}
+.pep-res-count {
+  font-weight: 700;
+  color: var(--t1);
+  font-size: 15px;
+}
+.pep-res-actions {
+  display: flex;
+  gap: 8px;
+}
+.pep-tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--bd);
+  margin-bottom: 16px;
+}
+.pep-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tm);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.pep-tab-btn.active {
+  color: var(--t1);
+  border-bottom: 2px solid var(--t1);
+}
+.pep-tab-panel {
+  display: none;
+  margin-bottom: 24px;
+}
+.pep-tab-panel.active {
+  display: block;
+}
+.pep-article-item {
+  border-bottom: 1px solid var(--bdl);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+.pep-article-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.pep-article-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.pep-article-date {
+  color: var(--tm);
+  font-size: 12px;
+}
+.pep-article-title {
+  color: #0d9488;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(13,148,136,0.4);
+  text-underline-offset: 2px;
+  font-size: 14px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.pep-article-excerpt {
+  color: var(--t2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.pep-empty-state {
+  color: var(--tm);
+  font-size: 14px;
+  font-style: italic;
+  padding: 12px 0;
+}
+.pep-inline-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  margin-top: 16px;
+}
+/* Custom Select for PEP Match Status */
+.custom-select-wrapper {
+  position: relative;
+  user-select: none;
+  min-width: 170px;
+}
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--bd);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--t1);
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.custom-select-trigger:hover {
+  border-color: #000;
+}
+.custom-select-wrapper.open .custom-select-trigger {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3.5px var(--al);
+}
+.custom-select-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--t1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.custom-select-wrapper.open .custom-select-icon {
+  transform: rotate(180deg);
+}
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--bdl);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+  overflow: hidden;
+  padding: 6px;
+}
+.custom-select-wrapper.open .custom-select-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.custom-select-option {
+  padding: 10px 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--t2);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.custom-select-option:hover {
+  background-color: var(--bg);
+  color: var(--t1);
+}
+.custom-select-option.selected {
+  background-color: var(--brand);
+  color: #fff;
+}
+.custom-select-option.selected::after {
+  content: "";
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='20 6 9 17 4 12'%3e%3c/polyline%3e%3c/svg%3e");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+
+
+/* Key Data List */
+.pep-kd-list {
+  display: flex;
+  flex-direction: column;
+}
+.pep-kd-item {
+  display: flex;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bdl);
+}
+.pep-kd-item:last-child {
+  border-bottom: none;
+}
+.pep-kd-lbl {
+  width: 180px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--tm);
+}
+.pep-kd-val {
+  flex: 1;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--t1);
+}
+/* Blacklist Alert Banner & Elements */
+.blacklist-banner {
+  background: var(--er-bg);
+  border: 1.5px solid var(--er-b);
+  border-radius: var(--rl);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.blacklist-banner.is-hidden {
+  display: none !important;
+}
+.blacklist-banner-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.blacklist-banner-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: var(--er);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.blacklist-banner-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--er);
+  letter-spacing: -0.01em;
+}
+.blacklist-banner-sub {
+  font-size: 14px;
+  color: var(--t1);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+/* Screening summary Card */
+.scr-sum-card{background:transparent;border:none;padding:0;margin-bottom:0;box-shadow:none}
+.scr-sum-ttl{font-size:16.5px;font-weight:700;color:var(--t1);margin-bottom:12px;letter-spacing:-.01em}
+.scr-sum-list{display:flex;flex-direction:column;gap:10px}
+.scr-sum-item{display:flex;align-items:flex-start;gap:10px;font-size:15.5px;color:var(--t1);line-height:1.45}
+.scr-ic{width:18px;height:18px;flex-shrink:0;margin-top:1px}
+.scr-ic.ok{color:#0f172a}
+.scr-ic.warn{color:#d97706}
+.scr-ic.info{color:#6d28d9}
+
+/* Collapsible Audit Details */
+.audit-details{margin-top:14px;border-top:1px solid var(--bdl);padding-top:10px}
+.audit-summary{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--brand);cursor:pointer;user-select:none;padding:4px 0;transition:color .15s var(--ease)}
+.audit-summary:hover{color:var(--accent)}
+.audit-summary::marker, .audit-summary::-webkit-details-marker{display:none}
+.audit-chv{width:14px;height:14px;transition:transform .2s var(--spring);color:var(--brand);flex-shrink:0}
+.audit-details[open] .audit-chv{transform:rotate(90deg)}
+.audit-panel{margin-top:10px;background:var(--surface);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px}
+.audit-grid{display:grid;grid-template-columns:150px 1fr;gap:8px 12px;font-size:15px;line-height:1.45}
+.audit-lbl{color:var(--t2);font-weight: 700}
+.audit-val{color:var(--t1);font-weight: 700;font-variant-numeric:tabular-nums;word-break:break-word}
+@media(max-width:480px){.audit-grid{grid-template-columns:1fr;gap:4px}}
+
+</style>
+
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Scenario Switcher Bar -->
+  <div class="scenario-nav">
+    <span class="scenario-tag">Scenario presets</span>
+    
+    
+    <div class="scenario-links">
+      <a href="01-both-hits.html" class="scenario-btn ">1. Dual hit</a>
+      <a href="02-single-hit.html" class="scenario-btn ">2. Single hit</a>
+      <a href="04-name-mismatch.html" class="scenario-btn ">3. Name mismatch</a>
+      <a href="03-no-hits.html" class="scenario-btn ">4. All clear</a>
+      <a href="05-manual-kyc.html" class="scenario-btn ">5. Manual KYC</a>
+      <a href="06-no-id.html" class="scenario-btn ">6. No ID</a>
+      <a href="07-multi-id-pass.html" class="scenario-btn ">7. Multi-ID pass</a>
+      <a href="08-multi-id-mixed.html" class="scenario-btn ">8. Multi-ID mixed</a>
+      <a href="09-blacklist-match.html" class="scenario-btn ">9. Blacklist match</a>
+    </div>
+  </div>
+
+  <header class="page-hd reveal">
+    <div class="hd-left">
+      <h1>Payout #578</h1>
+      <p class="meta">14 July 2026 &nbsp;·&nbsp; 7:09 am &nbsp;·&nbsp; Riverside&nbsp;RSL&nbsp;Club</p>
+    </div>
+    <div class="status-pill">Awaiting approval</div>
+  </header>
+
+  <div class="toolbar reveal">
+    <button class="btn-col" id="collapseBtn" type="button">
+      <svg id="collapseIcon" class="col-icon flipped" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 15l7-7 7 7"/></svg>
+      <span id="collapseLabel">Expand all</span>
+    </button>
+  </div>
+
+  <div class="shell reveal">
+    <div class="accordion">
+
+      <!-- Payout details -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+          <span class="acc-ttl">Payout details</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g no-sep payout-grid">
+            <div class="di"><span class="di-lbl">Cash amount</span><span class="di-val">AUD 500.00</span></div>
+            <div class="di"><span class="di-lbl">Transfer amount</span><span class="di-val">AUD 1,000.00</span></div>
+            <div class="di"><span class="di-lbl">Internal txn ID</span><span class="di-val mono">213</span></div>
+            <div class="di"><span class="di-lbl">Machine ID</span><span class="di-val mono">EGM-002</span></div>
+            <div class="di"><span class="di-lbl">Venue</span><span class="di-val">Riverside RSL Club</span></div>
+            <div class="di"><span class="di-lbl">Disbursement policy</span><span class="di-val" id="disbursementPolicyValue">Venue policy: Cash + Bank transfer</span></div>
+            <div class="di"><span class="di-lbl">Payout type</span><span class="di-val">EGM</span></div>
+          </div>
+          <div class="docket-btn-row">
+            <div class="docket-lbl-wrap">
+              <span class="docket-lbl">Payout docket</span>
+              <span class="docket-sub">Submitted docket image from collector</span>
+            </div>
+            <button type="button" class="btn-view-docket" onclick="openDocketModal()">
+              View docket
+            </button>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Member ID -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a7.5 7.5 0 0113 0"/></svg></span>
+          <span class="acc-ttl">Member identification</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g no-sep">
+            <div class="di"><span class="di-lbl">Membership number</span><span class="di-val mono">3e23e</span></div>
+            <div class="di"><span class="di-lbl">Email</span><span class="di-val">stacy@gmail.com</span></div>
+            <div class="di"><span class="di-lbl">Full name</span><span class="di-val">STACY TESTTWENTY</span></div>
+            <div class="di"><span class="di-lbl">Document type</span><span class="di-val">Passport</span></div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Bank account -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          <span class="acc-ttl">Bank account details</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g-3col">
+            <div class="di" style="border: none;"><span class="di-lbl">Account name</span><span class="di-val">STACY K TESTTWENTY</span></div>
+            <div class="di" style="border: none;"><span class="di-lbl">BSB number</span><span class="di-val mono">321-312</span></div>
+            <div class="di" style="border: none;"><span class="di-lbl">Account number</span><span class="di-val mono">213-123-123</span></div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Name verification Accordion -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>
+          <span class="acc-ttl">Name verification</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="res-panel match">
+            <div class="res-header">
+              <div class="res-htext">
+                <div class="res-htext-row">
+                    <h4>Name comparison</h4>
+                    <span class="pill pass">Match</span>
+                  </div>
+              </div>
+            </div>
+
+            <div class="res-body">
+              <div class="res-diff-table">
+                <div class="res-row">
+                  <span class="res-lbl">Name on ID document</span>
+                  <span class="res-val">STACY K TESTTWENTY</span>
+                </div>
+                <div class="res-row">
+                  <span class="res-lbl">Provided bank account name</span>
+                  <span class="res-val">STACY K TESTTWENTY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Verification results -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          <span class="acc-ttl">Verification results</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="sec-h">Identity verification</div>
+          
+          <div class="idv-row-list">
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">Government ID</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">ID validation</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">Name match</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">DOB match</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            <div class="idv-row-item" id="blacklistIdvRow">
+              <span class="idv-row-lbl">Venue Blacklist</span>
+              <span class="pill pass" id="blacklistIdvPill">No match</span>
+            </div>
+          </div>
+
+          <div class="sec-h">AML screening</div>
+          <div class="aml-c" id="blacklistAmlCard">
+            <button type="button" class="aml-h" onclick="openBlacklistResolutionModal()">
+              <div class="aml-info">
+                <div>
+                  <div class="aml-t" style="display:inline-flex;align-items:center;gap:0">Venue Blacklist - Screening</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="pill pass" id="blacklistAmlBadge">No match</span>
+              </div>
+            </button>
+          </div>
+          <div class="aml-c">
+            <button type="button" class="aml-h" onclick="openPepModal()"><div class="aml-info"><div><div class="aml-t" style="display:inline-flex;align-items:center;gap:0">PEP - Active hits</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="btn-action-req warn" id="pepBadge">Action required</span></div></button>
+          </div>
+          <div class="aml-c">
+            <button type="button" class="aml-h" onclick="openSancModal()"><div class="aml-info"><div><div class="aml-t" style="display:inline-flex;align-items:center;gap:0">Sanctions - Active hits</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="btn-action-req warn" id="sancBadge">Action required</span></div></button>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- IDV History -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/></svg></span>
+          <span class="acc-ttl">Identity verification (IDV) history</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <table class="idv-t">
+            <thead><tr><th>Country + document + IDV</th><th>Date &amp; time</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Australia Passport IDV</td>
+                <td>14 July 2026, 11:41 am</td>
+                <td><span class="pill pass">Pass</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div></div></div>
+      </div>
+
+      <!-- Collector -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+          <span class="acc-ttl">Collector</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="person-r">
+            <div class="person-av">MS</div>
+            <div><div class="person-n">M.Santos</div><div class="person-s">14/07/2026 07:12am</div></div>
+          </div>
+        </div></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Action Shell -->
+  <div class="action-shell reveal">
+    <div class="action-card">
+      <div class="action-ttl">
+        <span>Approval determination</span>
+      </div>
+
+      <!-- Combined Steps Panel -->
+      <div class="action-sub-panel">
+
+
+        <!-- Executive Summary -->
+        <div class="detail-g no-sep" style="grid-template-columns: 1fr; margin-bottom: 24px; background: transparent">
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;">
+            <span class="di-lbl">Identity verification</span>
+            <span class="di-val" style="color: var(--ok); font-weight: 700;">Fully verified</span>
+          </div>
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;">
+            <span class="di-lbl">Name match</span>
+            <span class="di-val" style="color: var(--wn); font-weight: 700;">Mismatch detected</span>
+          </div>
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;">
+            <span class="di-lbl">Confirmation of payee</span>
+            <span class="di-val" style="color: var(--ok); font-weight: 700;">Exact match</span>
+          </div>
+          <div class="di" id="blacklistExecDi" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: none; border-right: none;">
+            <span class="di-lbl">Venue blacklist</span>
+            <span class="di-val" id="blacklistExecVal" style="color: var(--ok); font-weight: 700;">No match</span>
+          </div>
+        </div>
+
+
+        <!-- AML Resolution Summary Section -->
+        <div class="aml-summary-sec">
+          <div class="aml-summary-hd">
+            <span>AML &amp; compliance audit trail</span>
+          </div>
+          <div class="detail-g no-sep" style="grid-template-columns: 1fr;">
+            <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;" id="blacklistSumCard">
+              <div style="display: flex; flex-direction: column; gap: 3px; max-width: 70%;">
+                <span class="di-lbl">Venue blacklist status</span>
+                <span class="person-s" id="blacklistSumSub" style="margin-top: 0;">Automated exclusion check evaluated against venue database.</span>
+              </div>
+              <button type="button" class="pill pass" id="blacklistSumStatus" onclick="openBlacklistResolutionModal()" style="width: fit-content; font-weight: 700; flex-shrink: 0; cursor: pointer;">No match</button>
+            </div>
+            <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;" id="pepSumCard">
+              <div style="display: flex; flex-direction: column; gap: 3px; max-width: 70%;">
+                <span class="di-lbl">PEP match status</span>
+                <span class="person-s" id="pepSumSub" style="margin-top: 0;">Pending determination in AML screening</span>
+              </div>
+              <button type="button" class="btn-action-req warn" id="pepSumStatus" onclick="openPepModal()" style="margin-top:2px;">Action required</button>
+            </div>
+            <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: none; border-right: none;" id="sancSumCard">
+              <div style="display: flex; flex-direction: column; gap: 3px; max-width: 70%;">
+                <span class="di-lbl">Sanctions match status</span>
+                <span class="person-s" id="sancSumSub" style="margin-top: 0;">Pending determination in AML screening</span>
+              </div>
+              <button type="button" class="btn-action-req warn" id="sancSumStatus" onclick="openSancModal()" style="margin-top:2px;">Action required</button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Hidden form inputs for validation -->
+        <input type="hidden" id="pepStatus" value="">
+        <input type="hidden" id="pepNotesVal" value="">
+        <input type="hidden" id="sancStatus" value="">
+        <input type="hidden" id="sancNotesVal" value="">
+
+        <!-- General Approver note -->
+        <div class="field">
+          <label for="approvalNote">Approver note (optional)</label>
+          <textarea id="approvalNote" rows="3" placeholder="Add an overall approval note or rationale for audit log..."></textarea>
+        </div>
+
+        <!-- Risk level Segmented Track -->
+        <div class="risk-sec">
+          <span class="risk-lbl-title">Risk level assessment <span class="req">*</span></span>
+          <div class="risk-selector">
+            <button type="button" class="risk-option low" data-risk="Low" onclick="setRisk('Low')">
+              <span class="r-label">Low</span>
+            </button>
+            <button type="button" class="risk-option medium" data-risk="Medium" onclick="setRisk('Medium')">
+              <span class="r-label">Medium</span>
+            </button>
+            <button type="button" class="risk-option high" data-risk="High" onclick="setRisk('High')">
+              <span class="r-label">High</span>
+            </button>
+          </div>
+          <input type="hidden" id="riskLevel" value="">
+        </div>
+
+        <!-- Confirm Checkbox Card -->
+        <label class="confirm-box" id="confirmCard" for="approvalConfirm">
+          <input type="checkbox" id="approvalConfirm" onchange="checkState()">
+          <div class="confirm-box-txt">
+            <span class="attest-desc">I confirm this transaction is ready for payment</span>
+          </div>
+        </label>
+
+        <div class="btn-row">
+          <button type="button" class="btn-secondary">Back</button>
+          <div style="display:flex; gap:12px;">
+            <button type="button" class="btn-secondary danger" onclick="openCancelConfirmModal()">Cancel</button>
+            <button type="button" class="btn-primary" id="approveBtn" disabled>
+            <span id="approveBtnText">Approve payout</span>
+          </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PEP match resolution Modal -->
+<div class="modal-backdrop" id="pepModal" tabindex="-1">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div>
+          <div class="modal-title">PEP match resolution</div>
+          
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closePepModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Player data vs Matched record Table -->
+      <!-- Result Nav -->
+      <div class="pep-result-nav">
+        <div class="pep-res-count">Result <span id="pepResIdx">1</span> of <span id="pepResTotal">3</span></div>
+        <div class="pep-res-actions">
+          <button type="button" class="btn-secondary" id="pepPrevBtn" onclick="prevPepResult()" style="height:34px; padding: 0 12px;">&lsaquo; Prev</button>
+          <button type="button" class="btn-secondary" id="pepNextBtn" onclick="nextPepResult()" style="height:34px; padding: 0 12px;">Next &rsaquo;</button>
+        </div>
+      </div>
+
+      <!-- Global Context Header -->
+      <div id="pepGlobalHeaderContainer"></div>
+
+      <!-- Result Tabs -->
+      <div class="pep-tabs">
+        <button type="button" class="pep-tab-btn active" id="tabBtn-key" onclick="switchPepTab('key')">Key Data</button>
+        <button type="button" class="pep-tab-btn" id="tabBtn-media" onclick="switchPepTab('media')">Adverse Media</button>
+        <button type="button" class="pep-tab-btn" id="tabBtn-listing" onclick="switchPepTab('listing')">Data Sources</button>
+      </div>
+
+      <!-- Tab Content Panels -->
+      <div class="pep-tab-panels">
+        <!-- Key Data -->
+        <div id="pepTab-key" class="pep-tab-panel active">
+          <div class="pep-kd-list" id="pepKeyDataContent">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+        
+        <!-- Adverse Media -->
+        <div id="pepTab-media" class="pep-tab-panel">
+          <div id="pepMediaContent">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Data Sources -->
+        <div id="pepTab-listing" class="pep-tab-panel">
+          <div style="margin-bottom: 16px;">
+            <span class="pill warn" id="pepListingBadge">PEP Class 2</span>
+            <div style="font-size: 16px; font-weight: 700; color: var(--t1); margin-top: 8px;" id="pepListingSource">Source Name</div>
+            <div style="font-size: 13px; color: var(--tm); margin-top: 4px;">Currently on</div>
+          </div>
+          <div class="audit-grid" id="pepListingContent">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Screening summary -->
+      <div class="scr-sum-card">
+        <div class="scr-sum-ttl">Screening summary</div>
+        <div class="scr-sum-list">
+          <div class="scr-sum-item">
+            <svg class="scr-ic ok" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <div>Date of birth matches - 15/08/1980</div>
+          </div>
+          <div class="scr-sum-item">
+            <svg class="scr-ic warn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01"/></svg>
+            <div>Name matched as "similar", not exact</div>
+          </div>
+          <div class="scr-sum-item">
+            <svg class="scr-ic warn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01"/></svg>
+            <div>International organisation PEP - High/Medium-High risk: Regional Government Members, Ambassadors, High Commissioners.</div>
+          </div>
+          <div class="scr-sum-item">
+            <svg class="scr-ic info" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div>Associate on record: Jane TESTTWENTYTWO (Wife) - due diligence can extend to associates.</div>
+          </div>
+        </div>
+
+        <details class="audit-details">
+          <summary class="audit-summary">
+            <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            <span>Show audit details</span>
+          </summary>
+          <div class="audit-panel">
+            <div class="audit-grid">
+              <span class="audit-lbl">Case ID</span><span class="audit-val">ca_searchid_testing</span>
+              <span class="audit-lbl">Search reference</span><span class="audit-val">Fr57rftufTKUYTF</span>
+              <span class="audit-lbl">Entity ID</span><span class="audit-val">55778899g</span>
+              <span class="audit-lbl">Check ID</span><span class="audit-val">7d2c56ed-6390-99f1-8f2a-cea3187e6ba4</span>
+              <span class="audit-lbl">Check source (PEP)</span><span class="audit-val">c6 intelligence · confidence 78</span>
+              <span class="audit-lbl">Also known as</span><span class="audit-val">Testtwenty, Stacy Testtwenty, Stacy</span>
+              <span class="audit-lbl">Addresses on file</span><span class="audit-val">1 Example St, Demotown, VIC 3465, AUS<br>Unit 4/42 Testing Abbey, Brisbane, QLD 4000, AUS</span>
+              <span class="audit-lbl">Checked</span><span class="audit-val">2026-07-23T17:51:44.370Z</span>
+            </div>
+          </div>
+        </details>
+      
+        <details class="audit-details" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--bdl);">
+          <summary class="audit-summary">
+            <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            <span>Political &amp; entity details</span>
+          </summary>
+          <div class="audit-panel">
+            <div class="audit-grid">
+              <span class="audit-lbl">Country</span><span class="audit-val">Australia</span>
+              <span class="audit-lbl">Original country text</span><span class="audit-val">Australia</span>
+              <span class="audit-lbl">Political position</span><span class="audit-val">Senior executive of a regional governmental body</span>
+              <span class="audit-lbl">Chamber</span><span class="audit-val">Department of jobs, skills, industry and regions executive</span>
+              <span class="audit-lbl">Function</span><span class="audit-val">Chief executive officer</span>
+              <span class="audit-lbl">Institution type</span><span class="audit-val">Body under regional executive</span>
+              <span class="audit-lbl">Other info</span><span class="audit-val">Victorian skills authority</span>
+              <span class="audit-lbl">Region</span><span class="audit-val">Victoria</span>
+              <span class="audit-lbl">Location url</span><span class="audit-val" style="word-break:break-all;"><a href="https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart" target="_blank" rel="noopener" style="color:#0d9488; text-decoration:underline; text-decoration-color:rgba(13,148,136,0.4); text-underline-offset:2px; display:inline-flex; align-items:flex-start; gap:4px; line-height:1.4;">https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-top:2px; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span>
+              <span class="audit-lbl">Related url</span><span class="audit-val" style="word-break:break-all;"><a href="https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart" target="_blank" rel="noopener" style="color:#0d9488; text-decoration:underline; text-decoration-color:rgba(13,148,136,0.4); text-underline-offset:2px; display:inline-flex; align-items:flex-start; gap:4px; line-height:1.4;">https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-top:2px; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="field">
+        <label>Resolution status <span class="req">*</span></label>
+        <div class="btn-group">
+          <button type="button" class="opt-btn" id="pepBtn-not" onclick="setPep('not_pep')">Not a PEP</button>
+          <button type="button" class="opt-btn" id="pepBtn-dom" onclick="setPep('domestic')">Domestic PEP</button>
+          <button type="button" class="opt-btn" id="pepBtn-for" onclick="setPep('foreign')">Foreign PEP</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pepNotes">Investigation notes <span class="req">*</span></label>
+        <textarea id="pepNotes" rows="2" placeholder="Enter rationale for PEP determination..." oninput="checkModalValid('pep')"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Supporting document</label>
+        <div class="upload-box" id="pepUploadBox" onclick="document.getElementById('pepFile').click()">
+          <div class="upload-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg></div>
+          <div><div class="upload-txt-m" id="pepUploadLabel">Click to upload document</div><div class="upload-txt-s">PDF, JPG, PNG up to 10MB</div></div>
+        </div>
+        <input type="file" id="pepFile" style="display:none" accept="image/*,application/pdf" onchange="handleUpload('pep',this)">
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" class="btn-secondary" style="height:42px; border-color:var(--er-b); color:var(--er); display:inline-flex; align-items:center; gap:6px;" onclick="openAddBlacklistFromFrankie('FrankieOne PEP Match')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Add to Venue Blacklist
+      </button>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-secondary" style="height:42px" onclick="closePepModal()">Cancel</button>
+        <button type="button" class="btn-save-modal" id="pepSaveBtn" onclick="savePepResolution()" disabled>Save resolution</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sanctions match resolution Modal -->
+<div class="modal-backdrop" id="sancModal" tabindex="-1">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div>
+          <div class="modal-title">Sanctions match resolution</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeSancModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Player data vs Matched record Table -->
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Player data</th>
+            <th>Matched record (WorldCheck)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Match type</td>
+            <td>—</td>
+            <td><strong style="color:var(--er)">Token match (98%)</strong></td>
+          </tr>
+          <tr class="cmp-mismatch">
+            <td>Name</td>
+            <td><strong>STACY TESTTWENTY</strong></td>
+            <td><strong>STACY TEST</strong></td>
+          </tr>
+          <tr class="cmp-mismatch">
+            <td>DOB</td>
+            <td><strong>15/08/1980</strong></td>
+            <td><strong>15/08/1980</strong></td>
+          </tr>
+          <tr class="cmp-mismatch">
+            <td>Location</td>
+            <td><strong>Sydney, AU</strong></td>
+            <td><strong>USA</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Screening summary -->
+      <div class="scr-sum-card">
+        <div class="scr-sum-ttl">Screening summary</div>
+        <div class="scr-sum-list">
+          <div class="scr-sum-item">
+            <svg class="scr-ic ok" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <div>Date of birth matches - 15/08/1980</div>
+          </div>
+          <div class="scr-sum-item">
+            <svg class="scr-ic warn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01"/></svg>
+            <div>Name matched as "similar", not exact</div>
+          </div>
+          <div class="scr-sum-item">
+            <svg class="scr-ic warn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01"/></svg>
+            <div>Searched countries do not match the record's countries</div>
+          </div>
+        </div>
+
+        <details class="audit-details">
+          <summary class="audit-summary">
+            <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            <span>Show audit details</span>
+          </summary>
+          <div class="audit-panel">
+            <div class="audit-grid">
+              <span class="audit-lbl">Case ID</span><span class="audit-val">ca_searchid_testing</span>
+              <span class="audit-lbl">Search reference</span><span class="audit-val">Fr57rftufTKUYTF</span>
+              <span class="audit-lbl">Entity ID</span><span class="audit-val">55778899g</span>
+              <span class="audit-lbl">Check ID</span><span class="audit-val">7d2c56ed-6390-99f1-8f2a-cea3187e6ba4</span>
+              <span class="audit-lbl">Check source (Sanctions)</span><span class="audit-val">c6 intelligence · confidence 98</span>
+              <span class="audit-lbl">Also known as</span><span class="audit-val">Testtwenty, Stacy Testtwenty, Stacy</span>
+              <span class="audit-lbl">Addresses on file</span><span class="audit-val">1 Example St, Demotown, VIC 3465, AUS<br>Unit 4/42 Testing Abbey, Brisbane, QLD 4000, AUS</span>
+              <span class="audit-lbl">Checked</span><span class="audit-val">2026-07-23T17:51:44.370Z</span>
+            </div>
+          </div>
+        </details>
+      
+        <details class="audit-details" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--bdl);">
+          <summary class="audit-summary">
+            <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            <span>Political &amp; entity details</span>
+          </summary>
+          <div class="audit-panel">
+            <div class="audit-grid">
+              <span class="audit-lbl">Country</span><span class="audit-val">Australia</span>
+              <span class="audit-lbl">Original country text</span><span class="audit-val">Australia</span>
+              <span class="audit-lbl">Political position</span><span class="audit-val">Senior executive of a regional governmental body</span>
+              <span class="audit-lbl">Chamber</span><span class="audit-val">Department of jobs, skills, industry and regions executive</span>
+              <span class="audit-lbl">Function</span><span class="audit-val">Chief executive officer</span>
+              <span class="audit-lbl">Institution type</span><span class="audit-val">Body under regional executive</span>
+              <span class="audit-lbl">Other info</span><span class="audit-val">Victorian skills authority</span>
+              <span class="audit-lbl">Region</span><span class="audit-val">Victoria</span>
+              <span class="audit-lbl">Location url</span><span class="audit-val" style="word-break:break-all;"><a href="https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart" target="_blank" rel="noopener" style="color:#0d9488; text-decoration:underline; text-decoration-color:rgba(13,148,136,0.4); text-underline-offset:2px; display:inline-flex; align-items:flex-start; gap:4px; line-height:1.4;">https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-top:2px; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span>
+              <span class="audit-lbl">Related url</span><span class="audit-val" style="word-break:break-all;"><a href="https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart" target="_blank" rel="noopener" style="color:#0d9488; text-decoration:underline; text-decoration-color:rgba(13,148,136,0.4); text-underline-offset:2px; display:inline-flex; align-items:flex-start; gap:4px; line-height:1.4;">https://djsir.vic.gov.au/about-us/overview/organisation-structure/departments-organisation-chart <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-top:2px; flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="field">
+        <label>Resolution status <span class="req">*</span></label>
+        <div class="btn-group">
+          <button type="button" class="opt-btn" id="sancBtn-match" onclick="setSanc('match')">Match</button>
+          <button type="button" class="opt-btn" id="sancBtn-fp" onclick="setSanc('false_positive')">Not a match</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="sancNotes">Investigation notes <span class="req">*</span></label>
+        <textarea id="sancNotes" rows="2" placeholder="Enter details of determination..." oninput="checkModalValid('sanc')"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Supporting document</label>
+        <div class="upload-box" id="sancUploadBox" onclick="document.getElementById('sancFile').click()">
+          <div class="upload-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg></div>
+          <div><div class="upload-txt-m" id="sancUploadLabel">Click to upload document</div><div class="upload-txt-s">PDF, JPG, PNG up to 10MB</div></div>
+        </div>
+        <input type="file" id="sancFile" style="display:none" accept="image/*,application/pdf" onchange="handleUpload('sanc',this)">
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" class="btn-secondary" style="height:42px; border-color:var(--er-b); color:var(--er); display:inline-flex; align-items:center; gap:6px;" onclick="openAddBlacklistFromFrankie('FrankieOne Sanctions Match')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Add to Venue Blacklist
+      </button>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-secondary" style="height:42px" onclick="closeSancModal()">Cancel</button>
+        <button type="button" class="btn-save-modal" id="sancSaveBtn" onclick="saveSancResolution()" disabled>Save resolution</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add to Venue Blacklist Modal (Approver) -->
+<div class="modal-backdrop" id="approverAddBlacklistModal" tabindex="-1">
+  <div class="modal-container" style="max-width:540px;">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div>
+          <div class="modal-title" style="font-size:19px; font-weight:700; color:var(--t1);">Add Patron to Venue Blacklist</div>
+          <div class="modal-sub" style="font-size:13.5px; color:var(--t2); margin-top:2px;">Record automated barring and exclusion in venue compliance register</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeApproverAddBlacklistModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px; gap:16px;">
+      <!-- Patron Summary Card -->
+      <div style="background:var(--surface); border:1px solid var(--bd); border-radius:10px; padding:14px 16px;">
+        <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; color:var(--tm); text-transform:uppercase; margin-bottom:8px;">Target Patron &amp; Scope</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; align-items:center; gap:8px; font-size:15px;">
+            <span class="pill fail" style="font-size:11px; padding:2px 7px;">TARGET</span>
+            <strong id="appBlkPatronSummary">STACY K TESTTWENTY</strong>
+            <span style="color:var(--t2); font-size:13.5px;">(DOB: 15/08/1980 · Passport PA-APPROVER-V3)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--t2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--ok); flex-shrink:0;"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>Venue Scope: <strong style="color:var(--t1);">Riverside RSL Club</strong> (Exclusion active for this venue)</span>
+          </div>
+        </div>
+      </div>
+
+      <form id="approverAddBlacklistForm" onsubmit="handleApproverAddBlacklist(event)" style="display:flex; flex-direction:column; gap:16px; margin:0;">
+        <div class="field" style="margin-bottom:0; gap:6px;">
+          <label for="appBlkReasonCat" style="font-size:13.5px; font-weight:700; color:var(--t1);">Reason Category <span class="req" style="color:var(--er);">*</span></label>
+          <div style="position:relative;">
+            <select id="appBlkReasonCat" style="width:100%; height:42px; border:1.5px solid var(--bd); border-radius:8px; padding:0 36px 0 14px; font-family:inherit; font-size:14.5px; color:var(--t1); background:#fff; appearance:none; outline:none; transition:border-color 0.15s ease;">
+              <option value="FrankieOne PEP Match">FrankieOne PEP Match</option>
+              <option value="FrankieOne Sanctions Match">FrankieOne Sanctions Match</option>
+              <option value="DVS Document Fraud / Fake ID">DVS Document Fraud / Fake ID</option>
+              <option value="Adverse Media Match">Adverse Media Match</option>
+              <option value="Self-Exclusion / Venue Barred">Self-Exclusion / Venue Barred</option>
+              <option value="Patron Misconduct / Barred">Patron Misconduct / Barred</option>
+            </select>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position:absolute; right:14px; top:14px; pointer-events:none; color:var(--t2);"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:0; gap:6px;">
+          <label for="appBlkFrankieRef" style="font-size:13.5px; font-weight:700; color:var(--t1);">FrankieOne Search Ref / Case ID</label>
+          <input type="text" id="appBlkFrankieRef" value="Fr-APP-V3" readonly style="width:100%; height:42px; border:1.5px solid var(--bd); border-radius:8px; padding:0 14px; font-family:inherit; font-size:14px; font-weight:600; color:var(--t2); background:var(--surface); outline:none;">
+        </div>
+
+        <div class="field" style="margin-bottom:0; gap:6px;">
+          <label for="appBlkNotes" style="font-size:13.5px; font-weight:700; color:var(--t1);">Investigation notes &amp; barring rationale <span class="req" style="color:var(--er);">*</span></label>
+          <textarea id="appBlkNotes" rows="3" placeholder="Provide clear audit justification for barring this patron from automated payouts..." required style="width:100%; min-height:84px; border:1.5px solid var(--bd); border-radius:8px; padding:10px 14px; font-family:inherit; font-size:14.5px; color:var(--t1); outline:none; resize:vertical; line-height:1.5;"></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding:16px 0 0; margin-top:8px; border-top:1px solid var(--bdl); background:transparent; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+          <button type="button" class="btn-secondary" style="height:42px; padding:0 20px; font-size:15px;" onclick="closeApproverAddBlacklistModal()">Cancel</button>
+          <button type="submit" class="btn-primary danger" style="height:42px; padding:0 22px; font-size:15px;">Confirm &amp; Add to Blacklist</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove from Blacklist Modal (Approver) -->
+<div class="modal-backdrop" id="approverRemoveBlacklistModal" tabindex="-1">
+  <div class="modal-container" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div>
+          <div class="modal-title" style="font-size:19px; font-weight:700; color:var(--t1);">Remove from Venue Blacklist</div>
+          <div class="modal-sub" style="font-size:13.5px; color:var(--t2); margin-top:2px;">Lift active exclusion and restore automated payout eligibility</div>
+        </div>
+      </div>
+      <button type="button" class="modal-close-btn" onclick="closeApproverRemoveBlacklistModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px; gap:16px;">
+      <div style="background:var(--surface); border:1px solid var(--bd); border-radius:10px; padding:14px 16px;">
+        <p style="font-size:14.5px; color:var(--t2); margin:0; line-height:1.5;">
+          You are lifting the exclusion for <strong style="color:var(--t1);" id="appBlkRemovalPatron">STACY K TESTTWENTY</strong> at <strong style="color:var(--t1);">Riverside RSL Club</strong>.
+        </p>
+      </div>
+      <form id="approverRemoveBlacklistForm" onsubmit="handleApproverRemoveBlacklist(event)" style="display:flex; flex-direction:column; gap:16px; margin:0;">
+        <div class="field" style="margin-bottom:0; gap:6px;">
+          <label for="appBlkRemovalReason" style="font-size:13.5px; font-weight:700; color:var(--t1);">Removal justification &amp; compliance rationale <span class="req" style="color:var(--er);">*</span></label>
+          <textarea id="appBlkRemovalReason" rows="3" placeholder="State reason for lifting exclusion (e.g. Identity resolution completed, statutory declaration verified, false positive confirmed)..." required style="width:100%; min-height:84px; border:1.5px solid var(--bd); border-radius:8px; padding:10px 14px; font-family:inherit; font-size:14.5px; color:var(--t1); outline:none; resize:vertical; line-height:1.5;"></textarea>
+        </div>
+        <div class="modal-footer" style="padding:16px 0 0; margin-top:8px; border-top:1px solid var(--bdl); background:transparent; display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+          <button type="button" class="btn-secondary" style="height:42px; padding:0 20px; font-size:15px;" onclick="closeApproverRemoveBlacklistModal()">Cancel</button>
+          <button type="submit" class="btn-primary danger" style="height:42px; padding:0 20px; font-size:15px;">Remove from Blacklist</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal-backdrop" id="cancelConfirmModal">
+  <div class="modal-container" style="max-width: 400px; padding: 24px 28px; border-radius: 16px; background: #fff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+      <div class="modal-title" style="color: var(--t1); font-size: 19px;">Cancel payout</div>
+      <button type="button" class="modal-close-btn" onclick="closeCancelConfirmModal()" style="margin: -6px -6px 0 0; width: 32px; height: 32px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-sub" style="font-size: 15px; color: var(--t2); margin-bottom: 32px; line-height: 1.5;">
+      Are you sure you want to cancel this payout? This action cannot be undone.
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn-secondary" style="height:42px; min-width:auto;" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-primary danger" style="height:42px; min-width:auto; padding: 0 20px;" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-acc]').forEach(item => {
+    item.querySelector('.acc-trigger').addEventListener('click', () => {
+      item.classList.toggle('open'); syncBtn();
+    });
+  });
+  let expanded = false;
+  const colBtn = document.getElementById('collapseBtn');
+  const colLbl = document.getElementById('collapseLabel');
+  const colIc  = document.getElementById('collapseIcon');
+  colBtn.addEventListener('click', () => {
+    expanded = !expanded;
+    document.querySelectorAll('[data-acc]').forEach(i => i.classList.toggle('open', expanded));
+    colLbl.textContent = expanded ? 'Collapse all' : 'Expand all';
+    colIc.classList.toggle('flipped', !expanded);
+  });
+  function syncBtn() {
+    const open = [...document.querySelectorAll('[data-acc]')].filter(i => i.classList.contains('open')).length;
+    expanded = open > 0;
+    colLbl.textContent = expanded ? 'Collapse all' : 'Expand all';
+    colIc.classList.toggle('flipped', !expanded);
+  }
+
+  function setRisk(level) {
+    document.getElementById('riskLevel').value = level;
+    document.querySelectorAll('.risk-option').forEach(btn => {
+      btn.classList.remove('selected');
+      if (btn.dataset.risk === level) {
+        btn.classList.add('selected');
+      }
+    });
+    checkState();
+  }
+
+  // --- PEP Multi-Guess Logic ---
+  const pepMockResults = [
+    {
+      keyData: {
+        "Full Name": "Stacy Test-Twenty",
+        "AKA": "Testtwenty, Stacy Testtwenty, Stacy",
+        "Date of Birth": "Not provided",
+        "Countries": "AU",
+        "Addresses": "1 Example St, Demotown, VIC 3465, AUS<br>Unit 4/42 Testing Abbey, Brisbane, QLD 4000, AUS",
+        "Associates": "Spouse: JANE TESTTWENTYTWO"
+      },
+      media: [
+        { date: "15-08-2024", source: "Clark County Municipal Court cases", title: "Regional Government Member involved in municipal proceedings", excerpt: "Stacy Test-Twenty, Senior executive of a regional governmental body, was noted in recent municipal proceedings regarding regional zoning and related compliance..." }
+      ],
+      listing: {
+        badge: "PEP Class 2",
+        sourceName: "Australian Regional Executives",
+        "Source URL": "https://djsir.vic.gov.au/about-us",
+        "Source Listing Ended": "-",
+        "Country Codes": "AU",
+        "AML Types": "pep-class-2",
+        "Nationality": "Australian",
+        "Active Start Date": "2024-01-01",
+        "Political Position": "Senior executive of a regional governmental body",
+        "Chamber": "Department of jobs, skills, industry and regions executive",
+        "Function": "Chief executive officer",
+        "Institution Type": "Body under regional executive"
+      },
+      matchStatus: "Possible Match"
+    },
+    {
+      keyData: {
+        "Full Name": "Stacy M. Test",
+        "AKA": "Stacy Test",
+        "Date of Birth": "12-04-1979",
+        "Countries": "AU, US",
+        "Addresses": "14 Example Drive, Melbourne, VIC 3000, AUS",
+        "Associates": "-"
+      },
+      media: [], // Empty to test 'Sometimes' adverse media
+      listing: {
+        badge: "PEP Class 3",
+        sourceName: "Global PEP Data",
+        "Source URL": "https://example.com/pep/123",
+        "Source Listing Ended": "2022-12-31",
+        "Country Codes": "AU",
+        "AML Types": "pep-class-3",
+        "Nationality": "Australian",
+        "Active Start Date": "2018-05-10",
+        "Political Position": "Former Board Member",
+        "Chamber": "Local Water Authority",
+        "Function": "Director",
+        "Institution Type": "Local Government Entity"
+      },
+      matchStatus: "Possible Match"
+    },
+    {
+      keyData: {
+        "Full Name": "S. Test-Twenty",
+        "AKA": "Stacy Test Twenty",
+        "Date of Birth": "15-08-1980",
+        "Countries": "AU",
+        "Addresses": "-",
+        "Associates": "-"
+      },
+      media: [
+        { date: "04-09-2024", source: "Thestar | kpcnews.com", title: "Judge sentences 18 for criminal offenses", excerpt: "S. Test-Twenty was placed on probation for one year. Sentence included community service and compliance with regional authority regulations." },
+        { date: "26-08-2024", source: "Selbyville weapons incident", title: "Man charged in Selbyville", excerpt: "The State Police have charged S. Test-Twenty with multiple offenses after an incident. The incident occurred at approximately 1 AM." }
+      ],
+      listing: {
+        badge: "PEP Class 2",
+        sourceName: "Historical Foreign Diplomatic Missions",
+        "Source URL": "https://example.com/mission/456",
+        "Source Listing Ended": "2015-01-01",
+        "Country Codes": "AU",
+        "AML Types": "pep-class-2",
+        "Nationality": "Australian",
+        "Active Start Date": "2014-11-06",
+        "Political Position": "Member of a Diplomatic Mission",
+        "Chamber": "Historical Foreign Diplomatic Missions",
+        "Function": "ASST. MILITARY ATTACHE",
+        "Institution Type": "International Representatives"
+      },
+      matchStatus: "Possible Match"
+    }
+  ];
+
+  let currentPepIndex = 0;
+
+  function renderPepResult(index) {
+    const data = pepMockResults[index];
+    document.getElementById('pepResIdx').innerText = index + 1;
+    document.getElementById('pepResTotal').innerText = pepMockResults.length;
+
+    document.getElementById('pepPrevBtn').disabled = (index === 0);
+    document.getElementById('pepNextBtn').disabled = (index === pepMockResults.length - 1);
+
+    // Render Global Context Header as vertical cmp-table
+    const yob = data.keyData['Date of Birth'] === 'Not provided' ? '-' : (data.keyData['Date of Birth'] || '-');
+    const globalHeaderHtml = `
+      <table class="cmp-table" style="margin-bottom:20px;">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Search Details</th>
+            <th>Returned Details (Match ${index + 1})</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Name</td>
+            <td>RICHARD MICHAEL STAPLEY SMITH</td>
+            <td>${data.keyData['Full Name'] || '-'}</td>
+          </tr>
+          <tr>
+            <td>Year of Birth</td>
+            <td>1977</td>
+            <td>${yob}</td>
+          </tr>
+          <tr>
+            <td>Countries</td>
+            <td>All</td>
+            <td>${data.keyData['Countries'] || '-'}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    document.getElementById('pepGlobalHeaderContainer').innerHTML = globalHeaderHtml;
+
+    // Render Key Data (Single column list)
+    let keyHtml = '';
+    for (const [k, v] of Object.entries(data.keyData)) {
+      const displayVal = v === 'Not provided' ? '-' : v;
+      keyHtml += `<div class="pep-kd-item"><span class="pep-kd-lbl">${k}</span><span class="pep-kd-val">${displayVal}</span></div>`;
+    }
+    document.getElementById('pepKeyDataContent').innerHTML = keyHtml;
+
+    // Adverse Media
+    let mediaHtml = '';
+    if (data.media.length > 0) {
+      data.media.forEach(m => {
+        mediaHtml += `
+          <div class="pep-article-item">
+            <div class="pep-article-meta">
+              <div class="pep-article-date">Published ${m.date}</div>
+            </div>
+            <a href="#" class="pep-article-title">${m.title} - ${m.source}</a>
+            <div class="pep-article-excerpt">${m.excerpt}</div>
+          </div>
+        `;
+      });
+    } else {
+      mediaHtml = '<div class="pep-empty-state">No adverse media on record for this result.</div>';
+    }
+    document.getElementById('pepMediaContent').innerHTML = mediaHtml;
+
+    // Listing / Data Sources
+    document.getElementById('pepListingBadge').innerText = data.listing.badge;
+    document.getElementById('pepListingBadge').className = data.listing.badge.includes('2') ? 'pill warn' : 'pill fail';
+    document.getElementById('pepListingSource').innerText = data.listing.sourceName;
+
+    let listHtml = '';
+    for (const [k, v] of Object.entries(data.listing)) {
+      if (k === 'badge' || k === 'sourceName') continue;
+      listHtml += `<span class="audit-lbl">${k}</span><span class="audit-val" style="word-break:break-all;">${v}</span>`;
+    }
+    document.getElementById('pepListingContent').innerHTML = listHtml;
+  }
+
+  function nextPepResult() {
+    if (currentPepIndex < pepMockResults.length - 1) {
+      currentPepIndex++;
+      renderPepResult(currentPepIndex);
+    }
+  }
+
+  function prevPepResult() {
+    if (currentPepIndex > 0) {
+      currentPepIndex--;
+      renderPepResult(currentPepIndex);
+    }
+  }
+
+  function switchPepTab(tab) {
+    document.querySelectorAll('.pep-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.pep-tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`tabBtn-${tab}`).classList.add('active');
+    document.getElementById(`pepTab-${tab}`).classList.add('active');
+  }
+
+  
+  function toggleCustomSelect(id) {
+    const wrapper = document.getElementById(id);
+    wrapper.classList.toggle('open');
+  }
+  
+  function selectCustomOption(id, value) {
+    const wrapper = document.getElementById(id);
+    wrapper.querySelector('.custom-select-value').innerText = value;
+    wrapper.querySelectorAll('.custom-select-option').forEach(opt => {
+      opt.classList.toggle('selected', opt.innerText === value);
+    });
+    wrapper.classList.remove('open');
+    updatePepResultStatus(value);
+  }
+
+  // Close when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select-wrapper')) {
+      document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
+    }
+  });
+
+  function updatePepResultStatus(status) {
+    pepMockResults[currentPepIndex].matchStatus = status;
+  }
+  // --- End PEP Multi-Guess Logic ---
+
+  function openPepModal() {
+    document.getElementById('pepModal').classList.add('active');
+    currentPepIndex = 0;
+    renderPepResult(currentPepIndex);
+    const val = document.getElementById('pepStatus').value;
+    if (val) setPep(val);
+    checkModalValid('pep');
+  }
+  function closePepModal() {
+    document.getElementById('pepModal').classList.remove('active');
+  }
+  function openSancModal() {
+    document.getElementById('sancModal').classList.add('active');
+    const val = document.getElementById('sancStatus').value;
+    if (val) setSanc(val);
+    checkModalValid('sanc');
+  }
+  function closeSancModal() {
+    document.getElementById('sancModal').classList.remove('active');
+  }
+
+  function checkModalValid(type) {
+    if (type === 'pep') {
+      const status = document.getElementById('pepStatus').value;
+      const notes = document.getElementById('pepNotes').value.trim();
+      document.getElementById('pepSaveBtn').disabled = !(status && notes);
+    } else if (type === 'sanc') {
+      const status = document.getElementById('sancStatus').value;
+      const notes = document.getElementById('sancNotes').value.trim();
+      document.getElementById('sancSaveBtn').disabled = !(status && notes);
+    }
+  }
+
+  function setPep(val) {
+    document.getElementById('pepStatus').value = val;
+    ['not_pep','domestic','foreign'].forEach(v => {
+      const btnKey = v==='not_pep'?'not':v==='domestic'?'dom':'for';
+      const btn = document.getElementById('pepBtn-' + btnKey);
+      if (btn) {
+        btn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+        if (v === val) {
+          if (v === 'not_pep') btn.classList.add('sel-pass');
+          else btn.classList.add('sel-warn');
+        }
+      }
+    });
+    if (val==='domestic') setRisk('Medium');
+    if (val==='foreign') setRisk('High');
+    checkModalValid('pep');
+  }
+
+  function setSanc(val) {
+    document.getElementById('sancStatus').value = val;
+    const fpBtn = document.getElementById('sancBtn-fp');
+    const matchBtn = document.getElementById('sancBtn-match');
+    if (fpBtn) {
+      fpBtn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+      if (val === 'false_positive') fpBtn.classList.add('sel-pass');
+    }
+    if (matchBtn) {
+      matchBtn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+      if (val === 'match') matchBtn.classList.add('sel-fail');
+    }
+    checkModalValid('sanc');
+  }
+
+  function savePepResolution() {
+    const status = document.getElementById('pepStatus').value;
+    const notes = document.getElementById('pepNotes').value.trim();
+    if (!status || !notes) return;
+
+    document.getElementById('pepNotesVal').value = notes;
+    closePepModal();
+
+    const labelMap = { not_pep: 'Not a PEP', domestic: 'Domestic PEP', foreign: 'Foreign PEP' };
+    const pepClass = status === 'not_pep' ? 'btn-action-req pass' : 'btn-action-req warn';
+
+    const pepB = document.getElementById('pepBadge');
+    if (pepB) {
+      pepB.innerHTML = `Resolved: ${labelMap[status]} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      pepB.className = pepClass;
+    }
+
+    const sumStatus = document.getElementById('pepSumStatus');
+    const sumSub = document.getElementById('pepSumSub');
+    if (sumStatus) {
+      sumStatus.innerHTML = `Resolved: ${labelMap[status]} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sumStatus.className = pepClass;
+    }
+    if (sumSub) {
+      sumSub.textContent = 'Approver determination saved to audit log';
+    }
+
+    checkState();
+  }
+
+  function saveSancResolution() {
+    const status = document.getElementById('sancStatus').value;
+    const notes = document.getElementById('sancNotes').value.trim();
+    if (!status || !notes) return;
+
+    document.getElementById('sancNotesVal').value = notes;
+    closeSancModal();
+
+    const labelMap = { false_positive: 'Not a match', match: 'Match' };
+    const sancClass = status === 'match' ? 'btn-action-req fail' : 'btn-action-req pass';
+
+    const sancB = document.getElementById('sancBadge');
+    if (sancB) {
+      sancB.innerHTML = status === 'match' ? `Match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>` : `Resolved: Not a match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sancB.className = sancClass;
+    }
+
+    const sumStatus = document.getElementById('sancSumStatus');
+    const sumSub = document.getElementById('sancSumSub');
+    if (sumStatus) {
+      sumStatus.innerHTML = status === 'match' ? `Match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>` : `Resolved: Not a match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sumStatus.className = sancClass;
+    }
+    if (sumSub) {
+      sumSub.textContent = status === 'match'
+        ? 'Payout blocked by sanctions compliance policy'
+        : 'Approver determination saved to audit log';
+    }
+
+    checkState();
+  }
+
+  function handleUpload(type, input) {
+    if (!input.files.length) return;
+    const f = input.files[0];
+    document.getElementById(type + 'UploadBox').classList.add('has-file');
+    document.getElementById(type + 'UploadLabel').textContent = f.name;
+  }
+
+  function checkState() {
+    const pepStatus = document.getElementById('pepStatus') ? document.getElementById('pepStatus').value : 'cleared';
+    const pepNotes  = document.getElementById('pepNotesVal') ? document.getElementById('pepNotesVal').value.trim() : 'n/a';
+    const sancStatus= document.getElementById('sancStatus') ? document.getElementById('sancStatus').value : 'cleared';
+    const sancNotes = document.getElementById('sancNotesVal') ? document.getElementById('sancNotesVal').value.trim() : 'n/a';
+    const riskLevel = document.getElementById('riskLevel').value;
+    const confirmed = document.getElementById('approvalConfirm').checked;
+
+    const confirmCard = document.getElementById('confirmCard');
+    if (confirmCard) confirmCard.classList.toggle('checked', confirmed);
+
+    const idBox = document.getElementById('idMismatchBox');
+    const idConfirm = document.getElementById('idConfirm');
+    const idOk = !idBox || (idConfirm && idConfirm.checked);
+
+    const pepOk = pepStatus && pepNotes;
+    const sancOk = sancStatus && sancNotes;
+    const blocked = sancStatus === 'match';
+    const canApprove = pepOk && sancOk && riskLevel && confirmed && idOk && !blocked;
+
+    const btn = document.getElementById('approveBtn');
+    const txt = document.getElementById('approveBtnText');
+    btn.disabled = !canApprove;
+
+    if (blocked) {
+      txt.textContent = 'Blocked by Sanctions';
+      btn.classList.add('blocked');
+    } else {
+      txt.textContent = 'Approve payout';
+      btn.classList.remove('blocked');
+    }
+  }
+
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => {
+      if (e.target === bd) bd.classList.remove('active');
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closePepModal();
+      closeSancModal();
+    }
+  });
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  function openCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.remove('active');
+  }
+  function executeCancel() {
+    alert('Payout cancelled successfully.');
+    closeCancelConfirmModal();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+function setPep(val) {
+    document.getElementById('pepStatus').value = val;
+    ['not_pep','domestic','foreign'].forEach(v => {
+      const btnKey = v==='not_pep'?'not':v==='domestic'?'dom':'for';
+      const btn = document.getElementById('pepBtn-' + btnKey);
+      if (btn) {
+        btn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+        if (v === val) {
+          if (v === 'not_pep') btn.classList.add('sel-pass');
+          else btn.classList.add('sel-warn');
+        }
+      }
+    });
+    if (val==='domestic') setRisk('Medium');
+    if (val==='foreign') setRisk('High');
+    checkModalValid('pep');
+  }
+
+  function setSanc(val) {
+    document.getElementById('sancStatus').value = val;
+    const fpBtn = document.getElementById('sancBtn-fp');
+    const matchBtn = document.getElementById('sancBtn-match');
+    if (fpBtn) {
+      fpBtn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+      if (val === 'false_positive') fpBtn.classList.add('sel-pass');
+    }
+    if (matchBtn) {
+      matchBtn.classList.remove('sel-pass', 'sel-warn', 'sel-fail');
+      if (val === 'match') matchBtn.classList.add('sel-fail');
+    }
+    checkModalValid('sanc');
+  }
+
+  function savePepResolution() {
+    const status = document.getElementById('pepStatus').value;
+    const notes = document.getElementById('pepNotes').value.trim();
+    if (!status || !notes) return;
+
+    document.getElementById('pepNotesVal').value = notes;
+    closePepModal();
+
+    const labelMap = { not_pep: 'Not a PEP', domestic: 'Domestic PEP', foreign: 'Foreign PEP' };
+    const pepClass = status === 'not_pep' ? 'btn-action-req pass' : 'btn-action-req warn';
+
+    const pepB = document.getElementById('pepBadge');
+    if (pepB) {
+      pepB.innerHTML = `Resolved: ${labelMap[status]} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      pepB.className = pepClass;
+    }
+
+    const sumStatus = document.getElementById('pepSumStatus');
+    const sumSub = document.getElementById('pepSumSub');
+    if (sumStatus) {
+      sumStatus.innerHTML = `Resolved: ${labelMap[status]} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sumStatus.className = pepClass;
+    }
+    if (sumSub) {
+      sumSub.textContent = 'Approver determination saved to audit log';
+    }
+
+    checkState();
+  }
+
+  function saveSancResolution() {
+    const status = document.getElementById('sancStatus').value;
+    const notes = document.getElementById('sancNotes').value.trim();
+    if (!status || !notes) return;
+
+    document.getElementById('sancNotesVal').value = notes;
+    closeSancModal();
+
+    const labelMap = { false_positive: 'Not a match', match: 'Match' };
+    const sancClass = status === 'match' ? 'btn-action-req fail' : 'btn-action-req pass';
+
+    const sancB = document.getElementById('sancBadge');
+    if (sancB) {
+      sancB.innerHTML = status === 'match' ? `Match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>` : `Resolved: Not a match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sancB.className = sancClass;
+    }
+
+    const sumStatus = document.getElementById('sancSumStatus');
+    const sumSub = document.getElementById('sancSumSub');
+    if (sumStatus) {
+      sumStatus.innerHTML = status === 'match' ? `Match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>` : `Resolved: Not a match <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+      sumStatus.className = sancClass;
+    }
+    if (sumSub) {
+      sumSub.textContent = status === 'match'
+        ? 'Payout blocked by sanctions compliance policy'
+        : 'Approver determination saved to audit log';
+    }
+
+    checkState();
+  }
+
+  function handleUpload(type, input) {
+    if (!input.files.length) return;
+    const f = input.files[0];
+    document.getElementById(type + 'UploadBox').classList.add('has-file');
+    document.getElementById(type + 'UploadLabel').textContent = f.name;
+  }
+
+  function checkState() {
+    const pepStatus = document.getElementById('pepStatus') ? document.getElementById('pepStatus').value : 'cleared';
+    const pepNotes  = document.getElementById('pepNotesVal') ? document.getElementById('pepNotesVal').value.trim() : 'n/a';
+    const sancStatus= document.getElementById('sancStatus') ? document.getElementById('sancStatus').value : 'cleared';
+    const sancNotes = document.getElementById('sancNotesVal') ? document.getElementById('sancNotesVal').value.trim() : 'n/a';
+    const riskLevel = document.getElementById('riskLevel').value;
+    const confirmed = document.getElementById('approvalConfirm').checked;
+
+    const confirmCard = document.getElementById('confirmCard');
+    if (confirmCard) confirmCard.classList.toggle('checked', confirmed);
+
+    const idBox = document.getElementById('idMismatchBox');
+    const idConfirm = document.getElementById('idConfirm');
+    const idOk = !idBox || (idConfirm && idConfirm.checked);
+
+    const pepOk = pepStatus && pepNotes;
+    const sancOk = sancStatus && sancNotes;
+    const blocked = sancStatus === 'match';
+    const canApprove = pepOk && sancOk && riskLevel && confirmed && idOk && !blocked;
+
+    const btn = document.getElementById('approveBtn');
+    const txt = document.getElementById('approveBtnText');
+    btn.disabled = !canApprove;
+
+    if (blocked) {
+      txt.textContent = 'Blocked by Sanctions';
+      btn.classList.add('blocked');
+    } else {
+      txt.textContent = 'Approve payout';
+      btn.classList.remove('blocked');
+    }
+  }
+
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => {
+      if (e.target === bd) bd.classList.remove('active');
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closePepModal();
+      closeSancModal();
+    }
+  });
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  function openCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    document.getElementById('cancelConfirmModal').classList.remove('active');
+  }
+  function executeCancel() {
+    alert('Payout cancelled successfully.');
+    closeCancelConfirmModal();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+  function executeCancel() {
+    closeCancelConfirmModal();
+    alert('Payout has been cancelled.');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+
+<div id="docketModal" onclick="if(event.target===this)closeDocketModal()">
+  <div class="docket-modal-card">
+    <div class="docket-modal-header">
+      <span class="docket-modal-title">Payout docket</span>
+      <button class="docket-modal-close" onclick="closeDocketModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="docket-modal-body">
+      <img src="dummy-docket.png" alt="Payout docket" />
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDocketModal() {
+    document.getElementById('docketModal').classList.add('active');
+  }
+  function closeDocketModal() {
+    document.getElementById('docketModal').classList.remove('active');
+  }
+
+  (function(){
+    var _prev = document.onkeydown;
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closeDocketModal();
+    });
+  })();
+
+  (function () {
+    const value = document.getElementById('disbursementPolicyValue');
+    if (!value || !window.RiversideDisbursement) return;
+    const policy = RiversideDisbursement.readVenuePolicy('Riverside RSL Club');
+    value.textContent = `Venue policy: ${policy.allowedMethods.map(RiversideDisbursement.methodLabel).join(' + ')}`;
+  }());
+
+  // --- Blacklist Management for Approver View ---
+  const currentPatron = {
+    name: 'STACY K TESTTWENTY',
+    dob: '15/08/1980',
+    docType: 'Passport',
+    docNumber: 'PA-APPROVER-V3',
+    frankieEntityId: 'entity-app-v3',
+    searchRef: 'Fr-APP-V3'
+  };
+  const currentVenueName = 'Riverside RSL Club';
+
+  function evaluateBlacklistState() {
+    if (!window.VenueBlacklistService) return;
+    const matchRes = VenueBlacklistService.checkBlacklistMatch(currentPatron, currentVenueName);
+
+    const idvPill = document.getElementById('blacklistIdvPill');
+    const amlBadge = document.getElementById('blacklistAmlBadge');
+    const amlDot = document.getElementById('blacklistAmlDot');
+    const execVal = document.getElementById('blacklistExecVal');
+    const sumStatus = document.getElementById('blacklistSumStatus');
+    const sumSub = document.getElementById('blacklistSumSub');
+
+    if (matchRes.isMatch && matchRes.record) {
+      const rec = matchRes.record;
+      if (idvPill) {
+        idvPill.className = 'pill fail';
+        idvPill.textContent = 'Match';
+      }
+      if (amlBadge) {
+        amlBadge.className = 'btn-action-req fail';
+        amlBadge.textContent = 'Blacklist match';
+      }
+      if (execVal) {
+        execVal.style.color = 'var(--er)';
+        execVal.textContent = 'Match';
+      }
+      if (sumStatus) {
+        sumStatus.className = 'btn-action-req fail';
+        sumStatus.textContent = 'Active Match';
+        sumStatus.style.width = '';
+      }
+      if (sumSub) {
+        sumSub.textContent = `Patron is blacklisted: ${rec.reasonCategory}. Supervisor override required.`;
+      }
+      // Pin risk to High
+      if (typeof setRisk === 'function') setRisk('High');
+    } else {
+      if (idvPill) {
+        idvPill.className = 'pill pass';
+        idvPill.textContent = 'No match';
+      }
+      if (amlBadge) {
+        amlBadge.className = 'pill pass';
+        amlBadge.textContent = 'No match';
+      }
+      if (execVal) {
+        execVal.style.color = 'var(--ok)';
+        execVal.textContent = 'No match';
+      }
+      if (sumStatus) {
+        sumStatus.className = 'pill pass';
+        sumStatus.textContent = 'No match';
+        sumStatus.style.width = 'fit-content';
+        sumStatus.style.fontWeight = '700';
+        sumStatus.style.flexShrink = '0';
+      }
+      if (sumSub) {
+        sumSub.textContent = 'Automated exclusion check evaluated against venue database.';
+      }
+    }
+  }
+
+  function openAddBlacklistFromFrankie(reasonCat) {
+    closePepModal();
+    closeSancModal();
+    const catSelect = document.getElementById('appBlkReasonCat');
+    if (catSelect && reasonCat) catSelect.value = reasonCat;
+    document.getElementById('approverAddBlacklistModal').classList.add('active');
+  }
+
+  function closeApproverAddBlacklistModal() {
+    document.getElementById('approverAddBlacklistModal').classList.remove('active');
+  }
+
+  function handleApproverAddBlacklist(e) {
+    e.preventDefault();
+    const reasonCat = document.getElementById('appBlkReasonCat').value;
+    const notes = document.getElementById('appBlkNotes').value;
+    const ref = document.getElementById('appBlkFrankieRef').value;
+
+    const record = VenueBlacklistService.addBlacklistRecord({
+      venueId: 'venue-riverside-rsl',
+      venueName: currentVenueName,
+      patronName: currentPatron.name,
+      dob: currentPatron.dob,
+      docType: currentPatron.docType,
+      docNumber: currentPatron.docNumber,
+      frankieEntityId: currentPatron.frankieEntityId,
+      searchRef: ref,
+      reasonCategory: reasonCat,
+      notes: notes,
+      actor: 'D. Walsh',
+      role: 'Approver'
+    });
+
+    closeApproverAddBlacklistModal();
+    evaluateBlacklistState();
+    alert(`Patron ${record.patronName} has been added to the ${record.venueName} blacklist.`);
+  }
+
+  function openRemoveBlacklistModal() {
+    document.getElementById('approverRemoveBlacklistModal').classList.add('active');
+  }
+
+  function closeApproverRemoveBlacklistModal() {
+    document.getElementById('approverRemoveBlacklistModal').classList.remove('active');
+  }
+
+  function handleApproverRemoveBlacklist(e) {
+    e.preventDefault();
+    const reason = document.getElementById('appBlkRemovalReason').value;
+    const matchRes = VenueBlacklistService.checkBlacklistMatch(currentPatron, currentVenueName);
+    if (matchRes.isMatch && matchRes.record) {
+      VenueBlacklistService.removeBlacklistRecord(matchRes.record.id, {
+        reason: reason,
+        actor: 'D. Walsh',
+        role: 'Approver'
+      });
+    }
+    closeApproverRemoveBlacklistModal();
+    evaluateBlacklistState();
+    alert(`Patron ${currentPatron.name} has been removed from the venue blacklist.`);
+  }
+
+  function openBlacklistResolutionModal() {
+    const matchRes = VenueBlacklistService.checkBlacklistMatch(currentPatron, currentVenueName);
+    if (matchRes.isMatch) {
+      openRemoveBlacklistModal();
+    } else {
+      openAddBlacklistFromFrankie('FrankieOne Screening Match');
+    }
+  }
+
+  window.addEventListener('blacklist:changed', evaluateBlacklistState);
+  document.addEventListener('DOMContentLoaded', evaluateBlacklistState);
+  setTimeout(evaluateBlacklistState, 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,807 @@
+/* ================================================================
+ * COLLECTOR WIZARD — Premium Design Override
+ * Riverside Hotel Payouts | Design System v3 (Blue-Teal Theme)
+ * Reference: Approver/approver.html
+ * ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap');
+
+/* ── DESIGN TOKENS (matched to Approver/approver.html theme) ───── */
+:root {
+  /* Font Families */
+  --font: 'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Color Palette — blue-teal fintech theme */
+  --bg-main: #f1f5f9;
+  --bg-card: #ffffff;
+  --text-main: #191c1d;
+  --text-muted: #404850;
+  --text-dark: #191c1d;
+  --border-color: #cbd5e1;
+  --border-focus: #005d90;
+  --brand-navy: #005d90;
+  --accent-blue: #005d90;
+  --accent-blue-dark: #004b74;
+
+  /* Shadows — tinted navy, matching approver's flat premium shadow */
+  --shadow-sm: 0 1px 2px rgba(10, 28, 55, 0.04);
+  --shadow-md: 0 1px 2px rgba(10, 28, 55, 0.04);
+  --shadow-lg: 0 1px 2px rgba(10, 28, 55, 0.04);
+
+  /* Focus ring */
+  --ring-blue: rgba(0, 93, 144, 0.12);
+
+  /* Missing variable mapping aliases */
+  --blue: var(--accent-blue);
+  --blue-ring: var(--ring-blue);
+  --border: var(--border-color);
+  --border-md: var(--border-color);
+  --navy: var(--brand-navy);
+  --shadow-xs: var(--shadow-sm);
+  --text: var(--text-main);
+  --text-hint: var(--text-muted);
+
+  /* Motion */
+  --spring: all 0.15s ease-in-out;
+  --fast: all 0.15s ease-in-out;
+}
+
+
+/* ── GLOBAL RESET ──────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__next {
+  font-family: var(--font) !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+  color: var(--text-main) !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+}
+
+body {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  min-height: 100dvh !important;
+}
+
+.bg-background,
+.bg-backgroundWhite,
+.bg-gray-50 {
+  background-color: transparent !important;
+}
+
+/* Monospace numbers */
+.font-mono,
+[inputmode="decimal"],
+[inputmode="numeric"],
+input#winAmount,
+input#confirmWinAmount,
+input#totalAmount,
+input#cashAmount,
+input#confirmCashAmount,
+input#instantTransferAmount {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+
+/* Input fields custom padding overrides to prevent overlap with prefix icons ($) and suffix text (AUD) */
+input#winAmount,
+input#confirmWinAmount,
+input#totalAmount,
+input#cashAmount,
+input#confirmCashAmount,
+input#instantTransferAmount {
+  padding-left: 42px !important;
+  padding-right: 48px !important;
+}
+
+
+/* ── HEADER NAVBAR ──────────────────────────────────────── */
+div.pr-8.border-b-2 {
+  background-color: rgba(255, 255, 255, 0.80) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-sm) !important;
+  /* DESIGN.md: Floating Nav Header 72px desktop */
+  height: 72px !important;
+}
+
+div.pr-8.border-b-2 nav {
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+
+div.pr-8.border-b-2 nav img {
+  content: url("../logo.png") !important;
+  max-height: 44px !important;
+  width: auto !important;
+  object-fit: contain !important;
+}
+
+/* ── STEPPER SIDEBAR CARD ──────────────────────────────────────── */
+ul.flex-col.w-72,
+.absolute ul {
+  background-color: var(--bg-card) !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 32px 24px 32px 36px !important;
+  margin-top: 16px !important;
+  width: 288px !important;
+
+  /* Flat, tinted shadow — matches approver.html's minimal card treatment */
+  box-shadow: var(--shadow-sm) !important;
+}
+
+ul.gap-3 {
+  gap: 14px !important;
+}
+
+/* Step list items & spacer rows grid alignment */
+ul li,
+ul>div.grid {
+  display: grid !important;
+  grid-template-columns: 28px 1fr !important;
+  column-gap: 16px !important;
+  align-items: center !important;
+  transition: var(--fast) !important;
+  width: 100% !important;
+}
+
+/* Force circle/dots and connector lines into column 1 */
+ul li div.rounded-full,
+ul li a.bg-czPurple-500,
+ul>div.grid>div {
+  grid-column: 1 !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Force text labels and spacer spans into column 2 */
+ul li>a:not(.rounded-full),
+ul li>span,
+ul>div.grid>span {
+  grid-column: 2 !important;
+  text-align: left !important;
+}
+
+/* Step label text defaults */
+ul li span,
+ul li a {
+  font-family: var(--font) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.4 !important;
+  transition: var(--fast) !important;
+  text-decoration: none !important;
+}
+
+/* Active / Completed step label */
+.text-czPurple-500,
+a.text-czPurple-500,
+span.text-czPurple-500 {
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+  font-size: 13.5px !important;
+}
+
+/* Inactive step label */
+.text-textTertiary {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+  font-size: 13.5px !important;
+}
+
+/* Active / Completed step dot — target div only */
+ul li div.bg-czPurple-500,
+ul li div.border-czPurple-500 {
+  border: 1px solid var(--brand-navy) !important;
+  background-color: #ffffff !important;
+  color: #58d6f1 !important;
+  /* Theme cyan matching approver's secondary accent */
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 100px var(--brand-navy) !important;
+}
+
+/* Neutralize ghost anchor tag duplicate styling from React HTML export */
+ul li a.bg-czPurple-500 {
+  display: contents !important;
+}
+
+/* "Before you start" checklist tick — was plain black, now on-theme navy */
+ul li div.bg-black {
+  background-color: var(--brand-navy) !important;
+  color: #ffffff !important;
+}
+
+/* Inactive step dot — target div only */
+ul li div.border-gray-300 {
+  border: 1px solid rgba(10, 28, 55, 0.08) !important;
+  background-color: #ffffff !important;
+  color: var(--text-muted) !important;
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 4px rgba(10, 28, 55, 0.08),
+    inset 0 0 0 100px #f8fafc !important;
+}
+
+/* Step dot sizing and centering overrides */
+ul li div.rounded-full {
+  width: 28px !important;
+  height: 28px !important;
+  border-width: 1px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  transition: var(--fast) !important;
+}
+
+/* Force checkmark/icons inside stepper circles to be small and centered */
+ul li div.rounded-full svg {
+  width: 11px !important;
+  height: 11px !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+ul li div.rounded-full svg path {
+  stroke-width: 2.8px !important;
+  /* Thick, premium crisp stroke */
+  stroke: currentColor !important;
+  /* Align to the parent check color */
+}
+
+/* Stepper vertical connector lines */
+div.w-\[2px\].h-8.bg-gray-300 {
+  background-color: rgba(10, 28, 55, 0.08) !important;
+  width: 1.5px !important;
+  height: 22px !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Interactivity: Hover states for links */
+ul li a:hover span.text-textTertiary {
+  color: var(--text-dark) !important;
+}
+
+ul li a:hover div.border-gray-300 {
+  border-color: var(--text-dark) !important;
+  box-shadow:
+    inset 0 0 0 3px #ffffff,
+    inset 0 0 0 4px rgba(10, 28, 55, 0.20),
+    inset 0 0 0 100px #edf2f7 !important;
+}
+
+
+/* ── FORM COLUMN WRAPPER ─────────────────────────────────── */
+/* Keep the flex column wrapper clean — preserve Tailwind centering */
+div.w-full.flex.justify-center.items-start.h-full {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+@media (min-width: 768px) {
+  div.w-full.flex.justify-center.items-start.h-full {
+    padding-left: 290px !important;
+    /* Adjust form wrapper padding to clear shifted sidebar */
+  }
+
+  .absolute.left-0.md\:left-12 {
+    left: 80px !important;
+    /* Shift the entire stepper card slightly to the right */
+  }
+}
+
+
+/* ── FORM CARD ──────────────────────────────────────────────────── */
+/* Flat bento-card treatment matching approver.html: solid border, single tinted shadow — no glow.
+   Scoped to `div` explicitly — the "Before you start" checklist (collector_3/3.1) is a <ul>
+   that also happens to carry a `gap-6` utility class for its own item spacing; without the
+   `div` restriction it was matched by mistake and boxed as if it were the form card. */
+div.w-full.flex.justify-center.items-start.h-full form,
+div.w-full.flex.justify-center.items-start.h-full div.flex-col.gap-6,
+div.w-full.flex.justify-center.items-start.h-full div.flex-col.gap-12 {
+  background-color: var(--bg-card) !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-sm) !important;
+
+  padding: 32px !important;
+  /* Standard 24px rhythm between heading / checklist / CTA — was a 48px gap-12 flex gap */
+  gap: 24px !important;
+  /* Center via auto margins inside the flex column */
+  margin-top: 16px !important;
+  margin-bottom: 48px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  max-width: 540px !important;
+}
+
+@media (max-width: 767px) {
+
+  div.w-full.flex.justify-center.items-start.h-full form,
+  div.w-full.flex.justify-center.items-start.h-full div.flex-col.gap-6,
+  div.w-full.flex.justify-center.items-start.h-full div.flex-col.gap-12 {
+    margin-top: 16px !important;
+    padding: 28px 20px !important;
+    border-radius: 16px !important;
+    max-width: 100% !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+}
+
+
+/* ── FORM HEADING ───────────────────────────────────────── */
+/* Standard title size — matches approver.html's text-title-sm (24px/32px/700) */
+/* Keyed off h2.text-czPurple-500 directly (present on every page's title) rather
+   than the wrapper div, since collector_3/3.1 wrap their h2 in a .flex-col.gap-12
+   div with no <form> — a combo the old form/gap-6 selectors missed. */
+form h2,
+h2.text-czPurple-500 {
+  font-family: var(--font-display) !important;
+  color: var(--text-dark) !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  /* Spacing to the next element now comes from the card's flex `gap: 24px`, not margin */
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* ── CLOSE BUTTON (mobile dismiss in h2) ───────────────────────── */
+/* This button defaults to type="submit" — reset ALL styles */
+form h2 button {
+  all: unset !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  color: var(--text-muted) !important;
+  transition: var(--fast) !important;
+}
+
+form h2 button:hover {
+  color: var(--text-dark) !important;
+}
+
+/* Section heading icon — tinted circle badge, matches approver.html's
+   w-11 h-11 rounded-full bg-primary/10 icon treatment (e.g. Winning Tickets Verification) */
+.payout-heading-inner {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.payout-icon-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 9999px !important;
+  background-color: rgba(0, 93, 144, 0.1) !important;
+  color: var(--brand-navy) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Icon sized to sit centered within the 44px badge, matching approver.html's text-xl/2xl scale */
+.payout-icon-badge svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* Explicit text node — keeps the title rendering exactly as it did
+   pre-icon (bare text as a flex child can mis-measure in some browsers) */
+.payout-heading-text {
+  font: inherit !important;
+  color: inherit !important;
+  letter-spacing: inherit !important;
+}
+
+/* Hide on desktop (the SVG already has md:hidden but let's be explicit) */
+@media (min-width: 768px) {
+  form h2 button {
+    display: none !important;
+  }
+}
+
+
+/* ── FIELD LABELS ───────────────────────────────────────── */
+/* Default label reset */
+label {
+  font-family: var(--font) !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  color: var(--text-main) !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  display: block !important;
+}
+
+/* Eyebrow tags — calmed to approver.html's label-caps rhythm: 14px | 700 | 0.08em */
+label[data-testid="flowbite-label"] {
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+/* Exception: labels that are styled differently (e.g., Bank Transfer heading) */
+label.font-bold[data-testid="flowbite-label"],
+label.text-lg[data-testid="flowbite-label"] {
+  text-transform: none !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--text-dark) !important;
+}
+
+/* Consent / checkbox labels */
+input[type="checkbox"]~label,
+input[type="checkbox"]+label,
+label[for*="consent"] {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  letter-spacing: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  display: inline !important;
+  vertical-align: middle !important;
+}
+
+/* Block wrapper for label+field pairs */
+.block.mb-2 {
+  margin-bottom: 0 !important;
+}
+
+
+/* ── FORM CONTROLS ─────────────────────────────────────────────── */
+/* Base: apply to any input/select inside form that is NOT inside MUI */
+form input[type="text"]:not(.MuiInputBase-input),
+form input[type="number"]:not(.MuiInputBase-input),
+form input[type="email"],
+form input[type="tel"],
+form input[type="date"],
+form select,
+.flex-col.gap-6 input[type="text"]:not(.MuiInputBase-input),
+.flex-col.gap-6 input[type="number"]:not(.MuiInputBase-input),
+.flex-col.gap-6 select {
+  font-family: var(--font) !important;
+  background-color: #ffffff !important;
+  color: var(--text-main) !important;
+  /* Visible border — rgba(10,28,55,0.08) was too faint; use a solid visible tone */
+  border: 1.5px solid var(--border-color) !important;
+  border-radius: 11px !important;
+  padding: 11px 15px !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  height: 46px !important;
+  line-height: 1.4 !important;
+  transition: var(--fast) !important;
+  box-shadow: inset 0 1px 2px rgba(10, 28, 55, 0.025) !important;
+  width: 100% !important;
+  outline: none !important;
+  letter-spacing: -0.01em !important;
+}
+
+form select,
+.flex-col.gap-6 select {
+  padding-right: 38px !important;
+  cursor: pointer !important;
+}
+
+form input:not(.MuiInputBase-input):focus,
+form select:focus,
+.flex-col.gap-6 input:not(.MuiInputBase-input):focus,
+.flex-col.gap-6 select:focus {
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 3px var(--ring-blue), inset 0 1px 2px rgba(10, 28, 55, 0.02) !important;
+  background-color: #ffffff !important;
+}
+
+form input::placeholder {
+  color: var(--text-hint) !important;
+  font-weight: 400 !important;
+}
+
+/* Control gap between flex elements on the form */
+form.flex-col.gap-6,
+div.w-full.flex.justify-center.items-start.h-full form,
+div.w-full.flex.justify-center.items-start.h-full .flex-col.gap-6 {
+  gap: 24px !important;
+}
+
+/* Reset any additional cascading margins between form field divs */
+form>div+div,
+.flex-col.gap-6>div+div {
+  margin-top: 0 !important;
+}
+
+
+/* ── MUI DATEPICKER ────────────────────────────────────────────── */
+.MuiInputBase-root.MuiOutlinedInput-root {
+  font-family: var(--font) !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  background-color: #ffffff !important;
+  border-radius: 11px !important;
+  height: 46px !important;
+  transition: var(--fast) !important;
+}
+
+/* The actual text input inside MUI — no border, transparent */
+.MuiInputBase-root input.MuiInputBase-input {
+  font-family: var(--font) !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  color: var(--text-dark) !important;
+  padding: 11px 12px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  height: auto !important;
+  outline: none !important;
+  width: 100% !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 11px !important;
+  transition: var(--fast) !important;
+}
+
+.MuiInputBase-root.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(10, 28, 55, 0.22) !important;
+}
+
+.MuiInputBase-root.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-focus) !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 0 0 3px var(--blue-ring) !important;
+}
+
+/* MUI calendar icon button — transparent, no pill */
+.MuiInputBase-root button.MuiIconButton-root {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  padding: 6px !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  color: var(--text-muted) !important;
+  transform: none !important;
+}
+
+.MuiInputBase-root button.MuiIconButton-root:hover {
+  background-color: rgba(10, 28, 55, 0.05) !important;
+  color: var(--text-dark) !important;
+  transform: none !important;
+}
+
+
+/* ── BUTTON SYSTEM ─────────────────────────────────────────────── */
+
+/* DESIGN.md Navigation Links & Buttons: 14px | 600/700 */
+/* Primary CTA height: 44px desktop per DESIGN.md */
+button.bg-czPurple-500,
+button.text-white.bg-czPurple-500 {
+  background-color: var(--brand-navy) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 0 26px !important;
+  font-family: var(--font-display) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.005em !important;
+  cursor: pointer !important;
+  transition: var(--spring) !important;
+  height: 40px !important;
+  min-width: 110px !important;
+  box-shadow: 0 1px 3px rgba(10, 28, 55, 0.18), 0 4px 12px rgba(10, 28, 55, 0.10) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-decoration: none !important;
+}
+
+button.bg-czPurple-500:hover,
+button.text-white.bg-czPurple-500:hover {
+  background-color: var(--accent-blue-dark) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(10, 28, 55, 0.22), 0 8px 20px rgba(10, 28, 55, 0.14) !important;
+}
+
+button.bg-czPurple-500:active,
+button.text-white.bg-czPurple-500:active {
+  transform: translateY(0) scale(0.975) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* ─ SECONDARY (Back) ─ */
+button.border-gray-300,
+button.bg-transparent {
+  background-color: transparent !important;
+  color: var(--text-muted) !important;
+  border: 1.5px solid var(--border-color) !important;
+  border-radius: 9999px !important;
+  padding: 0 22px !important;
+  font-family: var(--font-display) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  cursor: pointer !important;
+  transition: var(--fast) !important;
+  height: 40px !important;
+  min-width: 90px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+button.border-gray-300:hover,
+button.bg-transparent:hover {
+  background-color: rgba(10, 28, 55, 0.04) !important;
+  color: var(--text-dark) !important;
+  border-color: rgba(10, 28, 55, 0.24) !important;
+}
+
+button.border-gray-300:active,
+button.bg-transparent:active {
+  transform: scale(0.975) !important;
+}
+
+/* Button row */
+.flex.gap-4 {
+  gap: 12px !important;
+  margin-top: 28px !important;
+}
+
+
+/* ── SUB-CARDS (breakdown sections) ────────────────────────────── */
+.relative.border-2.border-slate-200 {
+  border: 1.5px solid var(--border) !important;
+  background-color: rgba(248, 250, 252, 0.6) !important;
+  border-radius: 14px !important;
+  padding: 20px 22px !important;
+  box-shadow: var(--shadow-xs) !important;
+  margin-bottom: 20px !important;
+}
+
+/* Detail section dividers */
+.w-full.h-\[1px\].bg-black\/5 {
+  background-color: rgba(10, 28, 55, 0.06) !important;
+  height: 1px !important;
+}
+
+/* Section header inside sub-cards */
+.text-lg.font-medium.mb-4 {
+  font-family: var(--font) !important;
+  color: var(--text-dark) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+  margin-bottom: 14px !important;
+}
+
+/* Purple field keys → Accent Blue */
+.text-\[\#6632FE\],
+span.text-\[\#6632FE\] {
+  color: var(--blue) !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.10em !important;
+  display: block !important;
+  margin-bottom: 2px !important;
+}
+
+/* Edit buttons inside sub-cards */
+.flex-col.gap-6 .flex.justify-between button,
+.relative.border-2 .flex.justify-between button {
+  background-color: var(--navy) !important;
+  color: #fff !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  min-width: 0 !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+
+/* ── CHECKBOX ──────────────────────────────────────────────────── */
+input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 5px !important;
+  border: 1.5px solid var(--border-md) !important;
+  transition: var(--fast) !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  accent-color: var(--blue) !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--blue) !important;
+  border-color: var(--blue) !important;
+}
+
+input[type="checkbox"]:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--blue-ring) !important;
+}
+
+
+/* ── ACCORDION (collector_7 Summary) ───────────────────────────── */
+[data-testid="flowbite-accordion-heading"] {
+  font-family: var(--font) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--text-dark) !important;
+  letter-spacing: -0.01em !important;
+}
+
+
+/* ── PROGRESS BAR ──────────────────────────────────────────────── */
+[role="progressbar"]>div {
+  background-color: var(--blue) !important;
+}
+
+
+/* ── MISC ──────────────────────────────────────────────────────── */
+main {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* ── LAYOUT HEIGHT FIX ─────────────────────────────────────────── */
+.flex-1 {
+  height: auto !important;
+  min-height: auto !important;
+  flex: none !important;
+}

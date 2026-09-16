@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payout summary</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --error-bg:#fff5f5;
+    --success:#0d9488;
+    --warn:#a15c07;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  /* Stepper */
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:13.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{ display:block; }
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+  .tag-warn{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    padding:2px 0; color:var(--warn); background:none; margin-left:6px;
+  }
+
+
+  .main{ flex:1; min-width:0; }
+  .title-row{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    gap:28px;
+    margin:0 0 22px;
+  }
+  .back-link{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:15.5px;
+    font-weight:600;
+    line-height:1;
+    color:var(--text-primary);
+    padding:0;
+    margin-left:-4px;
+    text-decoration:underline;
+  }
+  .back-link svg{flex-shrink:0; color:var(--accent);}
+  .title-block{ display:contents; }
+  h1{ font-size:22px; font-weight:600; color:var(--text-primary); line-height:1; margin:0; }
+  .timestamp{ font-size:13px; color:var(--text-secondary); margin:0 0 0 auto; white-space:nowrap; }
+
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:10px;
+    padding:24px 26px;
+  }
+
+  /* accordion - plain dividers, no card-in-card */
+  .accordion-item + .accordion-item{ border-top:1px solid #eceef2; }
+  .accordion-header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:18px 0; cursor:pointer;
+  }
+  .accordion-item:first-child .accordion-header{ padding-top:0; }
+  .accordion-title{
+    font-size:15px; font-weight:700; color:var(--text-primary);
+  }
+  .accordion-item:not(.open) .accordion-title{ color:var(--text-secondary); }
+  .accordion-header-right{ display:flex; align-items:center; gap:16px; flex-shrink:0; }
+  .accordion-chevron{
+    flex-shrink:0; color:var(--text-secondary);
+    transition:transform .15s ease;
+  }
+  .accordion-item.open .accordion-chevron{ transform:rotate(180deg); color:var(--text-primary); }
+  .edit-link{
+    flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    color:var(--text-secondary);
+    border-radius:4px;
+  }
+  .edit-link:hover{ color:var(--text-primary); }
+
+  .accordion-panel{
+    display:none;
+    padding:0 0 20px;
+  }
+  .accordion-item.open .accordion-panel{ display:block; }
+  .accordion-item:last-child .accordion-panel{ padding-bottom:0; }
+
+  .detail-row{
+    display:flex; justify-content:space-between; gap:16px;
+    padding:4px 0;
+    font-size:14px;
+  }
+  .detail-row dt{ color:var(--text-secondary); font-weight:500; }
+  .detail-row dd{
+    margin:0; color:var(--text-primary); font-weight:600;
+    text-align:right; max-width:60%; word-break:break-word;
+  }
+  .detail-row dd.muted{ color:var(--text-secondary); font-weight:500; }
+  .detail-row dd.num{ font-variant-numeric:tabular-nums; }
+  .detail-row dd.notes{ white-space:pre-wrap; }
+  .currency-prefix{ color:var(--text-secondary); font-weight:500; margin-right:4px; }
+
+  /* plain section labels - separation via typography/spacing only, no card treatment */
+  .detail-group-title{
+    font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-secondary);
+    margin:20px 0 8px;
+  }
+
+  /* CoP validation - nested within Bank Account Details panel, both states */
+  .cop-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 0;
+  }
+  .cop-label{ font-size:14px; font-weight:500; color:var(--text-secondary); }
+  .cop-status{ display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:600; }
+  .cop-status.match{ color:var(--success); }
+  .cop-status.fail{ color:var(--error); }
+  .cop-status.close{ color:var(--warn); }
+
+  .cop-close-note{ margin-top:6px; }
+  .cop-close-note-title{ font-size:14px; font-weight:700; color:var(--warn); margin:0 0 4px; }
+  .cop-close-note-body{ font-size:13.5px; color:var(--text-secondary); line-height:1.5; margin:0; }
+
+  /* prototype toggle */
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-bottom:14px;
+  }
+  .proto-toggle-label{ font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:12.5px; font-weight:600; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:#5a5a5a; border-color:#5a5a5a; color:#fff; }
+
+  .actions{ display:flex; align-items:center; gap:var(--gap-md); margin-top:46px; }
+  button{
+    height:44px; border-radius:var(--radius); font-size:16px; font-weight:600;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f4f4f4; }
+  .btn-back:active{ background:#e8e8e8; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:active{ background:#095e56; }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+
+  /* Primary submit action - full width, matches the Next-button pattern used across the flow.
+     Scoped to the outer actions row only, so the modal's compact Cancel/Submit pair is unaffected. */
+  .actions .btn-next{ height:60px; width:100%; font-size:19px; }
+
+  .accordion-header:focus-visible, .edit-link:focus-visible, button:focus-visible, .close-btn:focus-visible, .back-link:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  /* submit confirmation modal */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:100; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff; border-radius:var(--radius);
+    max-width:440px; width:100%;
+    padding:28px 30px 30px;
+    box-shadow:0 20px 60px rgba(20,20,50,0.25);
+  }
+  .modal-box h2{ font-size:22px; font-weight:600; color:var(--text-primary); margin:0 0 12px; }
+  .modal-body{ font-size:14.5px; color:var(--text-secondary); line-height:1.55; margin:0 0 22px; }
+  .modal-actions{ display:flex; gap:var(--gap-md); }
+  .modal-actions .btn-back{ flex:1; }
+  .modal-actions .btn-next{ flex:1; }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+    .detail-row{ flex-direction:column; gap:2px; }
+    .detail-row dd{ text-align:left; max-width:100%; }
+    .title-row{ flex-wrap:wrap; row-gap:0; margin-bottom:8px; }
+    .timestamp{ order:4; flex-basis:100%; margin:var(--gap-md) 0 0; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px Submit button below is touch-target sizing. On a
+     mouse/keyboard viewport that reads as oversized, so scale it down. */
+  @media (min-width:1025px){
+    :root{
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    .actions .btn-next{height:52px; font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email address</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Bank account</div></div>
+    <div class="step active" id="stepSummary"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <div class="title-row" id="titleRow">
+      <button type="button" class="back-link" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <div class="title-block">
+        <h1>Summary</h1>
+        <p class="timestamp">21/07/2026, 8:24 AM</p>
+      </div>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+        <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+
+    <div id="summaryContent">
+    <div class="content-card">
+    <div class="accordion">
+      <div class="accordion-item open" data-item>
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-payment" id="trigger-payment">
+          <span class="accordion-title">Payment breakdown</span>
+          <span class="accordion-header-right">
+            <a class="edit-link" href="02-payment-breakdown.html?from=summary" onclick="event.stopPropagation()" aria-label="Edit payment breakdown">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </a>
+            <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="accordion-panel" id="panel-payment" role="region" aria-labelledby="trigger-payment">
+          <div class="detail-row"><dt>Payout type</dt><dd class="num" id="sumPayoutType">EGM</dd></div>
+          <div class="detail-row"><dt>Venue</dt><dd class="num" id="sumVenue">Riverside RSL Club</dd></div>
+          <div class="detail-row"><dt>Win amount</dt><dd class="num"><span class="currency-prefix">AUD</span><span id="sumWinAmount">100.00</span></dd></div>
+          <div class="detail-row"><dt>Internal transaction ID</dt><dd class="num" id="sumTxnId">-</dd></div>
+          <div class="detail-row"><dt>Machine ID</dt><dd class="num" id="sumMachine">EGM-003</dd></div>
+          <div class="detail-row"><dt>Cash amount</dt><dd class="num"><span class="currency-prefix">AUD</span><span id="sumCash">234.00</span></dd></div>
+          <div class="detail-row"><dt>Transfer amount</dt><dd class="num"><span class="currency-prefix">AUD</span><span id="sumTransfer">1,999,766.00</span></dd></div>
+        </div>
+      </div>
+
+      <div class="accordion-item open" data-item>
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-member" id="trigger-member">
+          <span class="accordion-title">Member identification</span>
+          <span class="accordion-header-right">
+            <a class="edit-link" href="05-primary-id-document.html?from=summary" onclick="event.stopPropagation()" aria-label="Edit member identification">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </a>
+            <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="accordion-panel" id="panel-member" role="region" aria-labelledby="trigger-member">
+          <div class="detail-row"><dt>Membership number</dt><dd class="num" id="sumMembership">1234</dd></div>
+          <div class="detail-row"><dt>Email</dt><dd id="sumEmail">uat@palxi.com</dd></div>
+          <div class="detail-row"><dt>Full name</dt><dd id="sumFullName">test test</dd></div>
+          <div class="detail-row"><dt>Document type</dt><dd id="idDocType">No ID document</dd></div>
+
+          <div class="detail-row"><dt>Notes</dt><dd class="notes" id="sumNotes">test</dd></div>
+
+          <div id="identityConfirmationGroup">
+          <p class="detail-group-title">Identity confirmation</p>
+          <div class="detail-row"><dt>Identity documents provided to staff member</dt><dd id="idProvided">No</dd></div>
+          <div class="detail-row"><dt>Identity manually verified</dt><dd id="idVerified">No</dd></div>
+          </div>
+
+          <div id="licenceGroup" style="display:none">
+          <p class="detail-group-title">Driver Licence</p>
+          <div class="detail-row"><dt>State of issue</dt><dd id="sumLicState">NSW</dd></div>
+          <div class="detail-row"><dt>Licence number</dt><dd class="num" id="sumLicNumber">12345678</dd></div>
+          <div class="detail-row"><dt>Card number</dt><dd class="num" id="sumLicCard">123456789</dd></div>
+          </div>
+
+          <div id="passportGroup" style="display:none">
+          <p class="detail-group-title">Passport</p>
+          <div class="detail-row"><dt>Passport number</dt><dd class="num" id="sumPassNumber">PA1234567</dd></div>
+          <div class="detail-row"><dt>Expiry date</dt><dd id="sumPassExpiry">14/03/2029</dd></div>
+          </div>
+
+          <div id="medicareGroup" style="display:none">
+          <p class="detail-group-title">Medicare card</p>
+          <div class="detail-row"><dt>Card number</dt><dd class="num" id="sumMedicareNumber">2950 12345 1</dd></div>
+          <div class="detail-row"><dt>IRN</dt><dd class="num" id="sumMedicareIrn">1</dd></div>
+          <div class="detail-row"><dt>Card Colour</dt><dd id="sumMedicareColor">Green</dd></div>
+          <div class="detail-row"><dt>Expiry date</dt><dd id="sumMedicareExpiry">05/2028</dd></div>
+          </div>
+
+          <p class="detail-group-title">Address</p>
+          <div class="detail-row"><dt>Street</dt><dd class="muted" id="idStreet">-</dd></div>
+          <div class="detail-row"><dt>Suburb</dt><dd class="muted" id="idSuburb">-</dd></div>
+          <div class="detail-row"><dt>State</dt><dd class="muted" id="idState">-</dd></div>
+          <div class="detail-row"><dt>Postcode</dt><dd class="muted" id="idPostcode">-</dd></div>
+          <div class="detail-row"><dt>Country of issue</dt><dd>Australia</dd></div>
+        </div>
+      </div>
+
+      <div class="accordion-item open" data-item>
+        <div class="accordion-header" role="button" tabindex="0" aria-expanded="true" aria-controls="panel-bank" id="trigger-bank">
+          <span class="accordion-title">Bank account details</span>
+          <span class="accordion-header-right">
+            <a class="edit-link" href="12-bank-account.html?from=summary" onclick="event.stopPropagation()" aria-label="Edit bank account details">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </a>
+            <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="accordion-panel" id="panel-bank" role="region" aria-labelledby="trigger-bank">
+          <div class="detail-row"><dt>Account name</dt><dd id="sumAccountName">Test Testerson</dd></div>
+          <div class="detail-row"><dt>BSB number</dt><dd class="num" id="sumBsb">062-000</dd></div>
+          <div class="detail-row"><dt>Account number</dt><dd class="num" id="sumAccountNumber">12345678</dd></div>
+
+          <div class="cop-row match" id="copRow">
+            <span class="cop-label">CoP validation</span>
+            <span class="cop-status match" id="copStatus">
+              <span id="copStatusText">Match</span>
+            </span>
+          </div>
+
+          <div class="cop-close-note" id="copCloseNote" style="display:none">
+            <p class="cop-close-note-title">Close match - flagged for approver.</p>
+            <p class="cop-close-note-body" id="copCloseNoteBody">Entered name "Test Testerson" differs from registered account name. The payee confirmed to proceed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-next" id="submitBtn">Submit</button>
+    </div>
+    </div>
+
+    <div class="proto-toggle" style="margin-top:14px; margin-bottom:0;">
+      <span class="proto-toggle-label">Prototype preview only:</span>
+      <button type="button" class="proto-btn active" id="protoMatch">CoP: Match</button>
+      <button type="button" class="proto-btn" id="protoClose">CoP: Close match</button>
+      <button type="button" class="proto-btn" id="protoFail">CoP: No match</button>
+    </div>
+
+    <div class="proto-toggle" style="margin-top:8px; margin-bottom:0;">
+      <span class="proto-toggle-label">Prototype preview only:</span>
+      <button type="button" class="proto-btn" id="protoRealData">Real data</button>
+      <button type="button" class="proto-btn active" id="protoNoId">ID: Not provided</button>
+      <button type="button" class="proto-btn" id="protoWithId">ID: Provided (Driver Licence and Medicare)</button>
+      <button type="button" class="proto-btn" id="protoAllId">ID: Provided (Passport and Medicare)</button>
+    </div>
+    </div>
+  </main>
+</div>
+
+<!-- Submit confirmation modal -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="submitModalTitle">
+    <h2 id="submitModalTitle">Submit for approval?</h2>
+    <p class="modal-body">Once submitted, this payout moves to Approval and can no longer be viewed or edited.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-back" id="modalCancelBtn">Cancel</button>
+      <button type="button" class="btn-next" id="modalConfirmBtn">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = '12-bank-account.html';
+  });
+
+  document.querySelectorAll('[data-item]').forEach(item=>{
+    const trigger = item.querySelector('.accordion-header');
+    function toggle(){
+      const isOpen = item.classList.contains('open');
+      item.classList.toggle('open', !isOpen);
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+    }
+    trigger.addEventListener('click', toggle);
+    trigger.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+    });
+  });
+
+  const copRow = document.getElementById('copRow');
+  const copStatus = document.getElementById('copStatus');
+  const copStatusText = document.getElementById('copStatusText');
+  const copCloseNote = document.getElementById('copCloseNote');
+  const submitBtn = document.getElementById('submitBtn');
+  const protoMatch = document.getElementById('protoMatch');
+  const protoClose = document.getElementById('protoClose');
+  const protoFail = document.getElementById('protoFail');
+
+  function setCopState(state){
+    [protoMatch, protoClose, protoFail].forEach(btn=> btn.classList.toggle('active', btn.id === 'proto' + state));
+    copRow.classList.remove('match','close','fail');
+    copStatus.classList.remove('match','close','fail');
+    copCloseNote.style.display = 'none';
+
+    if(state === 'Match'){
+      copRow.classList.add('match');
+      copStatus.classList.add('match');
+      copStatusText.textContent = 'Match';
+      submitBtn.disabled = false;
+    } else if(state === 'Close'){
+      copRow.classList.add('close');
+      copStatus.classList.add('close');
+      copStatusText.textContent = 'Close match';
+      copCloseNote.style.display = 'block';
+      submitBtn.disabled = false;
+    } else {
+      copRow.classList.add('fail');
+      copStatus.classList.add('fail');
+      copStatusText.textContent = 'No match';
+      submitBtn.disabled = true;
+    }
+  }
+
+  protoMatch.addEventListener('click', ()=> setCopState('Match'));
+  protoClose.addEventListener('click', ()=> setCopState('Close'));
+  protoFail.addEventListener('click', ()=> setCopState('Fail'));
+
+  // ---- Member Identification preview: exactly one of these four states
+  // is ever active - "Real Data" reflects what was actually entered while
+  // walking the flow, the other three are fixed canned demos for design
+  // review. Switching toggles fully resets every field so nothing from a
+  // previously-selected state lingers. ----
+  const protoRealData = document.getElementById('protoRealData');
+  const protoNoId = document.getElementById('protoNoId');
+  const protoWithId = document.getElementById('protoWithId');
+  const protoAllId = document.getElementById('protoAllId');
+  const idDocType = document.getElementById('idDocType');
+  const idProvided = document.getElementById('idProvided');
+  const idVerified = document.getElementById('idVerified');
+  const identityConfirmationGroup = document.getElementById('identityConfirmationGroup');
+  const licenceGroup = document.getElementById('licenceGroup');
+  const passportGroup = document.getElementById('passportGroup');
+  const medicareGroup = document.getElementById('medicareGroup');
+  const idStreet = document.getElementById('idStreet');
+  const idSuburb = document.getElementById('idSuburb');
+  const idState = document.getElementById('idState');
+  const idPostcode = document.getElementById('idPostcode');
+  const idProtoButtons = [protoRealData, protoNoId, protoWithId, protoAllId];
+
+  function setActiveIdProto(active){
+    idProtoButtons.forEach(btn=> btn.classList.toggle('active', btn===active));
+  }
+  function setAddress(street, suburb, state, postcode){
+    const blank = !street && !suburb && !state && !postcode;
+    idStreet.textContent = street || '-'; idStreet.classList.toggle('muted', blank);
+    idSuburb.textContent = suburb || '-'; idSuburb.classList.toggle('muted', blank);
+    idState.textContent = state || '-'; idState.classList.toggle('muted', blank);
+    idPostcode.textContent = postcode || '-'; idPostcode.classList.toggle('muted', blank);
+  }
+
+  function applyNoId(){
+    idDocType.textContent = 'No ID document';
+    idProvided.textContent = 'No';
+    idVerified.textContent = 'No';
+    identityConfirmationGroup.style.display = '';
+    licenceGroup.style.display = 'none';
+    passportGroup.style.display = 'none';
+    medicareGroup.style.display = 'none';
+    setAddress();
+  }
+  function applyWithId(){
+    idDocType.textContent = 'Driver Licence, Medicare card';
+    idProvided.textContent = 'Yes';
+    idVerified.textContent = 'Yes';
+    identityConfirmationGroup.style.display = 'none';
+    licenceGroup.style.display = '';
+    passportGroup.style.display = 'none';
+    medicareGroup.style.display = '';
+    document.getElementById('sumLicState').textContent = 'NSW';
+    document.getElementById('sumLicNumber').textContent = '12345678';
+    document.getElementById('sumLicCard').textContent = '123456789';
+    document.getElementById('sumMedicareNumber').textContent = '2950 12345 1';
+    document.getElementById('sumMedicareIrn').textContent = '1';
+    document.getElementById('sumMedicareColor').textContent = 'Green';
+    document.getElementById('sumMedicareExpiry').textContent = '05/2028';
+    setAddress('12 Example Street', 'Sydney', 'NSW', '2000');
+  }
+  function applyAllId(){
+    idDocType.textContent = 'Passport, Medicare card';
+    idProvided.textContent = 'Yes';
+    idVerified.textContent = 'Yes';
+    identityConfirmationGroup.style.display = 'none';
+    licenceGroup.style.display = 'none';
+    passportGroup.style.display = '';
+    medicareGroup.style.display = '';
+    document.getElementById('sumPassNumber').textContent = 'PA1234567';
+    document.getElementById('sumPassExpiry').textContent = '14/03/2029';
+    document.getElementById('sumMedicareNumber').textContent = '2950 12345 1';
+    document.getElementById('sumMedicareIrn').textContent = '1';
+    document.getElementById('sumMedicareColor').textContent = 'Green';
+    document.getElementById('sumMedicareExpiry').textContent = '05/2028';
+    setAddress('12 Example Street', 'Sydney', 'NSW', '2000');
+  }
+
+  function applyRealData(){
+    let data;
+    try{ data = JSON.parse(sessionStorage.getItem('payoutFormData')) || {}; }catch(e){ data = {}; }
+
+    // New Payout Details (step 1) + Payment Breakdown
+    document.getElementById('sumPayoutType').textContent = data.payoutType || '-';
+    document.getElementById('sumVenue').textContent = data.venue || '-';
+    document.getElementById('sumWinAmount').textContent = data.winAmount || '0.00';
+    document.getElementById('sumTxnId').textContent = data.txnId || '-';
+    document.getElementById('sumMachine').textContent = data.machine || '-';
+    document.getElementById('sumCash').textContent = data.cashAmount || '0.00';
+    document.getElementById('sumTransfer').textContent = data.bankAmount || '0.00';
+
+    // Member Identification
+    document.getElementById('sumMembership').textContent = data.membership || '-';
+    document.getElementById('sumEmail').textContent = data.email || '-';
+    const fullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ');
+    document.getElementById('sumFullName').textContent = fullName || '-';
+    document.getElementById('sumNotes').textContent = data.notes || '-';
+
+    const docTypeLabels = { licence:'Driver Licence', passport:'Passport', otherKyc: data.otherDocType || 'Other document', noId:'No ID document' };
+    const parts = [];
+    if(data.docType && docTypeLabels[data.docType]) parts.push(docTypeLabels[data.docType]);
+    if(data.medicareSelected) parts.push('Medicare card');
+    idDocType.textContent = parts.join(', ') || 'No ID document';
+
+    const showConfirmation = data.docType === 'noId' || data.docType === 'otherKyc';
+    identityConfirmationGroup.style.display = showConfirmation ? '' : 'none';
+    if(showConfirmation){
+      idProvided.textContent = data.docsProvided ? 'Yes' : 'No';
+      idVerified.textContent = data.manualVerify ? 'Yes' : 'No';
+    }
+
+    licenceGroup.style.display = data.docType === 'licence' ? '' : 'none';
+    if(data.docType === 'licence'){
+      document.getElementById('sumLicState').textContent = data.state || '-';
+      document.getElementById('sumLicNumber').textContent = data.licNumber || '-';
+      document.getElementById('sumLicCard').textContent = data.cardNumber || '-';
+    }
+
+    passportGroup.style.display = data.docType === 'passport' ? '' : 'none';
+    if(data.docType === 'passport'){
+      document.getElementById('sumPassNumber').textContent = data.passNumber || '-';
+      document.getElementById('sumPassExpiry').textContent = data.passExpiryText || '-';
+    }
+
+    medicareGroup.style.display = data.medicareSelected ? '' : 'none';
+    if(data.medicareSelected){
+      document.getElementById('sumMedicareNumber').textContent = data.medicareNumber || '-';
+      document.getElementById('sumMedicareIrn').textContent = data.irn || '-';
+      document.getElementById('sumMedicareColor').textContent = data.cardColor || '-';
+      document.getElementById('sumMedicareExpiry').textContent = data.cardExpiryText || '-';
+    }
+
+    const addrParts = [data.streetNumber, data.streetName].filter(Boolean).join(' ');
+    setAddress(addrParts, data.suburb, data.addrState, data.postcode);
+
+    // Bank Account Details
+    document.getElementById('sumAccountName').textContent = data.accountName || '-';
+    document.getElementById('sumBsb').textContent = data.bsb || '-';
+    document.getElementById('sumAccountNumber').textContent = data.accountNumber || '-';
+    const copState = { match:'Match', close:'Close', fail:'Fail' }[data.copResult] || 'Match';
+    setCopState(copState);
+    if(data.copResult === 'close'){
+      document.getElementById('copCloseNoteBody').textContent = data.accountName
+        ? `Entered name "${data.accountName}" differs from registered account name.`
+        : 'Entered name differs from registered account name.';
+    }
+  }
+
+  protoRealData.addEventListener('click', ()=>{ setActiveIdProto(protoRealData); applyRealData(); });
+  protoNoId.addEventListener('click', ()=>{ setActiveIdProto(protoNoId); applyNoId(); });
+  protoWithId.addEventListener('click', ()=>{ setActiveIdProto(protoWithId); applyWithId(); });
+  protoAllId.addEventListener('click', ()=>{ setActiveIdProto(protoAllId); applyAllId(); });
+
+  // default to Real Data if something has actually been entered this
+  // session, otherwise fall back to the "Not Provided" demo state
+  (function initIdProtoState(){
+    let hasRealData = false;
+    try{ hasRealData = Object.keys(JSON.parse(sessionStorage.getItem('payoutFormData')) || {}).length > 0; }catch(e){}
+    if(hasRealData){ setActiveIdProto(protoRealData); applyRealData(); }
+    else{ setActiveIdProto(protoNoId); applyNoId(); }
+  })();
+
+  // ---- submit confirmation flow ----
+  // In the real application, confirming here redirects to the dashboard.
+  // There's no dashboard in this prototype, so confirming just closes the
+  // modal and leaves the Summary page as-is rather than faking a result.
+  const submitModal = document.getElementById('submitModal');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+  submitBtn.addEventListener('click', ()=>{
+    submitModal.classList.add('open');
+  });
+  modalCancelBtn.addEventListener('click', ()=>{
+    submitModal.classList.remove('open');
+  });
+  submitModal.addEventListener('click', (e)=>{
+    if(e.target === submitModal) submitModal.classList.remove('open');
+  });
+  modalConfirmBtn.addEventListener('click', ()=>{
+    submitModal.classList.remove('open');
+  });
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

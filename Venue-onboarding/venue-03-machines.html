@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Machines</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --accent-tint:#e6f6f4;
+    --error:#e53e3e;
+    --success:#0d9488;
+    --success-bg:#effcfa;
+    --warn:#a15c07;
+    --warn-bg:#fdf6ec;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:32px;
+    --field-h:48px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{ max-width:1120px; margin:0 auto; padding:32px 24px 64px; display:flex; gap:44px; }
+
+  .config-nav{ width:240px; flex-shrink:0; }
+  .back-link{
+    display:inline-flex; align-items:center; gap:5px;
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:13.5px; font-weight:600; color:var(--text-secondary);
+    padding:0; margin-bottom:16px; text-decoration:underline;
+  }
+  .back-link svg{ color:var(--accent); }
+  .venue-name-nav{ font-size:18px; font-weight:700; line-height:1.25; }
+  .venue-org-nav{ font-size:13px; color:var(--text-secondary); margin-top:2px; }
+  .status-badge{
+    display:inline-flex; align-items:center; font-size:11.5px; font-weight:700;
+    padding:3px 9px; border-radius:20px; margin-top:10px;
+  }
+  .status-badge.active{ background:var(--success-bg); color:var(--success); border:1px solid #9bd7cf; }
+  .status-badge.draft{ background:var(--warn-bg); color:var(--warn); border:1px solid #e3bd85; }
+  .progress-text{ font-size:12.5px; color:var(--text-secondary); margin:14px 0 14px; }
+  .config-nav-list{ display:flex; flex-direction:column; gap:2px; }
+  .config-nav-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 12px; border-radius:8px;
+    font-size:14.5px; font-weight:600; color:var(--text-secondary);
+    text-decoration:none; cursor:pointer;
+  }
+  .config-nav-item:hover{ background:#f0f1f4; }
+  .config-nav-item.active{ background:var(--accent-tint); color:var(--text-primary); }
+  .nav-status{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+    border:2px solid #cccccc; display:flex; align-items:center; justify-content:center;
+  }
+  .nav-status svg{ display:none; color:#fff; }
+  .nav-status.done{ background:var(--accent); border-color:var(--accent); }
+  .nav-status.done svg{ display:block; }
+
+  .main{ flex:1; min-width:0; }
+  .title-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:8px; }
+  h1{ font-size:22px; font-weight:700; margin:0; }
+  .page-sub{ font-size:14px; color:var(--text-secondary); margin:0 0 22px; }
+  .content-card{ background:#fff; border:1px solid #e2e3ea; border-radius:10px; padding:26px; }
+
+  .machine-table{ display:flex; flex-direction:column; gap:2px; }
+  .machine-row{
+    display:grid; grid-template-columns:1.2fr 1fr 1fr auto; gap:12px; align-items:end;
+    padding:14px 0; border-bottom:1px solid #eceef2;
+  }
+  .machine-row:first-child{ padding-top:0; }
+  .col-label{ font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  input[type="text"], select{
+    height:var(--field-h); width:100%; padding:0 14px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:14.5px; color:var(--text-primary);
+    font-family:inherit; outline:none; transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus, select:focus{ border-color:var(--field-border-focus); box-shadow:0 0 0 1px var(--field-border-focus); }
+  select{ appearance:none; background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23718096" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center; }
+  .remove-btn{
+    height:var(--field-h); width:var(--field-h); flex-shrink:0;
+    background:none; border:1px solid var(--field-border); border-radius:var(--radius);
+    color:var(--error); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .remove-btn:hover{ background:#fff5f5; border-color:#f0bdb5; }
+
+  .add-row-btn{
+    display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+    background:none; border:1px dashed var(--field-border); border-radius:var(--radius);
+    padding:12px 16px; font-size:14.5px; font-weight:600; color:var(--text-primary);
+    cursor:pointer; font-family:inherit; width:100%; justify-content:center;
+  }
+  .add-row-btn:hover{ background:#f7fafc; border-color:#c7c9d6; }
+
+  .empty-hint{ font-size:14px; color:var(--text-secondary); padding:18px 0; text-align:center; }
+
+  .actions{ display:flex; align-items:center; gap:16px; margin-top:26px; }
+  button.btn-save{
+    border-radius:var(--radius); font-size:15.5px; font-weight:600; cursor:pointer; border:none;
+    font-family:inherit; height:48px; padding:0 28px; background:var(--accent); color:#fff;
+  }
+  button.btn-save:hover{ background:var(--accent-hover); }
+  button:focus-visible, .back-link:focus-visible, .config-nav-item:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; }
+
+  /* toaster, styled and behaving after Chakra UI's toaster.create() */
+  .toast-container{
+    position:fixed; right:24px; bottom:24px;
+    display:flex; flex-direction:column-reverse; gap:12px;
+    z-index:200; pointer-events:none;
+  }
+  .toast{
+    background:#fff; border-radius:8px; border:1px solid #eceef2;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    padding:16px 20px; font-size:14.5px; font-weight:400; color:var(--text-primary);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .18s ease, transform .18s ease;
+    max-width:min(90vw, 360px);
+  }
+  .toast.show{ opacity:1; transform:translateY(0); }
+
+  @media (max-width:900px){
+    .app{ flex-direction:column; gap:22px; }
+    .config-nav{ width:100%; }
+    .config-nav-list{ flex-direction:row; overflow-x:auto; gap:8px; padding-bottom:4px; }
+    .config-nav-item{ flex-shrink:0; white-space:nowrap; }
+  }
+  @media (max-width:640px){
+    .app{ padding:20px 16px 48px; }
+    .content-card{ padding:20px; }
+    .machine-row{ grid-template-columns:1fr; gap:10px; }
+    .col-label{ display:none; }
+    .remove-btn{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="config-nav">
+    <button type="button" class="back-link" id="backToListBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+      All venues
+    </button>
+    <div class="venue-name-nav" id="venueNameNav">Venue</div>
+    <div class="venue-org-nav" id="venueOrgNav"></div>
+    <span class="status-badge draft" id="statusBadge">Draft</span>
+    <p class="progress-text" id="progressText">0 of 6 sections configured</p>
+    <div class="config-nav-list" id="configNavList"></div>
+  </nav>
+
+  <main class="main">
+    <div class="title-row">
+      <h1>Machines</h1>
+    </div>
+    <p class="page-sub">The gaming machines this venue pays out on. This list populates the machine selector in the Collector app.</p>
+
+    <div class="content-card">
+      <div class="machine-row" id="columnLabels" style="border-bottom:none; padding-top:0; padding-bottom:0;">
+        <div class="col-label">Machine ID</div>
+        <div class="col-label">Type</div>
+        <div class="col-label">Status</div>
+        <div></div>
+      </div>
+      <div class="machine-table" id="machineTable"></div>
+      <div class="empty-hint" id="emptyHint" style="display:none">No machines added yet.</div>
+      <button type="button" class="add-row-btn" id="addRowBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add machine
+      </button>
+
+      <div class="actions">
+        <button type="button" class="btn-save" id="saveBtn">Save section</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = 'venueConfigData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  }
+  function markConfigured(key, done){
+    const data = loadStoredData();
+    const configured = data.configuredSections || {};
+    configured[key] = done;
+    saveStoredData({ configuredSections: configured });
+  }
+
+  const SECTIONS = [
+    { key:'details', label:'Details', href:'venue-02-details.html' },
+    { key:'machines', label:'Machines', href:'venue-03-machines.html' },
+    { key:'payoutControls', label:'Payout controls', href:'venue-04-payout-controls.html' },
+    { key:'identityVerification', label:'Identity verification', href:'venue-05-identity-verification.html' },
+    { key:'devicesBranding', label:'Devices & branding', href:'venue-06-devices-branding.html' },
+    { key:'teamRoles', label:'Team & roles', href:'venue-07-team-roles.html' }
+  ];
+
+  function renderNav(activeKey){
+    const data = loadStoredData();
+    const configured = data.configuredSections || {};
+    document.getElementById('venueNameNav').textContent = data.venueName || 'Untitled venue';
+    document.getElementById('venueOrgNav').textContent = data.orgName || '';
+    const badge = document.getElementById('statusBadge');
+    const isActive = data.status === 'Active';
+    badge.textContent = isActive ? 'Active' : 'Draft';
+    badge.className = 'status-badge ' + (isActive ? 'active' : 'draft');
+    const doneCount = SECTIONS.filter(s=> configured[s.key]).length;
+    document.getElementById('progressText').textContent = doneCount + ' of ' + SECTIONS.length + ' sections configured';
+    const list = document.getElementById('configNavList');
+    list.innerHTML = SECTIONS.map(s=>{
+      const done = !!configured[s.key];
+      const active = s.key === activeKey;
+      return '<a class="config-nav-item' + (active ? ' active' : '') + '" href="' + s.href + '">'
+        + '<span>' + s.label + '</span>'
+        + '<span class="nav-status' + (done ? ' done' : '') + '" aria-hidden="true">'
+        + '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>'
+        + '</span></a>';
+    }).join('');
+  }
+
+  document.getElementById('backToListBtn').addEventListener('click', ()=>{
+    window.location.href = 'venue-00-list.html';
+  });
+
+  const machineTable = document.getElementById('machineTable');
+  const emptyHint = document.getElementById('emptyHint');
+  const columnLabels = document.getElementById('columnLabels');
+
+  function updateEmptyState(){
+    const hasRows = machineTable.children.length > 0;
+    emptyHint.style.display = hasRows ? 'none' : 'block';
+    columnLabels.style.display = hasRows ? 'grid' : 'none';
+  }
+
+  function addRow(values){
+    const v = values || { machineId:'', type:'EGM', status:'Active' };
+    const row = document.createElement('div');
+    row.className = 'machine-row';
+    row.innerHTML =
+      '<div class="field"><input type="text" class="f-machineId" placeholder="e.g. EGM-021" value="' + (v.machineId || '').replace(/"/g,'&quot;') + '" /></div>'
+      + '<div class="field"><select class="f-type">'
+        + '<option' + (v.type==='EGM' ? ' selected' : '') + '>EGM</option>'
+        + '<option' + (v.type==='Table Game' ? ' selected' : '') + '>Table Game</option>'
+        + '<option' + (v.type==='Keno' ? ' selected' : '') + '>Keno</option>'
+      + '</select></div>'
+      + '<div class="field"><select class="f-status">'
+        + '<option' + (v.status==='Active' ? ' selected' : '') + '>Active</option>'
+        + '<option' + (v.status==='Inactive' ? ' selected' : '') + '>Inactive</option>'
+      + '</select></div>'
+      + '<button type="button" class="remove-btn" aria-label="Remove machine"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></button>';
+    row.querySelector('.remove-btn').addEventListener('click', ()=>{ row.remove(); updateEmptyState(); });
+    machineTable.appendChild(row);
+    updateEmptyState();
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click', ()=> addRow());
+
+  const saveBtn = document.getElementById('saveBtn');
+  const toastContainer = document.getElementById('toastContainer');
+
+  // mirrors Chakra UI's toaster.create({ description, type }) - each call
+  // pushes a new toast into the stack, newest nearest the corner, each
+  // dismissing itself independently after its own duration
+  function showToast(message){
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    requestAnimationFrame(()=> toast.classList.add('show'));
+    setTimeout(()=>{
+      toast.classList.remove('show');
+      toast.addEventListener('transitionend', ()=> toast.remove(), { once:true });
+    }, 5000);
+  }
+
+  saveBtn.addEventListener('click', ()=>{
+    const machines = [...machineTable.children].map(row=>({
+      machineId: row.querySelector('.f-machineId').value.trim(),
+      type: row.querySelector('.f-type').value,
+      status: row.querySelector('.f-status').value
+    })).filter(m=> m.machineId !== '');
+    saveStoredData({ machines });
+    markConfigured('machines', machines.length > 0);
+    renderNav('machines');
+    showToast('Machines saved successfully');
+  });
+
+  (function restore(){
+    const data = loadStoredData();
+    const machines = data.machines || [];
+    if(machines.length){
+      machines.forEach(m=> addRow(m));
+    } else {
+      addRow();
+    }
+    renderNav('machines');
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1040 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approve Payout #578 — All Clear — Palxi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7fafc; --panel:#ffffff; --surface:#ffffff;
+  --brand:#0f172a; --accent:#0f172a; --accent-h:#000000;
+  --al:rgba(13,148,136,.07); --ar:rgba(13,148,136,.16);
+  --t1:#0f172a; --t2:#334155; --tm:#475569;
+  --bd:#e2e8f0; --bdl:#edf2f7;
+  --ok:#059669; --ok-bg:#ecfdf5; --ok-b:#a7f3d0;
+  --wn:#b45309; --wn-bg:#fffbeb; --wn-b:#fde68a;
+  --er:#e53e3e; --er-bg:#fff5f5; --er-b:#fed7d7;
+  --in:#3182ce; --in-bg:#ebf8ff; --in-b:#bee3f8;
+  --r:6px; --rl:8px; --rx:10px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --spring:cubic-bezier(.32,.72,0,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);font-family:'Hanken Grotesk', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;color:var(--t1);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.page{max-width:840px;margin:0 auto;padding:24px 24px 80px}
+
+/* Scenario Switcher Bar */
+.scenario-nav{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:#fff; border:1px solid var(--bd); border-radius:6px;
+  padding:6px 8px; margin-bottom:28px; box-shadow:none;
+  flex-wrap:wrap;
+}
+.scenario-tag{font-size:13.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--brand); padding-left:12px}
+.scenario-links{display:flex; gap:4px; flex-wrap:wrap}
+.scenario-btn{
+  font-size:14.5px; font-weight:700; text-decoration:none; color:var(--t2);
+  padding:6px 14px; border-radius:6px; border:1px solid transparent;
+  transition:all .15s var(--ease);
+}
+.scenario-btn:hover{color:var(--t1); background:var(--surface)}
+.scenario-btn.active{color:var(--brand); background:transparent; border-color:var(--ar)}
+
+/* Header */
+.page-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:32px}
+.hd-left{display:flex;flex-direction:column;gap:6px}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--brand);background:transparent;border:1px solid var(--ar);border-radius:6px;padding:3px 10px;width:fit-content}
+.eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--brand)}
+h1{font-size:34px;font-weight:800;color:var(--t1);letter-spacing:-.02em}
+.meta{font-size:15.5px;color:var(--t2);font-weight:500}
+.status-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:20px;font-size:15.5px;font-weight:700;background:var(--in-bg);color:var(--in);border:1.5px solid var(--in-b);white-space:nowrap;align-self:flex-start}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--in);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* Toolbar */
+.toolbar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.btn-col{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;padding:6px 14px;border-radius:6px;color:var(--brand);background:transparent;border:1px solid var(--ar);transition:background .2s var(--ease),transform .15s var(--spring)}
+.btn-col:hover{background:rgba(13,148,136,.12);transform:translateY(-1px)}
+.col-icon{transition:transform .25s var(--spring)}
+.col-icon.flipped{transform:rotate(180deg)}
+
+/* Shell + accordion */
+.shell{background:rgba(255,255,255,.5);border:1px solid var(--bd);border-radius:var(--rx);padding:3px;margin-bottom:20px;box-shadow:none}
+.accordion{background:var(--panel);border-radius:calc(var(--rx) - 3px);overflow:hidden}
+.acc-item+.acc-item{border-top:1px solid var(--bdl)}
+
+.acc-trigger{width:100%;display:flex;align-items:center;gap:14px;background:none;border:none;cursor:pointer;padding:17px 22px;font-family:inherit;text-align:left;transition:background .15s var(--ease)}
+.acc-trigger:hover{background:var(--surface)}
+.acc-item.open .acc-trigger{background:var(--surface)}
+
+.acc-ic{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;color:#0f172a}
+.acc-item.open .acc-ic{background:transparent;color:#0f172a}
+.acc-ttl{font-size:18.5px;font-weight:800;color:var(--t1);flex:1;letter-spacing:-.01em}
+.acc-chv{color:var(--tm);transition:transform .25s var(--spring);flex-shrink:0}
+.acc-item.open .acc-chv{transform:rotate(180deg);color:var(--t1)}
+
+.acc-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--spring)}
+.acc-item.open .acc-panel{grid-template-rows:1fr}
+.acc-inner{overflow:hidden}
+.acc-body{padding:4px 22px 20px}
+
+/* Detail grid */
+.detail-g{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.detail-g-3col{display:grid;grid-template-columns:1.2fr 0.9fr 1fr;gap:0}
+.di{padding:11px 14px;border-bottom:1px solid var(--bdl);display:flex;flex-direction:column;gap:3px}
+.di:nth-last-child(-n+2){border-bottom:none}
+.di:nth-child(odd){border-right:1px solid var(--bdl)}
+.detail-g-3col .di{border-bottom:none;border-right:1px solid var(--bdl)}
+.detail-g-3col .di:last-child{border-right:none}
+.di-lbl{font-size:14.5px;font-weight:700;color:var(--tm)}
+.di-val{font-size:16px;font-weight:500;color:var(--t1)}
+.di-val.mono{font-family:'JetBrains Mono', monospace;font-size:15.5px;letter-spacing:.02em}
+.no-sep .di{border:none!important}
+
+/* Minimalist Resolution Component */
+.res-panel { display: flex; flex-direction: column; gap: 4px; padding: 4px 14px; margin: 4px 0; }
+
+/* Header */
+.res-header { display: flex; align-items: flex-start; gap: 16px; }
+.res-htext { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.res-htext-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: space-between; margin-bottom: 16px; }
+.res-htext h4 { margin: 0; font-size:17.5px; font-weight: 700; color: var(--t1); letter-spacing: -0.01em; }
+.res-htext p { margin: 0; font-size:16.5px; color: var(--t2); line-height: 1.6; }
+.res-badge { padding: 3px 8px; border-radius: 4px; font-size:13px; font-weight: 700;  letter-spacing: 0.06em; }
+.res-panel.mismatch .res-badge { background: var(--wn-bg); color: var(--wn); }
+.res-panel.match .res-badge { background: var(--ok-bg); color: var(--ok); }
+
+/* Body (String diff grid) */
+.res-body { padding: 0; }
+.res-diff-table { display: flex; flex-direction: column; gap: 16px; padding-left: 0; margin-left: 0; margin-top: 0; margin-bottom: 20px; }
+.res-row { display: flex; align-items: center; justify-content: flex-start; gap: 32px; }
+.res-lbl { font-size: 12.5px; font-weight: 700; color: var(--t3, #64748b); letter-spacing: 0.05em;  width: 220px; flex-shrink: 0; }
+.res-val { font-size: 15.5px; font-weight: 700; color: var(--t1, #0f172a); }
+.res-panel.mismatch .res-val.error { color: var(--wn); }
+
+/* Footer Action */
+.res-footer { padding: 0; margin-top: 8px; margin-left: 0; }
+.res-checkbox { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
+.res-checkbox input { width: 18px; height: 18px; accent-color: #000; margin-top: 2px; }
+.res-checkbox span { font-size:16.5px; font-weight: 600; color: var(--t1); line-height: 1.6; }
+
+/* Identity verification row list */
+.idv-row-list{
+  display:flex; flex-direction:column;
+  margin-bottom:20px;
+}
+.idv-row-item{display:flex; align-items:center; justify-content:space-between; padding:11px 14px}
+.idv-row-item:last-child{}
+.idv-row-lbl{font-size:16.5px; font-weight:700; color:var(--t1)}
+
+/* AML Card */
+.aml-c{margin-bottom:0}
+.aml-c:last-child{}
+  button.aml-h { cursor:pointer; width:100%; text-align:left; transition:background 0.2s var(--ease); border:none; background:transparent; font-family:inherit; }
+  button.aml-h:focus-visible { outline:2px solid var(--ok); outline-offset:-2px; border-radius:4px; }
+  .aml-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px}
+.aml-info{display:flex;align-items:center;gap:12px}
+.aml-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--t3)}
+.aml-dot.ok{background:var(--ok)}
+.aml-t{font-size:16px;font-weight:700}
+.aml-t.ok{color:var(--ok)}
+.aml-s{font-size:14.5px;color:var(--t2);margin-top:1px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:14.5px;font-weight:700;border:1.5px solid}
+.badge.pass{color:var(--ok);background:transparent;border-color:var(--ok)}
+.badge.warn{color:var(--wn);background:transparent;border-color:var(--wn)}
+.badge.fail{color:var(--er);background:transparent;border-color:var(--er)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:14.5px;font-weight:700;border:1.5px solid}
+.badge.pass{color:var(--ok);background:transparent;border-color:var(--ok)}
+
+/* Section head */
+.sec-h{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--tm);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-h::after{content:'';flex:1;height:1px;background:var(--bdl)}
+
+/* Action Shell */
+.action-shell{background:rgba(255,255,255,.5);border:1px solid var(--bd);border-radius:var(--rx);padding:3px;box-shadow:none}
+.action-card{background:var(--panel);border-radius:calc(var(--rx) - 3px);padding:28px 28px 24px}
+.action-ttl{font-size:18px;font-weight:800;color:var(--t1);padding-bottom:12px;border-bottom:1px solid var(--bdl);margin-bottom:16px}
+.action-sub-panel{margin-bottom:36px}
+.action-sub-ttl{font-size:13.5px;font-weight:800;letter-spacing:.08em;color:var(--brand);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+
+/* Risk Level Segmented Track */
+.risk-sec{margin-bottom:36px}
+.risk-lbl-title{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:8px;display:block}
+.risk-lbl-title .req{color:var(--er)}
+
+.risk-pill-track{
+  display:flex; align-items:center; background:#edf0f5; border:1px solid #dbe0ea;
+  border-radius:6px; padding:4px; gap:4px; width:fit-content; min-width:320px; max-width:380px;
+}
+.risk-pill-btn{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+  height:40px; border-radius:6px; border:none; background:transparent;
+  font-family:inherit; font-size:16px; font-weight:700; color:#485268;
+  cursor:pointer; transition:all .2s var(--ease); padding:0 16px;
+}
+.risk-pill-btn:hover:not(.active){color:var(--t1); background:rgba(255,255,255,.4)}
+.risk-pill-btn .risk-dot{width:7px; height:7px; border-radius:50%; background:#b0b8c6; transition:background-color .2s}
+
+.risk-pill-btn.active{box-shadow:none}
+.risk-pill-btn.active.low{background:#ecfdf5; border:1.5px solid #a7f3d0; color:#047857; box-shadow:0 2px 8px rgba(16,185,129,.12)}
+.risk-pill-btn.active.low .risk-dot{background:#10b981}
+.risk-pill-btn.active.medium{background:#fffbeb; border:1.5px solid #fde68a; color:#b45309; box-shadow:0 2px 8px rgba(245,158,11,.12)}
+.risk-pill-btn.active.medium .risk-dot{background:#f59e0b}
+.risk-pill-btn.active.high{background:#fef2f2; border:1.5px solid #fecaca; color:#b91c1c; box-shadow:0 2px 8px rgba(239,68,68,.12)}
+.risk-pill-btn.active.high .risk-dot{background:#ef4444}
+
+/* AML Audit Summary Section */
+.aml-summary-sec{margin-top:36px}
+.aml-summary-hd{font-size:15px;font-weight:800;color:var(--brand);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.aml-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.aml-sum-card{
+  background:var(--bg); border:none; border-radius:var(--r);
+  padding:16px 20px; display:flex; flex-direction:column; gap:8px;
+  transition:background .2s var(--ease); box-shadow:none;
+}
+.aml-sum-card:hover{background:var(--bdl)}
+.aml-sum-card-hd{display:flex;align-items:center;justify-content:space-between}
+.aml-sum-label{font-size:13.5px;font-weight:800;letter-spacing:.06em;color:var(--tm)}
+.aml-sum-card-body{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+
+.aml-sum-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; border-radius:6px; font-size:14.5px; font-weight:700;
+  border:1.5px solid; transition:all .2s var(--ease);
+}
+.aml-sum-badge.unres{color:#b45309; background:#fffbeb; border-color:#fde68a}
+.aml-sum-badge.res{color:#047857; background:#ecfdf5; border-color:#a7f3d0}
+.aml-sum-badge.blocked{color:#b91c1c; background:#fef2f2; border-color:#fecaca}
+.aml-sum-badge.clear{color:#047857; background:#ecfdf5; border-color:#a7f3d0}
+
+.aml-sum-sub{font-size:14px;color:var(--t2);font-weight:500;line-height:1.4}
+
+.field{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;width:100%}
+.field label{font-size:14px;font-weight:800;letter-spacing:.06em;color:var(--t1);display:block}
+textarea{width:100%;min-height:88px;padding:12px 16px;border-radius:var(--r);border:1.5px solid var(--bd);background:#fff;font-size:16px;color:var(--t1);font-family:inherit;outline:none;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);resize:vertical;line-height:1.5;display:block}
+textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3.5px var(--al)}
+textarea::placeholder{color:var(--tm);font-weight:400}
+
+.confirm-box{display:flex;align-items:flex-start;gap:14px;padding:0;background:transparent;border:none;margin-bottom:32px;cursor:pointer;transition:opacity .2s var(--ease)}
+.confirm-box:hover{opacity:0.8}
+.confirm-box.checked{background:transparent;box-shadow:none}
+.confirm-box input[type=checkbox]{width:20px;height:20px;accent-color:#000;cursor:pointer;flex-shrink:0;margin-top:2px}
+.confirm-box-txt{display:flex;flex-direction:column;gap:4px;flex:1}
+.attest-badge{font-size:13.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--brand);display:inline-flex;align-items:center;gap:6px;margin-bottom:2px}
+.attest-desc{font-size:16px;color:var(--t1);line-height:1.55;font-weight:500}
+
+.btn-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:36px;padding-top:24px;border-top:1px solid var(--bdl)}
+button{font-family:inherit}
+.btn-secondary{height:44px;padding:0 26px;border-radius:6px;font-size:17px;font-weight:600;cursor:pointer;background:#fff;border:1px solid #e2e8f0;color:#1a202c;box-shadow:none;transition:all .15s var(--ease)}
+.btn-secondary:hover{background:#f4f4f4;border-color:#e2e8f0;color:#1a202c;transform:none}
+.btn-secondary.danger{border-color:#fca5a5;color:#ef4444;background:#fff;}
+.btn-secondary.danger:hover{background:#fef2f2;border-color:#f87171;color:#ef4444;transform:none;}
+
+.btn-primary{height:44px;padding:0 28px;border-radius:6px;font-size:17px;font-weight:600;cursor:pointer;background:#0d9488;color:#fff;border:none;min-width:220px;max-width:280px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:none;transition:all .2s var(--ease)}
+.btn-primary:hover:not(:disabled){background:#0b7a6f;transform:none;box-shadow:none}
+.btn-primary:active:not(:disabled){background:#095e56;transform:none}
+.btn-primary.danger{background:#ef4444;color:#fff;border:none;}
+.btn-primary.danger:hover:not(:disabled){background:#dc2626;}
+
+.btn-primary:disabled{background:#0d9488;opacity:0.4;cursor:not-allowed;border:none;color:#fff}
+.btn-primary:disabled .btn-ic{background:#e2e8f0 !important; color:#64748b !important}
+.btn-primary.blocked{background:#dc2626 !important; border-color:#b91c1c !important; color:#fff !important; box-shadow:0 4px 14px rgba(220,38,38,.25) !important}
+.person-av{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;font-weight:800;box-shadow:none}
+.btn-ic{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;transition:transform .2s var(--spring)}
+.btn-primary:hover:not(:disabled) .btn-ic{transform:translateX(3px)}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:640px){
+  .page{padding:16px 16px 60px}
+  .scenario-nav{flex-direction:column; align-items:flex-start}
+  h1{font-size:26.5px}
+  .detail-g{grid-template-columns:1fr}
+  .btn-row{flex-direction:column}
+  .btn-primary{height:44px;padding:0 28px;border-radius:6px;font-size:17px;font-weight:600;cursor:pointer;background:#0d9488;color:#fff;border:none;min-width:220px;max-width:280px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:none;transition:all .2s var(--ease)}
+  .aml-summary-bar{grid-template-columns:1fr}
+  .name-comp-grid{grid-template-columns:1fr}
+  .risk-pill-track{width:100%;min-width:0;max-width:none}
+}
+/* Executive Summary Block */
+.exec-summary-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin-bottom: 36px; padding-bottom: 32px; border-bottom: 1px solid var(--bdl);
+}
+.exec-card {
+  background: var(--bg); border-radius: var(--r); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.exec-lbl {
+  font-size:13px; font-weight: 800; 
+  letter-spacing: .08em; color: var(--tm);
+}
+.exec-val {
+  font-size:16.5px; font-weight: 700; color: var(--t1);
+  display: flex; align-items: center; gap: 6px;
+}
+.exec-val.ok svg { color: #0f172a; }
+.exec-val.warn svg { color: var(--wn); }
+.exec-val.danger svg { color: var(--er); }
+
+/* Result Pills (Verification History - Collector Specification) */
+.pill{font-size:13px;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-block;white-space:nowrap;}
+.pill.pass{color:var(--success, #0d9488);background:#effcfa;border:1px solid #9bd7cf;}
+.pill.fail{color:var(--error, #e53e3e);background:var(--error-bg, #fff5f5);border:1px solid #f0b3b3;}
+.pill.skipped, .pill.warn{color:var(--warn, #a15c07);background:#fdf6ec;border:1px solid #e3bd85;}
+
+/* IDV History Table */
+.idv-t{width:100%;border-collapse:collapse;font-size:16px}
+.idv-t th{text-align:left;padding:9px 14px;font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--tm);}
+.idv-t td{padding:11px 14px;vertical-align:middle;color:var(--t1);font-weight:500}
+.idv-t tr:last-child td{}
+
+/* Person / Collector Row */
+.person-r{display:flex;align-items:center;gap:14px}
+.person-av{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;font-weight:800;box-shadow:none}
+.person-n{font-size:17px;font-weight:700;color:var(--t1)}
+.person-s{font-size:16px;color:var(--t2);margin-top:2px}
+span.person-s{color:var(--t1);font-size:16px;line-height:1.5}
+
+
+      /* === Unified Packed Control (Segmented) === */
+  .seg-track, .risk-selector{display:flex;align-items:center;width:100%;margin-top:4px;margin-bottom:0}
+  
+  .seg-btn, .risk-option{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;color:var(--t1);transition:all .18s var(--ease);position:relative}
+  
+  /* Collapse overlapping borders */
+  .seg-btn + .seg-btn, .risk-option + .risk-option { margin-left: -1px; }
+  
+  /* Outer rounding */
+  .seg-btn:first-child, .risk-option:first-child { border-top-left-radius:8px; border-bottom-left-radius:8px; }
+  .seg-btn:last-child, .risk-option:last-child { border-top-right-radius:8px; border-bottom-right-radius:8px; }
+  
+  .seg-btn:hover:not(.selected), .risk-option:hover:not(.selected) { background:#f8fafc; }
+  
+  .risk-option .r-pip{width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex-shrink:0;transition:background .18s ease}
+  .risk-option .r-label{font-size:15px;font-weight:700}
+  
+  /* Active states bring the element forward to overlay borders */
+  .seg-btn.selected, .seg-btn.active { border-color:var(--brand); background:var(--brand); color:#fff; z-index:1; font-weight:700; }
+  
+  .risk-option.selected { z-index:1; font-weight:700; }
+  .risk-option.selected.low { border-color:var(--ok); background:transparent; color:var(--ok); }
+  .risk-option.selected.low .r-pip { background:var(--ok); }
+
+  .risk-option.selected.medium { border-color:var(--wn); background:transparent; color:var(--wn); }
+  .risk-option.selected.medium .r-pip { background:var(--wn); }
+
+  .risk-option.selected.high { border-color:var(--er); background:transparent; color:var(--er); }
+  .risk-option.selected.high .r-pip { background:var(--er); }
+
+
+/* Modal backdrop base (hidden by default, shown via .active or .show) */
+.modal-backdrop {
+  background: rgba(18, 19, 43, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop.show .modal-container,
+.modal-backdrop.active .modal-container {
+  transform: scale(1) translateY(0);
+}
+
+/* Minimal Cancel Confirmation Modal (theme.minimal) */
+.modal-backdrop#cancelConfirmModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 19, 43, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop#cancelConfirmModal .cancel-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 30px -10px rgba(18, 19, 43, 0.15);
+  width: 100%;
+  max-width: 420px;
+  padding: 24px 28px;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-backdrop#cancelConfirmModal.active .cancel-card {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal .cancel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn:hover {
+  color: #1e293b;
+  transform: scale(1.1);
+}
+.modal-backdrop#cancelConfirmModal .cancel-body {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: 1px solid #ef4444;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+
+/* ── Docket View Button ── */
+.docket-btn-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--b2,#e2e8f0)}
+.docket-lbl-wrap{display:flex;flex-direction:column;gap:3px}
+.docket-lbl{font-size:16px;font-weight:600;color:var(--t1,#0f172a)}
+.docket-sub{font-size:14px;color:var(--t3,#64748b)}
+.btn-view-docket{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 20px;border-radius:6px;border:1px solid var(--ok,#059669);background:#fff;color:var(--ok,#059669);font-size:15.5px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s,border-color 0.15s,color 0.15s}
+.btn-view-docket:hover{background:var(--ok-bg,#ecfdf5);border-color:var(--ok,#059669)}
+/* ── Docket Lightbox ── */
+#docketModal{position:fixed;inset:0;z-index:2000;background:rgba(18,19,43,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:opacity 0.25s ease,visibility 0.25s ease}
+#docketModal.active{opacity:1;visibility:visible}
+.docket-modal-card{background:#fff;border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.25);max-width:520px;width:100%;overflow:hidden;transform:scale(0.95) translateY(12px);transition:transform 0.25s ease;display:flex;flex-direction:column;max-height:calc(100vh - 48px)}
+#docketModal.active .docket-modal-card{transform:scale(1) translateY(0)}
+.docket-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;flex-shrink:0}
+.docket-modal-title{font-size:17px;font-weight:700;color:#0f172a}
+.docket-modal-close{background:transparent;border:none;cursor:pointer;color:#64748b;padding:4px;border-radius:6px;display:flex;align-items:center}
+.docket-modal-close:hover{color:#0f172a}
+.docket-modal-body{padding:16px;text-align:center;overflow:hidden;flex:1;display:flex;align-items:center;justify-content:center}
+.docket-modal-body img{max-width:100%;max-height:calc(100vh - 160px);width:auto;height:auto;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;display:block}
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Scenario Switcher Bar -->
+  <div class="scenario-nav">
+    <span class="scenario-tag">Scenario Presets</span>
+    
+    
+    <div class="scenario-links">
+      <a href="01-both-hits.html" class="scenario-btn ">1. Dual Hit</a>
+      <a href="02-single-hit.html" class="scenario-btn ">2. Single Hit</a>
+      <a href="04-name-mismatch.html" class="scenario-btn ">3. Name Mismatch</a>
+      <a href="03-no-hits.html" class="scenario-btn active">4. All Clear</a>
+      <a href="05-manual-kyc.html" class="scenario-btn ">5. Manual KYC</a>
+      <a href="06-no-id.html" class="scenario-btn ">6. No ID</a>
+      <a href="07-multi-id-pass.html" class="scenario-btn ">7. Multi-ID Pass</a>
+      <a href="08-multi-id-mixed.html" class="scenario-btn ">8. Multi-ID Mixed</a>
+    </div>
+  </div>
+
+  <header class="page-hd reveal">
+    <div class="hd-left">
+      <h1>Payout #578</h1>
+      <p class="meta">14 July 2026 &nbsp;·&nbsp; 7:09 am &nbsp;·&nbsp; Riverside RSL Club</p>
+    </div>
+    <div class="status-pill">Awaiting Approval</div>
+  </header>
+
+  <div class="toolbar reveal">
+    <button class="btn-col" id="collapseBtn" type="button">
+      <svg id="collapseIcon" class="col-icon flipped" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 15l7-7 7 7"/></svg>
+      <span id="collapseLabel">Expand All</span>
+    </button>
+  </div>
+
+  <div class="shell reveal">
+    <div class="accordion">
+
+      <!-- Payout Details -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+          <span class="acc-ttl">Payout Details</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g no-sep">
+            <div class="di"><span class="di-lbl">Cash Amount</span><span class="di-val">AUD 500.00</span></div>
+            <div class="di"><span class="di-lbl">Transfer Amount</span><span class="di-val">AUD 1,000.00</span></div>
+            <div class="di"><span class="di-lbl">Internal Txn ID</span><span class="di-val mono">213</span></div>
+            <div class="di"><span class="di-lbl">Machine ID</span><span class="di-val mono">EGM-002</span></div>
+            <div class="di"><span class="di-lbl">Venue</span><span class="di-val">Riverside RSL Club</span></div>
+            <div class="di"><span class="di-lbl">Payout Type</span><span class="di-val">EGM</span></div>
+          </div>
+          <div class="docket-btn-row">
+            <div class="docket-lbl-wrap">
+              <span class="docket-lbl">Payout Docket</span>
+              <span class="docket-sub">Submitted docket image from collector</span>
+            </div>
+            <button type="button" class="btn-view-docket" onclick="openDocketModal()">
+              View Docket
+            </button>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Member ID -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a7.5 7.5 0 0113 0"/></svg></span>
+          <span class="acc-ttl">Member Identification</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g no-sep">
+            <div class="di"><span class="di-lbl">Membership number</span><span class="di-val mono">3e23e</span></div>
+            <div class="di"><span class="di-lbl">Email</span><span class="di-val">stacy@gmail.com</span></div>
+            <div class="di"><span class="di-lbl">Full Name</span><span class="di-val">STACY TESTTWENTY</span></div>
+            <div class="di"><span class="di-lbl">Document Type</span><span class="di-val">Passport</span></div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Bank Account -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+          <span class="acc-ttl">Bank Account Details</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="detail-g-3col">
+            <div class="di" style="border: none;"><span class="di-lbl">Account Name</span><span class="di-val">Stacy Test-Twenty</span></div>
+            <div class="di" style="border: none;"><span class="di-lbl">BSB Number</span><span class="di-val mono">321-312</span></div>
+            <div class="di" style="border: none;"><span class="di-lbl">Account Number</span><span class="di-val mono">213-123-123</span></div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Name Verification Accordion -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></span>
+          <span class="acc-ttl">Name Verification</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="res-panel match">
+            <div class="res-header">
+              <div class="res-htext">
+                  <div class="res-htext-row">
+                    <h4>Name comparison</h4>
+                    <span class="pill pass">Match</span>
+                  </div>
+                </div>
+              
+            </div>
+
+            <div class="res-body">
+              <div class="res-diff-table">
+                <div class="res-row">
+                  <span class="res-lbl">Name on ID Document</span>
+                  <span class="res-val">STACY TESTTWENTY</span>
+                </div>
+                <div class="res-row">
+                  <span class="res-lbl">Provided Bank Account Name</span>
+                  <span class="res-val">Stacy Test-Twenty</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div></div>
+      </div>
+
+      <!-- Verification Results -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          <span class="acc-ttl">Verification Results</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="sec-h">Identity verification</div>
+          
+          <div class="idv-row-list">
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">Government ID</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">ID Validation</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">Name match</span>
+              <span class="pill pass">Pass</span>
+            </div>
+            <div class="idv-row-item">
+              <span class="idv-row-lbl">DOB Match</span>
+              <span class="pill pass">Pass</span>
+            </div>
+          </div>
+
+          <div class="sec-h">AML Screening</div>
+          <div class="aml-c">
+            <div class="aml-h" style="cursor:default"><div class="aml-info"><span class="aml-dot"></span><div><div class="aml-t" style="display:inline-flex;align-items:center;gap:0">PEP - No Hits Detected</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="pill pass">Clear</span></div></div>
+          </div>
+          <div class="aml-c">
+            <div class="aml-h" style="cursor:default"><div class="aml-info"><span class="aml-dot"></span><div><div class="aml-t" style="display:inline-flex;align-items:center;gap:0">Sanctions - No Hits Detected</div></div></div><div style="display:flex;align-items:center;gap:8px"><span class="pill pass">Clear</span></div></div>
+          </div>
+        </div></div></div>
+      </div>
+
+
+      <!-- IDV History -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/></svg></span>
+          <span class="acc-ttl">Identity verification (IDV) History</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <table class="idv-t">
+            <thead><tr><th>Country + Document + IDV</th><th>Date &amp; time</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Australia Passport IDV</td>
+                <td>14 July 2026, 11:41 am</td>
+                <td><span class="pill pass">Pass</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div></div></div>
+      </div>
+
+      <!-- Collector -->
+      <div class="acc-item" data-acc>
+        <button class="acc-trigger">
+          <span class="acc-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+          <span class="acc-ttl">Collector</span>
+          <svg class="acc-chv" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-body">
+          <div class="person-r">
+            <div class="person-av">MS</div>
+            <div><div class="person-n">M.Santos</div><div class="person-s">14/07/2026 07:12am</div></div>
+          </div>
+        </div></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Action Shell -->
+  <div class="action-shell reveal">
+    <div class="action-card">
+      <div class="action-ttl">
+        <span>Approval Determination</span>
+      </div>
+
+      <!-- Audit & Risk Sub-Panel -->
+      <div class="action-sub-panel">
+        <div class="action-sub-ttl">
+          <span>Risk &amp; compliance verification</span>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="detail-g no-sep" style="grid-template-columns: 1fr; margin-bottom: 24px; background: transparent">
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;">
+            <span class="di-lbl">Identity verification</span>
+            <span class="di-val" style="color: var(--ok); font-weight: 700;">Fully Verified</span>
+          </div>
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;">
+            <span class="di-lbl">Name match</span>
+            <span class="di-val" style="color: var(--ok); font-weight: 700;">Exact Match</span>
+          </div>
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 
+          <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: none; border-right: none;">
+            <span class="di-lbl">Confirmation of payee</span>
+            <span class="di-val" style="color: var(--er); font-weight: 700;">No Match</span>
+          </div>
+        </div>
+
+
+        <!-- AML Resolution Summary Section -->
+        <div class="aml-summary-sec">
+          <div class="aml-summary-hd">
+            <span>AML &amp; compliance audit trail</span>
+          </div>
+          <div class="detail-g no-sep" style="grid-template-columns: 1fr;">
+            <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-right: none;" id="pepSumCard">
+              <div style="display: flex; flex-direction: column; gap: 3px; max-width: 70%;">
+                <span class="di-lbl">PEP match status</span>
+              </div>
+              <span class="pill pass" id="pepSumStatus" style="width:fit-content; margin-top:2px; font-weight:700" style="width: fit-content; font-weight: 700; flex-shrink: 0;">
+                <span>Clear
+              </span>
+              </span>
+            </div>
+            <div class="di" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: none; border-right: none;" id="sancSumCard">
+              <div style="display: flex; flex-direction: column; gap: 3px; max-width: 70%;">
+                <span class="di-lbl">Sanctions match status</span>
+              </div>
+              <span class="pill pass" id="sancSumStatus" style="width:fit-content; margin-top:2px; font-weight:700" style="width: fit-content; font-weight: 700; flex-shrink: 0;">
+                <span>Clear
+              </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approver Sign-Off Sub-Panel -->
+      <div class="action-sub-panel" style="margin-bottom:0">
+
+
+        <!-- General Approver Note -->
+        <div class="field">
+          <label for="approvalNote">Approver Note (Optional)</label>
+          <textarea id="approvalNote" rows="3" placeholder="Add an overall approval note or rationale for audit log..."></textarea>
+        </div>
+
+                <!-- Risk Level Segmented Track -->
+        <div class="risk-sec">
+          <span class="risk-lbl-title">Risk Level Assessment <span class="req">*</span></span>
+          <div class="risk-selector">
+            <button type="button" class="risk-option low" data-risk="Low" onclick="setRisk('Low')">
+              <span class="r-pip"></span><span class="r-label">Low</span>
+            </button>
+            <button type="button" class="risk-option medium" data-risk="Medium" onclick="setRisk('Medium')">
+              <span class="r-pip"></span><span class="r-label">Medium</span>
+            </button>
+            <button type="button" class="risk-option high" data-risk="High" onclick="setRisk('High')">
+              <span class="r-pip"></span><span class="r-label">High</span>
+            </button>
+          </div>
+          <input type="hidden" id="riskLevel" value="">
+        </div>
+
+        <!-- Confirm Checkbox Card -->
+        <label class="confirm-box" id="confirmCard" for="approvalConfirm">
+          <input type="checkbox" id="approvalConfirm" onchange="checkState()">
+          <div class="confirm-box-txt">
+            <span class="attest-desc">I confirm this transaction is ready for payment</span>
+          </div>
+        </label>
+
+        <div class="btn-row">
+          <button type="button" class="btn-secondary">Back</button>
+          <div style="display:flex; gap:12px;">
+            <button type="button" class="btn-secondary danger" onclick="openCancelConfirmModal()">Cancel</button>
+            <button type="button" class="btn-primary" id="approveBtn" disabled>
+            <span id="approveBtnText">Approve Payout</span>
+          </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('[data-acc]').forEach(item => {
+    item.querySelector('.acc-trigger').addEventListener('click', () => {
+      item.classList.toggle('open'); syncBtn();
+    });
+  });
+  let expanded = false;
+  const colBtn = document.getElementById('collapseBtn');
+  const colLbl = document.getElementById('collapseLabel');
+  const colIc  = document.getElementById('collapseIcon');
+  colBtn.addEventListener('click', () => {
+    expanded = !expanded;
+    document.querySelectorAll('[data-acc]').forEach(i => i.classList.toggle('open', expanded));
+    colLbl.textContent = expanded ? 'Collapse All' : 'Expand All';
+    colIc.classList.toggle('flipped', !expanded);
+  });
+  function syncBtn() {
+    const open = [...document.querySelectorAll('[data-acc]')].filter(i => i.classList.contains('open')).length;
+    expanded = open > 0;
+    colLbl.textContent = expanded ? 'Collapse All' : 'Expand All';
+    colIc.classList.toggle('flipped', !expanded);
+  }
+
+  function setRisk(level) {
+    document.getElementById('riskLevel').value = level;
+    document.querySelectorAll('.risk-option').forEach(btn => {
+      btn.classList.remove('selected');
+      if (btn.dataset.risk === level) {
+        btn.classList.add('selected');
+      }
+    });
+    checkState();
+  }
+
+  function checkState() {
+    const riskLevel = document.getElementById('riskLevel').value;
+    const confirmed = document.getElementById('approvalConfirm').checked;
+
+    const confirmCard = document.getElementById('confirmCard');
+    if (confirmCard) confirmCard.classList.toggle('checked', confirmed);
+
+    const btn = document.getElementById('approveBtn');
+    btn.disabled = !(riskLevel && confirmed);
+  }
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  function openPepModal() {
+    document.getElementById('pepModal').classList.add('active');
+  }
+  function closePepModal() {
+    document.getElementById('pepModal').classList.remove('active');
+  }
+  function openSancModal() {
+    document.getElementById('sancModal').classList.add('active');
+  }
+  function closeSancModal() {
+    document.getElementById('sancModal').classList.remove('active');
+  }
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => {
+      if (e.target === bd) bd.classList.remove('active');
+    });
+  });
+</script>
+<div class="modal-backdrop" id="pepModal" tabindex="-1">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div><div class="modal-title">PEP Screening Result</div></div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closePepModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="scr-sum-card" style="margin-top:0">
+          <div class="scr-sum-ttl">Screening Details</div>
+          <div class="scr-sum-list">
+            <div class="scr-sum-item">
+              <svg class="scr-ic ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <div>No PEP matches found for STACY K TESTTWENTY</div>
+            </div>
+            <div class="scr-sum-item">
+              <svg class="scr-ic ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <div>Screened against global PEP databases (Dow Jones, World-Check)</div>
+            </div>
+          </div>
+          <details class="audit-details">
+            <summary class="audit-summary">
+              <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              <span>Show Audit Details</span>
+            </summary>
+            <div class="audit-panel">
+              <div class="audit-grid">
+                <span class="audit-lbl">Case ID</span><span class="audit-val">ca_searchid_testing</span>
+                <span class="audit-lbl">Search reference</span><span class="audit-val">Fr57rftufTKUYTF</span>
+                <span class="audit-lbl">Check source (PEP)</span><span class="audit-val">c6 intelligence</span>
+                <span class="audit-lbl">Checked</span><span class="audit-val">2026-07-23T17:51:44.370Z</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn-secondary" style="height:42px" onclick="closePepModal()">Close</button>
+      </div>
+    </div>
+  </div>
+<div class="modal-backdrop" id="sancModal" tabindex="-1">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div><div class="modal-title">Sanctions Screening Result</div></div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeSancModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="scr-sum-card" style="margin-top:0">
+          <div class="scr-sum-ttl">Screening Details</div>
+          <div class="scr-sum-list">
+            <div class="scr-sum-item">
+              <svg class="scr-ic ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <div>No Sanctions matches found for STACY K TESTTWENTY</div>
+            </div>
+            <div class="scr-sum-item">
+              <svg class="scr-ic ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <div>Screened against global sanctions lists (OFAC, UN, EU, HMT)</div>
+            </div>
+          </div>
+          <details class="audit-details">
+            <summary class="audit-summary">
+              <svg class="audit-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              <span>Show Audit Details</span>
+            </summary>
+            <div class="audit-panel">
+              <div class="audit-grid">
+                <span class="audit-lbl">Case ID</span><span class="audit-val">ca_searchid_testing</span>
+                <span class="audit-lbl">Search reference</span><span class="audit-val">Fr57rftufTKUYTF</span>
+                <span class="audit-lbl">Check source (Sanctions)</span><span class="audit-val">c6 intelligence</span>
+                <span class="audit-lbl">Checked</span><span class="audit-val">2026-07-23T17:51:44.370Z</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button type="button" class="btn-secondary" style="height:42px" onclick="closeSancModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel Payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep Payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel Payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+  function executeCancel() {
+    closeCancelConfirmModal();
+    alert('Payout has been cancelled.');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+
+<div id="docketModal" onclick="if(event.target===this)closeDocketModal()">
+  <div class="docket-modal-card">
+    <div class="docket-modal-header">
+      <span class="docket-modal-title">Payout Docket</span>
+      <button class="docket-modal-close" onclick="closeDocketModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="docket-modal-body">
+      <img src="../Collector-v4/dummy-docket.png" alt="Payout Docket" />
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDocketModal() {
+    document.getElementById('docketModal').classList.add('active');
+  }
+  function closeDocketModal() {
+    document.getElementById('docketModal').classList.remove('active');
+  }
+  (function(){
+    var _prev = document.onkeydown;
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closeDocketModal();
+    });
+  })();
+</script>
+</body>
+</html>

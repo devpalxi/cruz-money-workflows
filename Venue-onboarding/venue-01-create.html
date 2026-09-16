@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New venue</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:52px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{ max-width:640px; margin:0 auto; padding:36px 24px 64px; }
+  .back-link{
+    display:inline-flex; align-items:center; gap:5px;
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:14.5px; font-weight:600; color:var(--text-primary);
+    padding:0; margin-bottom:18px; text-decoration:underline;
+  }
+  .back-link svg{ color:var(--accent); }
+  h1{ font-size:24px; font-weight:700; margin:0 0 6px; }
+  .page-sub{ font-size:14px; color:var(--text-secondary); margin:0 0 26px; line-height:1.5; }
+
+  .content-card{ background:#fff; border:1px solid #e2e3ea; border-radius:10px; padding:26px; }
+  form{ display:flex; flex-direction:column; gap:var(--gap-lg); }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:15px; font-weight:600; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+  input[type="text"]{
+    height:var(--field-h); width:100%; padding:0 16px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15.5px; color:var(--text-primary);
+    font-family:inherit; outline:none; transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{ border-color:var(--field-border-focus); box-shadow:0 0 0 1px var(--field-border-focus); }
+
+  .actions{ margin-top:6px; }
+  button{ border-radius:var(--radius); font-size:16px; font-weight:600; cursor:pointer; border:none; font-family:inherit; }
+  .btn-next{ height:52px; width:100%; background:var(--accent); color:#fff; font-size:17px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+  button:focus-visible, .back-link:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button type="button" class="back-link" id="backBtn">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+    Venues
+  </button>
+
+  <h1>New venue</h1>
+  <p class="page-sub">Create the venue record, then configure its payout settings, contacts and team.</p>
+
+  <div class="content-card">
+    <form id="createForm" novalidate>
+      <div class="field">
+        <label for="orgName" class="req">Organisation name</label>
+        <input type="text" id="orgName" placeholder="e.g. Riverside Leagues Ltd" aria-required="true" />
+      </div>
+      <div class="field">
+        <label for="venueName" class="req">Venue name</label>
+        <input type="text" id="venueName" placeholder="e.g. Riverside RSL Club" aria-required="true" />
+        <div class="hint">The trading name of the club or venue.</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-next" id="createBtn" disabled>Create venue</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'venueConfigData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = 'venue-00-list.html';
+  });
+
+  const orgName = document.getElementById('orgName');
+  const venueName = document.getElementById('venueName');
+  const createBtn = document.getElementById('createBtn');
+
+  function updateState(){
+    createBtn.disabled = orgName.value.trim() === '' || venueName.value.trim() === '';
+  }
+  orgName.addEventListener('input', updateState);
+  venueName.addEventListener('input', updateState);
+  updateState();
+
+  createBtn.addEventListener('click', ()=>{
+    if(createBtn.disabled) return;
+    // starting a new venue record clears any previous session's config
+    sessionStorage.removeItem(STORAGE_KEY);
+    saveStoredData({
+      orgName: orgName.value.trim(),
+      venueName: venueName.value.trim(),
+      status: 'Draft',
+      configuredSections: {}
+    });
+    window.location.href = 'venue-02-details.html?new=1';
+  });
+</script>
+
+</body>
+</html>

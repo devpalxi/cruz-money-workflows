@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create New Payout — Step 1</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#6f6cc0;
+    --accent-hover:#5a57ac;
+    --error:#c0392b;
+    --error-bg:#fdecea;
+    --success:#1e7d4b;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+  }
+  /* Stepper */
+  .stepper{
+    width:220px;
+    flex-shrink:0;
+    padding-top:6px;
+  }
+  .step{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    position:relative;
+    padding-bottom:26px;
+  }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:'';
+    position:absolute;
+    left:9px;
+    top:22px;
+    width:2px;
+    height:calc(100% - 6px);
+    background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6;
+    background:#fff;
+    flex-shrink:0;
+    z-index:1;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand);
+    background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{
+    border-color:var(--success);
+    background:var(--success);
+  }
+  .step-label{
+    font-size:14.5px;
+    color:var(--text-secondary);
+    font-weight:600;
+  }
+  .step.active .step-label{color:var(--brand);}
+
+  /* Main panel */
+  .main{flex:1; min-width:0;}
+  h1{
+    font-size:28px;
+    font-weight:800;
+    color:var(--brand);
+    margin:0 0 22px;
+  }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+  form{
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-lg);
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-xs);
+  }
+  .field-row{
+    display:flex;
+    gap:var(--gap-md);
+  }
+  .field-row .field{flex:1;}
+  label{
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--text-primary);
+  }
+  .req::after{
+    content:' *';
+    color:var(--error);
+  }
+  .hint{
+    font-size:12.5px;
+    color:var(--text-secondary);
+  }
+  input[type="text"],
+  input[type="number"],
+  input[type="datetime-local"],
+  .select-display,
+  .combo-input{
+    height:var(--field-h);
+    width:100%;
+    padding:0 14px;
+    border-radius:var(--radius);
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
+    font-size:15px;
+    color:var(--text-primary);
+    font-family:inherit;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{color:#9ea2b3;}
+  input:focus,
+  .combo-input:focus,
+  .select-display:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  input[readonly]{cursor:pointer;}
+
+  /* currency prefix field */
+  .currency-field{
+    display:flex;
+    align-items:stretch;
+    border:1px solid var(--field-border);
+    border-radius:var(--radius);
+    background:var(--field-bg);
+    overflow:hidden;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .currency-field:focus-within{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  .currency-prefix{
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+    font-weight:700;
+    font-size:13.5px;
+    color:var(--text-secondary);
+    background:#e8e9f0;
+    border-right:1px solid var(--field-border);
+    letter-spacing:.02em;
+  }
+  .currency-field input{
+    border:none;
+    background:transparent;
+    box-shadow:none;
+    height:calc(var(--field-h) - 2px);
+    padding-left:12px;
+  }
+  .currency-field input:focus{box-shadow:none; border:none; background:transparent;}
+  .currency-field.has-error{
+    border-color:var(--error);
+    background:var(--error-bg);
+  }
+  .currency-field.has-error .currency-prefix{
+    background:#f6d9d6;
+    border-color:var(--error);
+  }
+  .error-msg{
+    font-size:12.5px;
+    color:var(--error);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+
+  /* select */
+  .select-wrap{position:relative;}
+  .select-display{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    user-select:none;
+  }
+  .select-display svg{flex-shrink:0; color:var(--text-secondary);}
+  .dropdown-panel{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;right:0;
+    background:#fff;
+    border:1px solid var(--field-border);
+    border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(20,20,50,0.12);
+    z-index:20;
+    max-height:220px;
+    overflow-y:auto;
+    display:none;
+  }
+  .dropdown-panel.open{display:block;}
+  .dropdown-item{
+    padding:10px 14px;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .dropdown-item:hover, .dropdown-item.hl{background:#f0f0f8;}
+  .dropdown-empty{
+    padding:12px 14px;
+    font-size:13.5px;
+    color:var(--text-secondary);
+  }
+
+  /* combobox (machine) */
+  .combo-wrap{position:relative;}
+  .combo-input{cursor:text;}
+
+  /* file upload */
+  .upload-box{
+    border:1.5px dashed var(--field-border);
+    border-radius:var(--radius);
+    background:var(--field-bg);
+    padding:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:border-color .12s, background .12s;
+  }
+  .upload-box:hover, .upload-box:focus-within{
+    border-color:var(--accent);
+    background:#f0f0fb;
+  }
+  .upload-box.has-file{
+    border-style:solid;
+    border-color:var(--success);
+    background:#eefaf2;
+  }
+  .upload-icon{
+    width:38px;height:38px;
+    border-radius:8px;
+    background:#e8e9f0;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    color:var(--brand);
+  }
+  .upload-box.has-file .upload-icon{background:#d7f0e0; color:var(--success);}
+  .upload-text-main{font-size:14.5px; font-weight:600;}
+  .upload-text-sub{font-size:12.5px; color:var(--text-secondary);}
+  .upload-remove{
+    margin-left:auto;
+    font-size:13px;
+    font-weight:700;
+    color:var(--error);
+    background:none;border:none;cursor:pointer;
+    padding:6px 8px;
+  }
+  .upload-remove:hover{text-decoration:underline;}
+
+  .actions{
+    display:flex;
+    gap:var(--gap-md);
+    margin-top:6px;
+  }
+  button{
+    height:46px;
+    border-radius:var(--radius);
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+    border:none;
+    font-family:inherit;
+  }
+  .btn-back{
+    background:#fff;
+    border:1px solid var(--field-border);
+    color:var(--text-primary);
+    padding:0 26px;
+  }
+  .btn-back:hover{background:#f5f5fa;}
+  .btn-next{
+    background:#2E2F7A;
+    color:#fff;
+    padding:0 32px;
+    flex:1;
+    max-width:220px;
+  }
+  .btn-next:hover{background:#24255f;}
+  .btn-next:disabled{background:#c3c2e0; cursor:not-allowed;}
+
+  input:focus-visible, .select-display:focus-visible, button:focus-visible, .upload-box:focus-visible{
+    outline:3px solid #2e6fdb;
+    outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{flex-direction:column; gap:24px; padding:20px 16px 48px;}
+    .stepper{width:100%;}
+    .field-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step active"><div class="step-dot"></div><div class="step-label">New Payout Details</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Email Address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Create New Payout</h1>
+    <div class="content-card">
+    <form id="payoutForm" novalidate>
+
+      <div class="field">
+        <label for="dateTime" class="req">Payout Date and Time</label>
+        <input type="text" id="dateTime" value="24/07/2026 09:49 am" readonly aria-required="true" />
+      </div>
+
+      <div class="field">
+        <label for="docketUpload" class="req">Upload Payout Docket</label>
+        <div class="hint">Photo or scan of the physical payout docket. JPG, PNG or PDF, up to 10MB.</div>
+        <div class="upload-box" id="docketBox" tabindex="0" role="button" aria-describedby="docketStatus">
+          <div class="upload-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+          </div>
+          <div>
+            <div class="upload-text-main" id="docketStatus">Click or drag file to upload</div>
+            <div class="upload-text-sub">No file selected</div>
+          </div>
+        </div>
+        <input type="file" id="docketFile" accept="image/*,application/pdf" style="display:none" />
+      </div>
+
+      <div class="field-row">
+        <div class="field select-wrap">
+          <label for="payoutType" class="req">Payout Type</label>
+          <div class="select-display" id="payoutType" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+            <span>EGM</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown-panel" role="listbox">
+            <div class="dropdown-item hl" role="option" aria-selected="true">EGM</div>
+            <div class="dropdown-item" role="option">Table Game</div>
+            <div class="dropdown-item" role="option">Keno</div>
+          </div>
+        </div>
+
+        <div class="field select-wrap">
+          <label for="venue" class="req">Venue</label>
+          <div class="select-display" id="venue" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+            <span>Riverside RSL Club</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown-panel" role="listbox">
+            <div class="dropdown-item hl" role="option" aria-selected="true">Riverside RSL Club</div>
+            <div class="dropdown-item" role="option">Northside Leagues Club</div>
+            <div class="dropdown-item" role="option">Harbourview Hotel</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field combo-wrap">
+        <label for="machineInput" class="req">Machine</label>
+        <div class="hint">Showing machines at Riverside RSL Club</div>
+        <input class="combo-input" type="text" id="machineInput" placeholder="Click to browse, or type to search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="machineList" aria-required="true" />
+        <div class="dropdown-panel" id="machineList" role="listbox"></div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="winAmount" class="req">Win Amount</label>
+          <div class="currency-field">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="winAmount" value="0.00" aria-label="Win amount in AUD" aria-required="true" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="confirmAmount" class="req">Confirm Win Amount</label>
+          <div class="currency-field" id="confirmWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="confirmAmount" placeholder="0.00" aria-describedby="amountError" aria-label="Confirm win amount in AUD" aria-required="true" />
+          </div>
+          <div class="error-msg" id="amountError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Win amounts do not match.
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="txnId" class="req">Internal Transaction ID</label>
+        <input type="text" id="txnId" placeholder="Internal Transaction ID" aria-required="true" />
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-back">Back</button>
+        <button type="button" class="btn-next" id="nextBtn">Next</button>
+      </div>
+    </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Generic select-display dropdowns (Payout Type, Venue)
+  document.querySelectorAll('.select-display').forEach(sel=>{
+    const panel = sel.nextElementSibling;
+    sel.addEventListener('click', ()=>{
+      document.querySelectorAll('.dropdown-panel').forEach(p=>{ if(p!==panel) p.classList.remove('open'); });
+      panel.classList.toggle('open');
+      sel.setAttribute('aria-expanded', panel.classList.contains('open'));
+    });
+    panel.querySelectorAll('.dropdown-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        sel.querySelector('span').textContent = item.textContent;
+        panel.classList.remove('open');
+        sel.setAttribute('aria-expanded','false');
+      });
+    });
+  });
+
+  // Machine combobox
+  const machines = ["EGM-001","EGM-002","EGM-003","EGM-014","EGM-021","EGM-034","EGM-045","EGM-052"];
+  const machineInput = document.getElementById('machineInput');
+  const machineList = document.getElementById('machineList');
+
+  function renderMachineList(filter){
+    const items = machines.filter(m=>m.toLowerCase().includes(filter.toLowerCase()));
+    machineList.innerHTML='';
+    if(items.length===0){
+      machineList.innerHTML = '<div class="dropdown-empty">No machines found</div>';
+      return;
+    }
+    items.forEach(m=>{
+      const div = document.createElement('div');
+      div.className='dropdown-item';
+      div.setAttribute('role','option');
+      div.textContent=m;
+      div.addEventListener('click', ()=>{
+        machineInput.value=m;
+        machineList.classList.remove('open');
+        machineInput.setAttribute('aria-expanded','false');
+      });
+      machineList.appendChild(div);
+    });
+  }
+
+  machineInput.addEventListener('click', ()=>{
+    renderMachineList(machineInput.value);
+    machineList.classList.add('open');
+    machineInput.setAttribute('aria-expanded','true');
+  });
+  machineInput.addEventListener('input', ()=>{
+    renderMachineList(machineInput.value);
+    machineList.classList.add('open');
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.combo-wrap')){ machineList.classList.remove('open'); }
+    if(!e.target.closest('.select-wrap')){ document.querySelectorAll('.select-wrap .dropdown-panel').forEach(p=>p.classList.remove('open')); }
+  });
+
+  // File upload
+  const docketBox = document.getElementById('docketBox');
+  const docketFile = document.getElementById('docketFile');
+  const docketStatus = document.getElementById('docketStatus');
+  const docketSub = docketBox.querySelector('.upload-text-sub');
+
+  function openFileDialog(){ docketFile.click(); }
+  docketBox.addEventListener('click', openFileDialog);
+  docketBox.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openFileDialog(); } });
+  docketFile.addEventListener('change', ()=>{
+    if(docketFile.files.length){
+      const f = docketFile.files[0];
+      docketBox.classList.add('has-file');
+      docketStatus.textContent = f.name;
+      docketSub.textContent = 'Uploaded — click to replace';
+    }
+  });
+
+  // Win amount validation + currency formatting
+  const winAmount = document.getElementById('winAmount');
+  const confirmAmount = document.getElementById('confirmAmount');
+  const confirmWrap = document.getElementById('confirmWrap');
+  const amountError = document.getElementById('amountError');
+
+  function sanitizeDecimal(raw){
+    // allow digits and a single decimal point, max 2 decimal places
+    let v = raw.replace(/[^0-9.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2){ v = parts[0] + '.' + parts.slice(1).join(''); }
+    const dotIndex = v.indexOf('.');
+    if(dotIndex !== -1 && v.length - dotIndex - 1 > 2){
+      v = v.slice(0, dotIndex + 3);
+    }
+    return v;
+  }
+
+  function formatWithCommas(raw){
+    if(raw === '' || raw === '.') return raw;
+    const num = parseFloat(raw);
+    if(isNaN(num)) return raw;
+    return num.toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+
+  function attachCurrencyBehavior(input){
+    input.addEventListener('input', ()=>{
+      input.value = sanitizeDecimal(input.value);
+      validateAmounts();
+    });
+    input.addEventListener('focus', ()=>{
+      // show raw editable number, drop commas
+      input.value = input.value.replace(/,/g,'');
+    });
+    input.addEventListener('blur', ()=>{
+      input.value = formatWithCommas(input.value);
+      validateAmounts();
+    });
+  }
+  attachCurrencyBehavior(winAmount);
+  attachCurrencyBehavior(confirmAmount);
+
+  function rawNumber(input){
+    return parseFloat(input.value.replace(/,/g,'')) || 0;
+  }
+
+  function validateAmounts(){
+    if(confirmAmount.value === ''){
+      confirmWrap.classList.remove('has-error');
+      amountError.style.display='none';
+      return;
+    }
+    const mismatch = rawNumber(winAmount) !== rawNumber(confirmAmount);
+    confirmWrap.classList.toggle('has-error', mismatch);
+    amountError.style.display = mismatch ? 'flex' : 'none';
+  }
+
+  // initial format
+  winAmount.value = formatWithCommas(winAmount.value);
+</script>
+
+</body>
+</html>

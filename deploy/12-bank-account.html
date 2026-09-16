@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank account</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --error-bg:#fff5f5;
+    --error-border:#f0bdb5;
+    --error-text:#8a4a44;
+    --warning:#b45309;
+    --warning-bg:#fffbeb;
+    --warning-border:#fbd98a;
+    --warning-text:#8a5b1f;
+    --success:#0d9488;
+    --success-bg:#f0fff4;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+    position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  /* prototype toggle */
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-top:14px;
+  }
+  .proto-toggle-label{ font-size:12.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:13.5px; font-weight: 700; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:#5a5a5a; border-color:#5a5a5a; color:#fff; }
+
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{ display:block; }
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  .back-to-summary{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:14px; font-weight: 700; color:var(--text-secondary);
+    text-decoration:none; margin-bottom:10px;
+  }
+  .back-to-summary-text{ text-decoration:underline; }
+  .title-row{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    gap:28px;
+    margin:0 0 22px;
+  }
+  .back-link{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:16.5px;
+    font-weight: 700;
+    line-height:1;
+    color:var(--text-primary);
+    padding:0;
+    margin-left:-4px;
+    text-decoration:underline;
+  }
+  .back-link svg{flex-shrink:0; color:var(--accent);}
+  h1{ font-size:23px; font-weight: 700; color:var(--text-primary); line-height:1; margin:0; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:10px;
+    padding:24px 26px;
+  }
+
+  form{ display:flex; flex-direction:column; gap:var(--gap-lg); }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:16.5px; font-weight: 700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:13.5px; color:var(--text-secondary); }
+
+  input[type="text"]{
+    height:var(--field-h);
+    width:100%;
+    padding:0 18px;
+    display:flex; align-items:center;
+    border-radius:var(--radius);
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
+    font-size:18px;
+    color:var(--text-primary);
+    font-family:inherit;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+    font-variant-numeric:tabular-nums;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff;
+  }
+  input.has-error{
+    border-color:var(--error);
+    background:var(--error-bg);
+  }
+  .error-msg{
+    font-size:13.5px; color:var(--error); font-weight: 700;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  .actions{ display:flex; justify-content:space-between; align-items:center; gap:var(--gap-md); margin-top:10px; }
+  button{
+    border-radius:var(--radius); font-size:17px; font-weight: 700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-next{ height:60px; width:100%; background:var(--accent); color:#fff; padding:0 32px; font-size:20px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:active{ background:#095e56; }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+
+  button:focus-visible, .close-btn:focus-visible, .back-link:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  /* custom checkbox - matches the pattern used across 05/06 */
+  .custom-checkbox{
+    width:28px; height:28px; border-radius:6px;
+    border:2px solid #cccccc;
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .12s, border-color .12s;
+  }
+  .custom-checkbox svg{ display:none; color:#fff; }
+  [aria-checked="true"] .custom-checkbox{ background:var(--text-primary); border-color:var(--text-primary); }
+  [aria-checked="true"] .custom-checkbox svg{ display:block; }
+
+  /* verification "running" state */
+  .verify-panel{
+    display:none;
+    align-items:center; gap:10px;
+    border-radius:var(--radius);
+    background:var(--bg);
+    padding:12px 16px;
+  }
+  .verify-panel.show{ display:flex; }
+  .spinner{
+    width:16px; height:16px; flex-shrink:0;
+    border:2px solid #d7d9e2; border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .verify-running-text{ font-size:15.5px; font-weight: 700; color:var(--text-primary); }
+
+  /* CoP validation result cards - sit inside the form, fields remain editable */
+  .status-card{ display:none; border-radius:var(--radius); text-align:left; }
+  .status-card.show{ display:block; }
+
+  .status-match{
+    display:none;
+    align-items:center; gap:8px;
+    background:var(--success-bg);
+    padding:12px 16px;
+    font-size:15px; font-weight: 700; color:var(--success);
+  }
+  .status-match.show{ display:flex; }
+  .status-match svg{ flex-shrink:0; }
+
+  .status-warning{ background:var(--warning-bg); padding:18px 20px; }
+  .status-warning .status-title{ margin:0 0 8px; font-size:16px; font-weight: 700; color:var(--warning); }
+  .status-warning .status-body{ margin:0 0 4px; font-size:14.5px; color:var(--text-primary); }
+
+  .status-error{ background:var(--error-bg); border-radius:var(--radius); padding:18px 20px; }
+  .status-error .status-title{ margin:0 0 8px; font-size:16px; font-weight: 700; color:var(--error); }
+  .status-error .status-body{ margin:0 0 4px; font-size:14.5px; color:var(--text-primary); }
+
+  .edit-rerun-link{
+    display:inline-block;
+    height:auto; padding:0; margin-top:10px;
+    background:none; border:none; cursor:pointer;
+    font-size:14px; font-weight: 700; color:var(--text-primary);
+    font-family:inherit; text-align:left; text-decoration:underline;
+  }
+
+
+  .bypass-row{
+    display:flex; align-items:center; gap:10px; cursor:pointer;
+    font-size:15px; font-weight: 700; color:var(--text-primary);
+  }
+
+  .notes-field{ margin-top:14px; }
+  .notes-field label{ font-size:14px; font-weight: 700; color:var(--text-primary); }
+  textarea{
+    width:100%; min-height:64px; margin-top:6px; padding:10px 12px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:#fff; font-family:inherit; font-size:15px; color:var(--text-primary);
+    resize:vertical; outline:none;
+  }
+  textarea:focus{ border-color:var(--field-border-focus); box-shadow:0 0 0 1px var(--field-border-focus); }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px fields below are touch-target sizing. On a
+     mouse/keyboard viewport that reads as oversized, so scale it down. */
+  @media (min-width:1025px){
+    :root{
+      --field-h:52px;
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    input[type="text"]{font-size:16.5px; padding:0 16px;}
+    .btn-next{height:52px; font-size:18px;}
+  }
+
+/* STANDARDIZED UI STYLES */
+:root {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --t1: #0f172a;
+  --t2: #334155;
+  --tm: #475569;
+  --bd: #e2e8f0;
+  --ok: #059669; --ok-bg: #ecfdf5; --ok-b: #a7f3d0;
+  --wn: #b45309; --wn-bg: #fffbeb; --wn-b: #fde68a;
+  --er: #e53e3e; --er-bg: #fff5f5; --er-b: #fed7d7;
+  --in: #3182ce; --in-bg: #ebf8ff; --in-b: #bee3f8;
+}
+
+/* BUTTONS */
+.btn-primary {
+  height: 44px; padding: 0 28px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #0d9488; color: #fff; border: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover:not(:disabled) { background: #0b7a6f; }
+.btn-primary.danger { background: #ef4444; }
+.btn-primary.danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-secondary {
+  height: 44px; padding: 0 26px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #fff; border: 1px solid #e2e8f0; color: #1a202c;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover { background: #f4f4f4; border-color: #e2e8f0; }
+.btn-secondary.danger { border-color: #fca5a5; color: #ef4444; }
+.btn-secondary.danger:hover { background: #fef2f2; border-color: #f87171; }
+
+.btn-action-req {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 20px; border-radius: 6px; font-size: 15.5px; font-weight: 700;
+  border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease;
+}
+.btn-action-req.warn { color: var(--wn); background: transparent; border-color: var(--wn); }
+.btn-action-req.warn:hover { background: var(--wn-bg); }
+.btn-action-req.pass { color: var(--ok); background: transparent; border-color: var(--ok); }
+.btn-action-req.pass:hover { background: var(--ok-bg); }
+.btn-action-req.fail { color: var(--er); background: transparent; border-color: var(--er); }
+.btn-action-req.fail:hover { background: var(--er-bg); }
+
+/* PILLS */
+.pill {
+  font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.pill.pass { color: var(--ok); background: var(--ok-bg); border: 1px solid var(--ok-b); }
+.pill.fail { color: var(--er); background: var(--er-bg); border: 1px solid var(--er-b); }
+.pill.warn { color: var(--wn); background: var(--wn-bg); border: 1px solid var(--wn-b); }
+.pill.neutral { color: var(--t2); background: #f1f5f9; border: 1px solid var(--bd); }
+
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+  border-radius: 20px; font-size: 15.5px; font-weight: 700;
+  background: var(--in-bg); color: var(--in); border: 1.5px solid var(--in-b);
+}
+.status-pill .sdot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--in);
+  animation: pulse 2s infinite;
+}
+
+/* MISMATCH BOX */
+.id-mismatch-box {
+  background: transparent; border: 1.5px solid var(--wn-b);
+  border-radius: 8px; padding: 16px 18px; margin-bottom: 18px;
+}
+/* END STANDARDIZED UI STYLES */
+
+</style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email address</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step active" id="stepBankAccount"><div class="step-dot"></div><div class="step-label">Bank account</div></div>
+    <div class="step" id="stepSummary"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <a class="back-to-summary" id="backToSummary" href="13-summary.html" style="display:none"><span aria-hidden="true">&larr;</span><span class="back-to-summary-text">Back to summary</span></a>
+    <div class="title-row" id="titleRow">
+      <button type="button" class="back-link" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <h1>Bank account</h1>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+
+    <div class="content-card">
+    <form id="bankForm" novalidate>
+
+      <div id="formFields">
+        <div class="field">
+          <label for="accountName" class="req">Account name</label>
+          <input type="text" id="accountName" placeholder="Account name" aria-required="true" />
+        </div>
+
+        <div class="field" style="margin-top:var(--gap-lg)">
+          <label for="bsb" class="req">BSB number</label>
+          <input type="text" id="bsb" placeholder="000-000" inputmode="numeric" maxlength="7" aria-required="true" />
+        </div>
+
+        <div class="field" style="margin-top:var(--gap-lg)">
+          <label for="accountNumber" class="req">Account number</label>
+          <input type="text" id="accountNumber" placeholder="241-325-325" inputmode="numeric" maxlength="11" aria-required="true" aria-describedby="accountError" />
+          <div class="error-msg" id="accountError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Enter a valid account number.
+          </div>
+        </div>
+      </div>
+
+      <div class="verify-panel running" id="runningPanel">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="verify-running-text">Validating bank account…</div>
+      </div>
+
+      <div class="status-match" id="statusMatch" role="status">
+        <span>Account name matches bank records.</span>
+      </div>
+
+      <div class="status-card status-warning" id="statusCloseMatch" role="alert">
+        <p class="status-title">Close match detected.</p>
+        <p class="status-body">The entered name "<span id="closeMatchName"></span>" is a close match to the registered account.</p>
+        <p class="status-body">Please update the bank details.</p>
+        <button type="button" class="edit-rerun-link" id="editFromCloseMatch">Edit bank details and re-run</button>
+      </div>
+
+      <div class="status-card status-error" id="statusNoMatch" role="alert">
+        <p class="status-title">The account name does not match bank records.</p>
+        <p class="status-body" id="noMatchBody"></p>
+        <button type="button" class="edit-rerun-link" id="editFromNoMatch">Edit bank details and re-run</button>
+      </div>
+
+      <div id="bypassSection" style="display:none">
+        <div class="bypass-row" id="bypassCheckbox" role="checkbox" aria-checked="false" tabindex="0">
+          <div class="custom-checkbox" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <span>I confirm the payee wishes to proceed with the entered details despite the no match result.</span>
+        </div>
+        <div class="notes-field">
+          <label for="bypassNotes">Notes</label>
+          <textarea id="bypassNotes"></textarea>
+        </div>
+      </div>
+
+      <div class="actions" id="formActions">
+        <button type="button" class="btn-next" id="validateBtn" disabled>Run validation</button>
+      </div>
+    </form>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Prototype preview only – simulate CoP result:</span>
+      <button type="button" class="proto-btn active" id="protoMatch">Match</button>
+      <button type="button" class="proto-btn" id="protoCloseMatch">Close match</button>
+      <button type="button" class="proto-btn" id="protoNoMatchNoBypass">No match (no bypass)</button>
+      <button type="button" class="proto-btn" id="protoNoMatchBypassIndividual">No match (bypass, individual)</button>
+      <button type="button" class="proto-btn" id="protoNoMatchBypassNonIndividual">No match (bypass, non-individual)</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ---- Cross-page data persistence ----
+  const STORAGE_KEY = 'payoutFormData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  const editingFromSummary = new URLSearchParams(location.search).get('from') === 'summary';
+
+  if (editingFromSummary) {
+    document.getElementById('backToSummary').style.display = '';
+  }
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = '10-secondary-id-landing.html';
+  });
+
+  const accountName = document.getElementById('accountName');
+  const bsb = document.getElementById('bsb');
+  const accountNumber = document.getElementById('accountNumber');
+  const validateBtn = document.getElementById('validateBtn');
+  const runningPanel = document.getElementById('runningPanel');
+  const statusMatch = document.getElementById('statusMatch');
+  const statusCloseMatch = document.getElementById('statusCloseMatch');
+  const statusNoMatch = document.getElementById('statusNoMatch');
+  const closeMatchName = document.getElementById('closeMatchName');
+  const noMatchBody = document.getElementById('noMatchBody');
+  const bypassSection = document.getElementById('bypassSection');
+  const bypassCheckbox = document.getElementById('bypassCheckbox');
+  const bypassNotes = document.getElementById('bypassNotes');
+  const editFromCloseMatch = document.getElementById('editFromCloseMatch');
+  const editFromNoMatch = document.getElementById('editFromNoMatch');
+  const formActions = document.getElementById('formActions');
+
+  const protoButtons = {
+    match: document.getElementById('protoMatch'),
+    closeMatch: document.getElementById('protoCloseMatch'),
+    noMatchNoBypass: document.getElementById('protoNoMatchNoBypass'),
+    noMatchBypassIndividual: document.getElementById('protoNoMatchBypassIndividual'),
+    noMatchBypassNonIndividual: document.getElementById('protoNoMatchBypassNonIndividual'),
+  };
+  let activeScenario = 'match';
+
+  const scenarios = {
+    match:                        { tag:'[M]',    kind:'match' },
+    closeMatch:                   { tag:'[CM]',   kind:'closeMatch' },
+    noMatchNoBypass:               { tag:'[INM]',  kind:'noMatch', bypass:false },
+    noMatchBypassIndividual:       { tag:'[INM]',  kind:'noMatch', bypass:true,
+                                      notesPlaceholder:'Add a note about this no match result, please avoid any sensitive information.' },
+    noMatchBypassNonIndividual:    { tag:'[NINM]', kind:'noMatch', bypass:true,
+                                      notesPlaceholder:'Add a note about this no match result, please avoid any sensitive information.' },
+  };
+
+  bsb.addEventListener('input', ()=>{
+    let digits = bsb.value.replace(/[^0-9]/g,'').slice(0,6);
+    bsb.value = digits.length > 3 ? digits.slice(0,3) + '-' + digits.slice(3) : digits;
+    updateValidateState();
+    saveStoredData({ bsb: bsb.value });
+  });
+
+  accountNumber.addEventListener('input', ()=>{
+    let digits = accountNumber.value.replace(/[^0-9]/g,'').slice(0,9);
+    accountNumber.value = digits.replace(/(\d{3})(?=\d)/g, '$1-');
+    updateValidateState();
+    saveStoredData({ accountNumber: accountNumber.value });
+  });
+
+  accountName.addEventListener('input', ()=>{ updateValidateState(); saveStoredData({ accountName: accountName.value }); });
+
+  function updateValidateState(){
+    if (validateBtn.dataset.mode === 'next') return;
+    const nameFilled = accountName.value.trim() !== '';
+    const bsbComplete = bsb.value.replace(/[^0-9]/g,'').length === 6;
+    const acctComplete = accountNumber.value.replace(/[^0-9]/g,'').length === 9;
+    validateBtn.disabled = !(nameFilled && bsbComplete && acctComplete);
+  }
+
+  function initCustomCheckbox(el, onChange){
+    function toggle(){
+      const next = el.getAttribute('aria-checked') !== 'true';
+      el.setAttribute('aria-checked', String(next));
+      if(onChange) onChange(next);
+    }
+    el.addEventListener('click', toggle);
+    el.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+    });
+  }
+  function setChecked(el, value){ el.setAttribute('aria-checked', String(value)); }
+  function isChecked(el){ return el.getAttribute('aria-checked') === 'true'; }
+
+  function hideAllStatus(){
+    statusMatch.classList.remove('show');
+    statusCloseMatch.classList.remove('show');
+    statusNoMatch.classList.remove('show');
+    bypassSection.style.display = 'none';
+  }
+
+  function resetToIdle(){
+    hideAllStatus();
+    formActions.style.display = '';
+    validateBtn.style.display = '';
+    validateBtn.dataset.mode = 'validate';
+    validateBtn.textContent = 'Run validation';
+    validateBtn.onclick = runValidation;
+    updateValidateState();
+  }
+
+  function goNext(){
+    let copResult = 'match';
+    if(statusCloseMatch.classList.contains('show')) copResult = 'close';
+    else if(statusNoMatch.classList.contains('show')) copResult = 'fail';
+    saveStoredData({
+      accountName: accountName.value, bsb: bsb.value, accountNumber: accountNumber.value,
+      copResult, bypassNotes: bypassNotes.value
+    });
+    window.location.href = '13-summary.html';
+  }
+
+  function tryProceedWithBypass(){
+    if(!isChecked(bypassCheckbox)) return;
+    goNext();
+  }
+
+  function applyScenarioResult(){
+    const s = scenarios[activeScenario];
+    const baseName = accountName.value.replace(/\s*\[[A-Z]+\]\s*$/,'').trim() || "James O'Sullivan";
+    accountName.value = baseName + ' ' + s.tag;
+    hideAllStatus();
+
+    if(s.kind === 'match'){
+      statusMatch.classList.add('show');
+      formActions.style.display = '';
+      validateBtn.dataset.mode = 'next';
+      validateBtn.textContent = editingFromSummary ? 'Save and return to summary' : 'Next';
+      validateBtn.onclick = goNext;
+      validateBtn.disabled = false;
+
+    } else if(s.kind === 'closeMatch'){
+      closeMatchName.textContent = accountName.value;
+      statusCloseMatch.classList.add('show');
+      // no bypass for a close match - actions row stays hidden entirely
+      // (not just the button) so it doesn't add its own gap below the
+      // notice; it reappears once the user clicks "Edit bank details and
+      // re-run" (resetToIdle brings it back)
+      formActions.style.display = 'none';
+
+    } else { // noMatch
+      noMatchBody.textContent = s.bypass
+        ? 'You can update the bank details or proceed. If you proceed, this will be flagged for the approver.'
+        : 'Please update the account name or enter different bank account details, then re-validate.';
+      bypassSection.style.display = s.bypass ? 'block' : 'none';
+      if(s.bypass){
+        bypassNotes.placeholder = s.notesPlaceholder;
+        bypassNotes.value = '';
+        setChecked(bypassCheckbox, false);
+        formActions.style.display = '';
+        validateBtn.dataset.mode = 'bypass';
+        validateBtn.textContent = editingFromSummary ? 'Save and return to summary' : 'Next';
+        validateBtn.onclick = tryProceedWithBypass;
+        // disabled until the bypass checkbox is ticked
+        validateBtn.disabled = true;
+      } else {
+        // no bypass - actions row stays hidden entirely until "Edit bank
+        // details and re-run"
+        formActions.style.display = 'none';
+      }
+      statusNoMatch.classList.add('show');
+    }
+  }
+
+  function runValidation(){
+    hideAllStatus();
+    validateBtn.disabled = true;
+    runningPanel.classList.add('show');
+
+    setTimeout(()=>{
+      runningPanel.classList.remove('show');
+      applyScenarioResult();
+    }, 900);
+  }
+
+  editFromCloseMatch.addEventListener('click', resetToIdle);
+  editFromNoMatch.addEventListener('click', resetToIdle);
+
+  initCustomCheckbox(bypassCheckbox, (checked)=>{
+    if(validateBtn.dataset.mode === 'bypass'){
+      validateBtn.disabled = !checked;
+    }
+  });
+
+  Object.entries(protoButtons).forEach(([key, btn])=>{
+    btn.addEventListener('click', ()=>{
+      activeScenario = key;
+      Object.values(protoButtons).forEach(b=> b.classList.toggle('active', b === btn));
+      resetToIdle();
+    });
+  });
+
+  validateBtn.dataset.mode = 'validate';
+  validateBtn.onclick = runValidation;
+  updateValidateState();
+
+  // restore previously entered data when navigating back to this step
+  (function restoreStoredData(){
+    const data = loadStoredData();
+    if(data.accountName) accountName.value = data.accountName;
+    if(data.bsb) bsb.value = data.bsb;
+    if(data.accountNumber) accountNumber.value = data.accountNumber;
+    updateValidateState();
+  })();
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+
+<!-- PEP & Sanctions Base Modal CSS -->
+<style>
+.modal-backdrop {
+  background: rgba(18, 19, 43, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop.show .modal-container,
+.modal-backdrop.active .modal-container {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop#cancelConfirmModal .cancel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active .cancel-card {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal .cancel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn:hover {
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .cancel-body {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+</style>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+  function executeCancel() {
+    closeCancelConfirmModal();
+    alert('Payout has been cancelled.');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+</body>
+</html>

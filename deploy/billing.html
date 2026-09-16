@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing &amp; Subscriptions - Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <link rel="stylesheet" href="super-admin-ui.css">
+  <!-- Google Fonts: JetBrains Mono for numbers/currency -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Specific table & interactive enhancements */
+    #venuesBillingBody tr {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    #venuesBillingBody tr:hover td {
+      background-color: var(--sa-teal-soft) !important;
+    }
+
+    .back-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--sa-muted);
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: underline;
+      transition: color 0.15s ease;
+    }
+    .back-link-btn:hover {
+      color: var(--sa-teal);
+    }
+    .back-link-btn svg {
+      color: var(--sa-teal);
+    }
+
+    /* Progress bar meter */
+    .sa-progress-bar-bg {
+      height: 8px;
+      background: var(--sa-border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0 6px;
+    }
+    .sa-progress-bar-fill {
+      height: 100%;
+      background: var(--sa-teal);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Stripe-styled Credit Card component */
+    .sa-payment-card {
+      padding: 20px;
+      border: 1px solid var(--sa-border);
+      border-radius: 8px;
+      background: #ffffff;
+      max-width: 480px;
+    }
+    .sa-card-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .sa-card-digits {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--sa-ink);
+      margin-bottom: 14px;
+    }
+
+    /* Plan comparison cards */
+    .sa-plan-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .sa-plan-card {
+      padding: 20px;
+      border: 1px solid var(--sa-border);
+      border-radius: 8px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .sa-plan-card.active {
+      border-color: var(--sa-teal);
+      box-shadow: 0 0 0 1px var(--sa-teal);
+      background: #fdfefe;
+    }
+    .sa-plan-price {
+      font-size: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--sa-ink);
+    }
+    .sa-plan-features {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--sa-ink);
+    }
+    .sa-plan-features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (max-width: 700px) {
+      .sa-plan-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="super-admin-ui">
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="sa-main">
+    
+    <!-- 1. Super Admin Page Head -->
+    <div class="sa-page-head" id="pageHeadSuperadmin">
+      <div>
+        <h1>Billing &amp; Subscriptions</h1>
+        <p>Platform monthly recurring revenue, subscription plans, and venue invoice statuses.</p>
+      </div>
+      <div class="sa-actions">
+        <button class="sa-btn sa-btn-secondary" id="exportAllBillingBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Venue Drill-Down / Admin Page Head (Hidden by default in Super Admin mode) -->
+    <div class="sa-page-head" id="pageHeadVenue" style="display:none;">
+      <div>
+        <button class="back-link-btn" id="billingBackBtn" type="button" onclick="showSuperAdminOverview()" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+          Back to All Venues
+        </button>
+        <h1 id="venueBillingTitle">Riverside RSL Club &mdash; Venue Billing</h1>
+        <p id="venueBillingSubtitle">Usage breakdown, monthly invoices, payment methods, and PAYG subscription details.</p>
+      </div>
+      <div class="sa-actions">
+        <button class="sa-btn sa-btn-secondary" id="downloadStatementBtn" type="button">Download Statement</button>
+      </div>
+    </div>
+
+    <!-- 3. Super Admin Multi-Venue Content Container -->
+    <div id="content-superadmin">
+      
+      <!-- Metrics Grid -->
+      <div class="sa-grid" style="margin-bottom: 24px;">
+        <div class="sa-stat">
+          <div class="sa-stat-label">Total MRR</div>
+          <div class="sa-stat-value">$756.00</div>
+          <div class="sa-stat-meta positive">&#8593; +12% vs last month</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-label">Active Venues</div>
+          <div class="sa-stat-value">4</div>
+          <div class="sa-stat-meta positive">+1 onboarded this month</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-label">Outstanding Invoices</div>
+          <div class="sa-stat-value">1</div>
+          <div class="sa-stat-meta warning">$87.00 pending payment</div>
+        </div>
+        <div class="sa-stat">
+          <div class="sa-stat-label">Failed Payments</div>
+          <div class="sa-stat-value">1</div>
+          <div class="sa-stat-meta" style="color:var(--sa-red);">$22.50 action required</div>
+        </div>
+      </div>
+
+      <!-- Super Admin Overview Table Section -->
+      <section class="sa-section">
+        <div class="sa-section-head">
+          <div>
+            <h2>Venues Subscription Overview</h2>
+            <p>Click any venue row to drill down into its feature usage, invoices, and billing configuration.</p>
+          </div>
+        </div>
+        <div class="sa-section-body" style="padding:0;">
+          <div class="sa-table-wrap">
+            <table class="sa-table" id="venuesBillingTable" style="margin:0;">
+              <thead>
+                <tr>
+                  <th>Venue</th>
+                  <th>Plan</th>
+                  <th>Monthly Charge (Est)</th>
+                  <th>Billing Started</th>
+                  <th>Next Invoice</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+              <tbody id="venuesBillingBody">
+                <tr data-venue="Riverside RSL Club" data-org="Riverside Group" data-plan="PAYG" data-charge="$412.50" data-status="Paid" data-started="01 Jul 2026" data-next="01 Aug 2026">
+                  <td>
+                    <div class="sa-primary-text">Riverside RSL Club</div>
+                    <div class="sa-secondary-text">Riverside Group</div>
+                  </td>
+                  <td>PAYG</td>
+                  <td class="sa-mono" style="font-weight:700;">$412.50</td>
+                  <td class="sa-mono">01 Jul 2026</td>
+                  <td class="sa-mono">01 Aug 2026</td>
+                  <td><span class="sa-status active">Paid</span></td>
+                </tr>
+
+                <tr data-venue="Northside Leagues Club" data-org="Northside Hospitality" data-plan="PAYG" data-charge="$87.00" data-status="Pending" data-started="15 Jul 2026" data-next="15 Aug 2026">
+                  <td>
+                    <div class="sa-primary-text">Northside Leagues Club</div>
+                    <div class="sa-secondary-text">Northside Hospitality</div>
+                  </td>
+                  <td>PAYG</td>
+                  <td class="sa-mono" style="font-weight:700;">$87.00</td>
+                  <td class="sa-mono">15 Jul 2026</td>
+                  <td class="sa-mono">15 Aug 2026</td>
+                  <td><span class="sa-status pending">Pending</span></td>
+                </tr>
+
+                <tr data-venue="Harbourview Hotel" data-org="Harbourview Group" data-plan="PAYG" data-charge="$234.00" data-status="Paid" data-started="01 Aug 2026" data-next="01 Sep 2026">
+                  <td>
+                    <div class="sa-primary-text">Harbourview Hotel</div>
+                    <div class="sa-secondary-text">Harbourview Group</div>
+                  </td>
+                  <td>PAYG</td>
+                  <td class="sa-mono" style="font-weight:700;">$234.00</td>
+                  <td class="sa-mono">01 Aug 2026</td>
+                  <td class="sa-mono">01 Sep 2026</td>
+                  <td><span class="sa-status active">Paid</span></td>
+                </tr>
+
+                <tr data-venue="Riverside Grand Bistro" data-org="Riverside Group" data-plan="PAYG" data-charge="$22.50" data-status="Failed" data-started="10 Jul 2026" data-next="10 Aug 2026">
+                  <td>
+                    <div class="sa-primary-text">Riverside Grand Bistro</div>
+                    <div class="sa-secondary-text">Riverside Group</div>
+                  </td>
+                  <td>PAYG</td>
+                  <td class="sa-mono" style="font-weight:700;">$22.50</td>
+                  <td class="sa-mono">10 Jul 2026</td>
+                  <td class="sa-mono">10 Aug 2026</td>
+                  <td><span class="sa-status failed">Failed</span></td>
+                </tr>
+
+                <tr data-venue="Riverside Lounge & Bar" data-org="Riverside Group" data-plan="PAYG" data-charge="$0.00" data-status="No Activity" data-started="-" data-next="-">
+                  <td>
+                    <div class="sa-primary-text">Riverside Lounge &amp; Bar</div>
+                    <div class="sa-secondary-text">Riverside Group</div>
+                  </td>
+                  <td>PAYG</td>
+                  <td class="sa-mono" style="font-weight:700;">$0.00</td>
+                  <td class="sa-mono">-</td>
+                  <td class="sa-mono">-</td>
+                  <td><span class="sa-status">No Activity</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 4. Venue-Specific Tabbed Billing Section (Admin / Drill-Down) -->
+    <div id="content-admin" style="display:none;">
+      <section class="sa-section">
+        <div class="sa-section-body">
+          <div class="sa-side-layout">
+            
+            <!-- Side Navigation Tabs -->
+            <nav class="sa-side-nav" id="venueBillingTabs" aria-label="Venue billing sections">
+              <button class="active" data-tab="usage" type="button">Usage &amp; charges</button>
+              <button data-tab="history" type="button">Billing history</button>
+              <button data-tab="payment" type="button">Payment method</button>
+              <button data-tab="plan" type="button">Plan &amp; subscription</button>
+            </nav>
+
+            <!-- Tab Content Panels -->
+            <div>
+              
+              <!-- Tab 1: Usage & Charges -->
+              <div class="sa-tab-panel active" id="tab-usage">
+                <div class="sa-section-head" style="padding:0 0 16px;border:0;">
+                  <div style="width:100%;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                      <h2 style="font-size:17px;">Usage &amp; Charges Breakdown</h2>
+                      <span class="sa-mono" style="font-size:12.5px;color:var(--sa-muted);" id="usagePeriodText">1 Aug &ndash; 31 Aug 2026</span>
+                    </div>
+                    <div class="sa-progress-bar-bg">
+                      <div class="sa-progress-bar-fill" id="usageProgressFill" style="width: 35%;"></div>
+                    </div>
+                    <div style="font-size:12px;color:var(--sa-muted);" id="usageElapsedText">11 days elapsed in current cycle (35%)</div>
+                  </div>
+                </div>
+
+                <div class="sa-table-wrap" style="border:1px solid var(--sa-border);border-radius:8px;">
+                  <table class="sa-table" id="usageTable">
+                    <thead>
+                      <tr>
+                        <th>Compliance &amp; Operational Feature</th>
+                        <th>Volume / Units Used</th>
+                        <th>Unit Rate</th>
+                        <th style="text-align:right;">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody id="usageTableBody">
+                      <!-- Populated dynamically via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab 2: Billing History -->
+              <div class="sa-tab-panel" id="tab-history">
+                <div class="sa-section-head" style="padding:0 0 16px;border:0;">
+                  <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                      <h2 style="font-size:17px;">Billing History &amp; Tax Invoices</h2>
+                      <p>Download itemized PDF receipts for auditing and financial reconciliation.</p>
+                    </div>
+                    <button class="sa-btn sa-btn-secondary" id="exportVenueHistoryBtn" type="button">Export Ledger</button>
+                  </div>
+                </div>
+
+                <div class="sa-table-wrap" style="border:1px solid var(--sa-border);border-radius:8px;">
+                  <table class="sa-table" id="historyTable">
+                    <thead>
+                      <tr>
+                        <th>Tax Invoice #</th>
+                        <th>Billing Period</th>
+                        <th>Invoice Amount</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                      <!-- Populated dynamically via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Tab 3: Payment Method -->
+              <div class="sa-tab-panel" id="tab-payment">
+                <div class="sa-section-head" style="padding:0 0 16px;border:0;">
+                  <div>
+                    <h2 style="font-size:17px;">Payment Method &amp; Direct Debit</h2>
+                    <p>Primary payment source used for automated end-of-cycle settlement.</p>
+                  </div>
+                </div>
+
+                <div class="sa-payment-card">
+                  <div class="sa-card-brand-row">
+                    <span class="sa-status active">Primary Payment Method</span>
+                    <span style="font-weight:700;font-size:14px;color:var(--sa-ink);">Mastercard</span>
+                  </div>
+                  <div class="sa-card-digits">&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 4242</div>
+                  <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--sa-muted);">
+                    <div>Expires: <strong>08/28</strong></div>
+                    <div>Cardholder: <strong id="cardHolderName">Jonathan Chen</strong></div>
+                  </div>
+                  <div class="sa-actions" style="margin-top:20px;">
+                    <button class="sa-btn sa-btn-secondary" type="button" onclick="alert('Update card workflow opened.');">Update Card</button>
+                    <button class="sa-btn sa-btn-secondary" type="button" onclick="alert('Direct debit credentials opened.');">Set Direct Debit</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 4: Plan & Subscription -->
+              <div class="sa-tab-panel" id="tab-plan">
+                <div class="sa-section-head" style="padding:0 0 16px;border:0;">
+                  <div>
+                    <h2 style="font-size:17px;">Platform Subscription &amp; Tier</h2>
+                    <p>Configure base subscription model, add-on modules, and custom pricing tiers.</p>
+                  </div>
+                </div>
+
+                <div class="sa-plan-grid">
+                  <div class="sa-plan-card active">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:16px;font-weight:700;color:var(--sa-ink);">Pay-As-You-Go (PAYG)</span>
+                        <span class="sa-status active">Current Plan</span>
+                      </div>
+                      <div class="sa-plan-price">$0 <span style="font-size:13px;font-weight:400;color:var(--sa-muted);">/ month base</span></div>
+                      <p style="font-size:13px;color:var(--sa-muted);margin:8px 0 16px;">Pure usage-based billing with no fixed monthly commitment.</p>
+                      <ul class="sa-plan-features">
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          $0.25 per ID verification check
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          $0.15 per AUSTRAC transaction filing
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          $10.00 per connected gaming machine / mo
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          Unlimited admin &amp; staff user seats
+                        </li>
+                      </ul>
+                    </div>
+                    <button class="sa-btn sa-btn-secondary" style="width:100%;" disabled>Active Plan</button>
+                  </div>
+
+                  <div class="sa-plan-card">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:16px;font-weight:700;color:var(--sa-ink);">Enterprise Volume Tier</span>
+                        <span class="sa-status">Upgrade</span>
+                      </div>
+                      <div class="sa-plan-price">$499 <span style="font-size:13px;font-weight:400;color:var(--sa-muted);">/ month base</span></div>
+                      <p style="font-size:13px;color:var(--sa-muted);margin:8px 0 16px;">Volume discount for large clubs with high daily disbursement traffic.</p>
+                      <ul class="sa-plan-features">
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          Includes 3,000 ID verification checks / mo
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          $0.08 per extra check ($0.05 AUSTRAC)
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          Dedicated compliance SLA &amp; account manager
+                        </li>
+                        <li>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sa-teal)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                          Real-time AML webhook streaming
+                        </li>
+                      </ul>
+                    </div>
+                    <button class="sa-btn sa-btn-primary" style="width:100%;" type="button" onclick="alert('Enterprise tier upgrade request submitted.');">Upgrade to Enterprise</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script src="admin-data.js"></script>
+  <script>
+    // Venue-specific mock profiles
+    const venueBillingProfiles = {
+      'Riverside RSL Club': {
+        venueName: 'Riverside RSL Club',
+        orgName: 'Riverside Group',
+        plan: 'PAYG',
+        status: 'Active',
+        statusClass: 'active',
+        period: '1 Aug \u2013 31 Aug 2026',
+        elapsedDays: '11 days elapsed in current cycle (35%)',
+        elapsedPct: '35%',
+        payoutsCount: 84,
+        payoutsTotal: '$42.00',
+        kycCount: 84,
+        kycTotal: '$84.00',
+        reportsCount: 6,
+        reportsTotal: '$30.00',
+        machinesCount: 12,
+        machinesTotal: '$30.00',
+        totalPeriod: '$186.00',
+        history: [
+          { inv: 'INV-0042', period: 'Jul 2026', amount: '$412.50', status: 'Paid', statusClass: 'active' },
+          { inv: 'INV-0031', period: 'Jun 2026', amount: '$388.00', status: 'Paid', statusClass: 'active' },
+          { inv: 'INV-0020', period: 'May 2026', amount: '$405.00', status: 'Paid', statusClass: 'active' }
+        ]
+      },
+      'Northside Leagues Club': {
+        venueName: 'Northside Leagues Club',
+        orgName: 'Northside Hospitality',
+        plan: 'PAYG',
+        status: 'Pending Payment',
+        statusClass: 'pending',
+        period: '15 Jul \u2013 15 Aug 2026',
+        elapsedDays: '28 days elapsed in current cycle (93%)',
+        elapsedPct: '93%',
+        payoutsCount: 42,
+        payoutsTotal: '$21.00',
+        kycCount: 38,
+        kycTotal: '$38.00',
+        reportsCount: 2,
+        reportsTotal: '$10.00',
+        machinesCount: 8,
+        machinesTotal: '$20.00',
+        totalPeriod: '$89.00',
+        history: [
+          { inv: 'INV-0049', period: 'Jul 2026', amount: '$87.00', status: 'Pending', statusClass: 'pending' },
+          { inv: 'INV-0038', period: 'Jun 2026', amount: '$65.00', status: 'Paid', statusClass: 'active' }
+        ]
+      },
+      'Harbourview Hotel': {
+        venueName: 'Harbourview Hotel',
+        orgName: 'Harbourview Group',
+        plan: 'PAYG',
+        status: 'Active',
+        statusClass: 'active',
+        period: '1 Aug \u2013 31 Aug 2026',
+        elapsedDays: '11 days elapsed in current cycle (35%)',
+        elapsedPct: '35%',
+        payoutsCount: 60,
+        payoutsTotal: '$30.00',
+        kycCount: 55,
+        kycTotal: '$55.00',
+        reportsCount: 4,
+        reportsTotal: '$20.00',
+        machinesCount: 6,
+        machinesTotal: '$15.00',
+        totalPeriod: '$120.00',
+        history: [
+          { inv: 'INV-0045', period: 'Jul 2026', amount: '$234.00', status: 'Paid', statusClass: 'active' },
+          { inv: 'INV-0034', period: 'Jun 2026', amount: '$210.00', status: 'Paid', statusClass: 'active' }
+        ]
+      },
+      'Riverside Grand Bistro': {
+        venueName: 'Riverside Grand Bistro',
+        orgName: 'Riverside Group',
+        plan: 'PAYG',
+        status: 'Action Required',
+        statusClass: 'failed',
+        period: '10 Jul \u2013 10 Aug 2026',
+        elapsedDays: '31 days elapsed in cycle (100%)',
+        elapsedPct: '100%',
+        payoutsCount: 15,
+        payoutsTotal: '$7.50',
+        kycCount: 15,
+        kycTotal: '$15.00',
+        reportsCount: 0,
+        reportsTotal: '$0.00',
+        machinesCount: 0,
+        machinesTotal: '$0.00',
+        totalPeriod: '$22.50',
+        history: [
+          { inv: 'INV-0051', period: 'Jul 2026', amount: '$22.50', status: 'Failed', statusClass: 'failed' }
+        ]
+      },
+      'Riverside Lounge & Bar': {
+        venueName: 'Riverside Lounge & Bar',
+        orgName: 'Riverside Group',
+        plan: 'PAYG',
+        status: 'Draft / Setup',
+        statusClass: 'neutral',
+        period: '1 Aug \u2013 31 Aug 2026',
+        elapsedDays: '0 days elapsed',
+        elapsedPct: '0%',
+        payoutsCount: 0,
+        payoutsTotal: '$0.00',
+        kycCount: 0,
+        kycTotal: '$0.00',
+        reportsCount: 0,
+        reportsTotal: '$0.00',
+        machinesCount: 0,
+        machinesTotal: '$0.00',
+        totalPeriod: '$0.00',
+        history: []
+      }
+    };
+
+    // Tab Switching Logic
+    function switchVenueTab(tabId) {
+      document.querySelectorAll('#venueBillingTabs button').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+      });
+      document.querySelectorAll('.sa-tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+      });
+    }
+
+    document.querySelectorAll('#venueBillingTabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchVenueTab(btn.getAttribute('data-tab'));
+      });
+    });
+
+    // Populate and open Venue Drill-down view
+    function openVenueBilling(venueName, orgName) {
+      const superAdminData = window.SuperAdminData ? SuperAdminData.read() : null;
+      const venue = superAdminData?.venues?.find(v => v.name === venueName);
+      const profile = venueBillingProfiles[venueName] || {
+        venueName,
+        orgName: orgName || 'Venue Client Group',
+        plan: 'PAYG',
+        status: 'Active',
+        statusClass: 'active',
+        period: '1 Aug \u2013 31 Aug 2026',
+        elapsedDays: '11 days elapsed in current cycle (35%)',
+        elapsedPct: '35%',
+        payoutsCount: venue?.transactions ?? venueBillingProfiles[venueName]?.payoutsCount ?? 0,
+        payoutsTotal: `$${((venue?.transactions ?? venueBillingProfiles[venueName]?.payoutsCount ?? 0) * 0.5).toFixed(2)}`,
+        kycCount: venue?.transactions ?? venueBillingProfiles[venueName]?.kycCount ?? 0,
+        kycTotal: `$${((venue?.transactions ?? venueBillingProfiles[venueName]?.kycCount ?? 0) * 1.0).toFixed(2)}`,
+        reportsCount: 0,
+        reportsTotal: '$0.00',
+        machinesCount: 0,
+        machinesTotal: '$0.00',
+        totalPeriod: `$${((venue?.transactions ?? venueBillingProfiles[venueName]?.payoutsCount ?? 0) * 1.5).toFixed(2)}`,
+        history: []
+      };
+
+      // Populate Headings & Meta
+      document.getElementById('venueBillingTitle').innerHTML = `${profile.venueName} &mdash; Venue Billing`;
+      document.getElementById('venueBillingSubtitle').textContent = `Usage breakdown, monthly invoices, payment methods, and subscription details for ${profile.orgName}.`;
+      document.getElementById('usagePeriodText').textContent = profile.period;
+      document.getElementById('usageProgressFill').style.width = profile.elapsedPct;
+      document.getElementById('usageElapsedText').textContent = profile.elapsedDays;
+
+      // Populate usage breakdown table
+      const usageTbody = document.getElementById('usageTableBody');
+      usageTbody.innerHTML = `
+        <tr>
+          <td>
+            <div class="sa-primary-text">Payout Processing (PAYG)</div>
+            <div class="sa-secondary-text">Standard EFTPOS &amp; Osko transaction verification</div>
+          </td>
+          <td class="sa-mono">${profile.payoutsCount} disbursements</td>
+          <td class="sa-mono">$0.50 / payout</td>
+          <td class="sa-mono" style="text-align:right;font-weight:700;">${profile.payoutsTotal}</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="sa-primary-text">Digital ID Verification (DVS / Credit Bureau)</div>
+            <div class="sa-secondary-text">Automated patron identity &amp; document match checks</div>
+          </td>
+          <td class="sa-mono">${profile.kycCount} checks</td>
+          <td class="sa-mono">$1.00 / check</td>
+          <td class="sa-mono" style="text-align:right;font-weight:700;">${profile.kycTotal}</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="sa-primary-text">AUSTRAC SMR Report Generator</div>
+            <div class="sa-secondary-text">Automated Suspicious Matter Report compilation</div>
+          </td>
+          <td class="sa-mono">${profile.reportsCount} reports</td>
+          <td class="sa-mono">$5.00 / filing</td>
+          <td class="sa-mono" style="text-align:right;font-weight:700;">${profile.reportsTotal}</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="sa-primary-text">Connected EGM Telemetry Module</div>
+            <div class="sa-secondary-text">Live telemetry link for floor gaming machines</div>
+          </td>
+          <td class="sa-mono">${profile.machinesCount} machines</td>
+          <td class="sa-mono">$2.50 / unit / mo</td>
+          <td class="sa-mono" style="text-align:right;font-weight:700;">${profile.machinesTotal}</td>
+        </tr>
+        <tr style="background:var(--sa-surface-subtle);font-weight:700;">
+          <td colspan="3">Estimated Current Billing Cycle Total</td>
+          <td class="sa-mono" style="text-align:right;color:var(--sa-teal);font-size:15px;">${profile.totalPeriod}</td>
+        </tr>
+      `;
+
+      // Update history table
+      const historyTbody = document.getElementById('historyTableBody');
+      if (profile.history.length === 0) {
+        historyTbody.innerHTML = `<tr><td colspan="5" class="sa-empty">No billing history records for this venue yet.</td></tr>`;
+      } else {
+        historyTbody.innerHTML = profile.history.map(h => `
+          <tr>
+            <td class="sa-mono" style="font-weight:700;color:var(--sa-teal);">${h.inv}</td>
+            <td class="sa-mono">${h.period}</td>
+            <td class="sa-mono" style="font-weight:700;">${h.amount}</td>
+            <td><span class="sa-status ${h.statusClass}">${h.status}</span></td>
+            <td style="text-align:right;"><button class="sa-btn sa-btn-secondary" style="min-height:32px;font-size:12px;padding:0 10px;" type="button" onclick="alert('Downloading invoice PDF for ${h.inv}');">Download PDF</button></td>
+          </tr>
+        `).join('');
+      }
+
+      // Toggle views
+      document.getElementById('pageHeadSuperadmin').style.display = 'none';
+      document.getElementById('content-superadmin').style.display = 'none';
+      document.getElementById('pageHeadVenue').style.display = 'flex';
+      document.getElementById('content-admin').style.display = 'block';
+
+      switchVenueTab('usage');
+    }
+
+    // Switch back to Super Admin multi-venue overview
+    function showSuperAdminOverview() {
+      document.getElementById('pageHeadVenue').style.display = 'none';
+      document.getElementById('content-admin').style.display = 'none';
+      document.getElementById('pageHeadSuperadmin').style.display = 'flex';
+      document.getElementById('content-superadmin').style.display = 'block';
+    }
+
+    // Wire up row click listeners on the Super Admin table
+    document.querySelectorAll('#venuesBillingBody tr').forEach(row => {
+      row.addEventListener('click', () => {
+        const venueName = row.getAttribute('data-venue') || row.querySelector('.sa-primary-text').textContent.trim();
+        const orgName = row.getAttribute('data-org') || 'Riverside Group';
+        const venueKey = venueName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+        const context = {
+          venueId: 'venue-' + venueKey,
+          venueKey: venueKey,
+          venueName: venueName,
+          orgName: orgName
+        };
+
+        sessionStorage.setItem('selectedVenueContext', JSON.stringify(context));
+        sessionStorage.setItem('venueConfigData', JSON.stringify(context));
+        openVenueBilling(venueName, orgName);
+      });
+    });
+
+    // Handle initial state on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const role = sessionStorage.getItem('userRole') || 'superadmin';
+      const isSuperAdmin = role === 'superadmin';
+      const backBtn = document.getElementById('billingBackBtn');
+
+      if (isSuperAdmin) {
+        showSuperAdminOverview();
+        if (backBtn) backBtn.style.display = 'inline-flex';
+      } else {
+        const contextStr = sessionStorage.getItem('selectedVenueContext') || sessionStorage.getItem('venueConfigData');
+        let venueName = 'Riverside RSL Club';
+        let orgName = 'Riverside Group';
+        if (contextStr) {
+          try {
+            const ctx = JSON.parse(contextStr);
+            venueName = ctx.venueName || ctx.name || venueName;
+            orgName = ctx.orgName || orgName;
+          } catch(e) {}
+        }
+        if (backBtn) backBtn.style.display = 'none';
+        openVenueBilling(venueName, orgName);
+      }
+
+      // Export buttons mock feedback
+      const exportAll = document.getElementById('exportAllBillingBtn');
+      if (exportAll) {
+        exportAll.addEventListener('click', () => {
+          if (window.SuperAdminData) SuperAdminData.toast('Platform billing CSV report generated.');
+          else alert('Platform billing CSV report generated.');
+        });
+      }
+
+      const exportLedger = document.getElementById('exportVenueHistoryBtn');
+      if (exportLedger) {
+        exportLedger.addEventListener('click', () => {
+          if (window.SuperAdminData) SuperAdminData.toast('Venue ledger CSV exported.');
+          else alert('Venue ledger CSV exported.');
+        });
+      }
+
+      const downloadStatement = document.getElementById('downloadStatementBtn');
+      if (downloadStatement) {
+        downloadStatement.addEventListener('click', () => {
+          if (window.SuperAdminData) SuperAdminData.toast('Itemized statement PDF downloading.');
+          else alert('Itemized statement PDF downloading.');
+        });
+      }
+
+      // Sync Admin Shell Header navigation
+      const badge = document.getElementById('settings-role-badge');
+      const nav = document.getElementById('settings-admin-nav');
+      const switchLink = document.getElementById('settings-switch-link');
+
+      if (isSuperAdmin) {
+        badge.className = 'role-badge super-admin';
+        badge.innerText = 'SUPER ADMIN';
+        nav.innerHTML = `
+          <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-smr.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        `;
+        switchLink.href = 'dashboard.html';
+        switchLink.onclick = function(){ sessionStorage.setItem('userRole','admin'); };
+        switchLink.innerText = '→ Switch to Admin';
+      } else {
+        badge.className = 'role-badge admin';
+        badge.innerText = 'ADMIN';
+        nav.innerHTML = `
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="austrac-transactions.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        `;
+        switchLink.href = 'super-admin.html';
+        switchLink.onclick = function(){ sessionStorage.setItem('userRole','superadmin'); };
+        switchLink.innerText = '→ Switch to Super Admin';
+      }
+    });
+  </script>
+</body>
+</html>

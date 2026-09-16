@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaming Machines - Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <link rel="stylesheet" href="super-admin-ui.css">
+  <!-- Google Fonts: JetBrains Mono for machine codes/serials -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Specific styling for Admin Machines Roster */
+    .app {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 32px 28px 64px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .page-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text-hi);
+    }
+    .page-sub {
+      margin: 6px 0 0;
+      font-size: 13.5px;
+      color: var(--text-mid);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-toolbar {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-toolbar.primary {
+      background: var(--blue);
+      color: #ffffff;
+    }
+    .btn-toolbar.primary:hover {
+      background: var(--blue-dark, #0b7a6f);
+    }
+    .btn-toolbar.secondary {
+      background: var(--bg-card);
+      border-color: var(--border-mid);
+      color: var(--text-hi);
+    }
+    .btn-toolbar.secondary:hover {
+      background: var(--bg-page);
+    }
+
+    /* Filter Toolbar Card */
+    .toolbar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .toolbar-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 280px;
+      flex-wrap: wrap;
+    }
+    .search-field {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+      max-width: 440px;
+    }
+    .search-field svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-mid);
+      pointer-events: none;
+    }
+    .search-field input {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px 0 36px;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--text-hi);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .search-field input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+    }
+
+    .filter-select {
+      height: 38px;
+      padding: 0 32px 0 12px;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+      color: var(--text-hi);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      outline: none;
+    }
+    .filter-select:focus {
+      border-color: var(--blue);
+    }
+
+    .filter-summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12.5px;
+      color: var(--text-mid);
+    }
+    .reset-filters-btn {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      color: var(--blue);
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    /* Table & Card Container */
+    .content-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .table-responsive {
+      overflow-x: auto;
+    }
+    #machinesTable {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    #machinesTable th {
+      padding: 12px 18px;
+      background: #f8fafb;
+      color: var(--text-mid);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    #machinesTable td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 13.5px;
+      vertical-align: middle;
+    }
+    #machinesTable tbody tr {
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+    #machinesTable tbody tr:hover {
+      background-color: #fbfdfd;
+    }
+    #machinesTable tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .cell-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cell-id {
+      font-weight: 700;
+      color: var(--blue);
+      font-size: 13px;
+    }
+    .cell-game {
+      font-weight: 700;
+      color: var(--text-hi);
+      font-size: 14px;
+    }
+    .cell-serial {
+      color: var(--text-mid);
+      font-size: 12.5px;
+    }
+
+    /* Status Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pill.pass {
+      background: #e6f7f3;
+      color: #0d7a6f;
+      border: 1px solid #b2e2d9;
+    }
+    .pill.neutral {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .modal-overlay.active,
+    .modal-overlay.open {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      visibility: visible !important;
+      display: flex !important;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 480px;
+      max-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin: auto;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.active .modal-box,
+    .modal-overlay.open .modal-box {
+      transform: translateY(0) scale(1);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #ffffff;
+      flex-shrink: 0;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-hi);
+    }
+    .modal-close {
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      color: var(--text-mid);
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover {
+      background: var(--bg-page);
+      color: var(--text-hi);
+    }
+    .modal-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+    }
+    #addMachineForm .modal-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 24px;
+      background: #f8fafb;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .btn-modal {
+      min-height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+    .btn-modal.primary {
+      background: var(--blue);
+      color: #ffffff;
+    }
+    .btn-modal.primary:hover {
+      background: var(--blue-dark, #0b7a6f);
+    }
+    .btn-modal.secondary {
+      background: #ffffff;
+      border-color: var(--border-mid);
+      color: var(--text-hi);
+    }
+    .btn-modal.secondary:hover {
+      background: var(--bg-page);
+    }
+
+    .form-grid-5 {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field-group label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-mid);
+    }
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border-mid);
+      border-radius: 6px;
+      font-size: 13.5px;
+      color: var(--text-hi);
+      background: #ffffff;
+      font-family: inherit;
+      outline: none;
+    }
+    .field-group textarea {
+      height: 76px;
+      padding-top: 10px;
+      resize: vertical;
+    }
+    .field-group input[readonly] {
+      background: #f8fafb;
+      color: var(--text-mid);
+    }
+    .field-group input:focus,
+    .field-group select:focus,
+    .field-group textarea:focus {
+      border-color: var(--blue);
+    }
+
+    /* Detail Modal Inspection Items */
+    .detail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .detail-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .detail-lbl {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-mid);
+      text-transform: none;
+      letter-spacing: 0.04em;
+    }
+    .detail-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-hi);
+    }
+
+    .empty-state {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--text-mid);
+    }
+
+    .machine-modal-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .machine-modal-tab {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--text-mid);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .machine-modal-tab:hover { color: var(--text-hi); }
+    .machine-modal-tab.active {
+      border-bottom-color: var(--blue);
+      color: var(--blue-dark);
+    }
+    .machine-modal-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    .machine-modal-panel > .modal-body {
+      flex: 1;
+      min-height: 0;
+    }
+    #addMachineModal [hidden] {
+      display: none !important;
+    }
+    .bulk-upload-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .modal-intro,
+    .modal-header-sub {
+      margin: 0;
+      color: var(--text-mid);
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    .modal-header-sub { margin-top: 4px; font-size: 12.5px; }
+    .template-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--blue-border);
+      border-radius: var(--r-sm);
+      background: var(--blue-light);
+      color: var(--blue-dark);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .template-download:hover { background: #ccfbf1; }
+    .upload-dropzone {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      min-height: 190px;
+      padding: 24px;
+      border: 1px dashed var(--border-mid);
+      border-radius: var(--r-md);
+      background: var(--bg-page);
+      color: var(--text-mid);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--t) var(--ease), background var(--t) var(--ease);
+    }
+    .upload-dropzone:hover,
+    .upload-dropzone:focus-within,
+    .upload-dropzone.is-dragging {
+      border-color: var(--blue);
+      background: var(--blue-light);
+    }
+    .upload-dropzone strong { color: var(--text-hi); font-size: 14px; }
+    .upload-icon { color: var(--blue); margin-bottom: 4px; }
+    .upload-browse {
+      margin-top: 7px;
+      padding: 8px 13px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm);
+      background: var(--bg-card);
+      color: var(--text-hi);
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+    .upload-file-name {
+      min-height: 18px;
+      margin: -4px 0 0;
+      color: var(--text-mid);
+      font-size: 12.5px;
+      overflow-wrap: anywhere;
+    }
+    .export-modal-box { max-width: 520px; }
+    .export-modal-body { display: flex; flex-direction: column; gap: 22px; }
+    .export-modal-body .field-group select { width: 100%; }
+    .export-count {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+      color: var(--text-mid);
+      font-size: 13.5px;
+    }
+    .export-count strong { color: var(--text-hi); font-size: 21px; }
+    .btn-modal:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 560px) {
+      .modal-header, .modal-body, .modal-footer { padding-left: 18px; padding-right: 18px; }
+      .machine-modal-tabs { padding-left: 18px; padding-right: 18px; }
+      .modal-footer { flex-wrap: wrap; }
+      .modal-footer .btn-modal { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <div class="app">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="pageTitle">Gaming Machines</h1>
+        <p class="page-sub" id="pageSub">Registered EGM machine registry across all venues in the network.</p>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn-toolbar secondary" id="exportBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+        <button class="btn-toolbar primary" id="addMachineBtn" type="button" onclick="openAddMachineModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add machines
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="toolbar-card">
+      <div class="toolbar-flex">
+        <div class="toolbar-left">
+          <div class="search-field">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Search by Machine ID, Game Title, Serial, or Venue..." />
+          </div>
+
+          <select class="filter-select" id="venueFilter">
+            <option value="all">All Venues</option>
+            <option value="Riverside RSL Club">Riverside RSL Club</option>
+            <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+            <option value="Northside Leagues Club">Northside Leagues Club</option>
+            <option value="Northside Sports Club">Northside Sports Club</option>
+            <option value="Harbourview Hotel">Harbourview Hotel</option>
+          </select>
+
+          <select class="filter-select" id="statusFilter">
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+
+        <div class="filter-summary">
+          <span id="resultsCount">Showing 20 machines</span>
+          <button class="reset-filters-btn" id="resetFiltersBtn" type="button" style="display:none;">Reset filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Container (5 Core Strapi Fields) -->
+    <div class="content-card">
+      <div class="table-responsive">
+        <table id="machinesTable">
+          <thead>
+            <tr>
+              <th style="width: 16%;">Machine ID</th>
+              <th style="width: 34%;">Game Title</th>
+              <th style="width: 20%;">Serial Number</th>
+              <th style="width: 18%;">Venue</th>
+              <th style="width: 12%;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="machinesBody">
+            <!-- Dynamically populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;color:var(--text-mid);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p style="margin:0;font-weight:700;color:var(--text-hi);">No machines match your criteria</p>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-mid);">Try adjusting your search query or venue filter.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Machine Detail Modal -->
+  <div class="modal-overlay" id="machineDetailModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h2 id="detailModalTitle">Aristocrat Lightning Link 1</h2>
+          <p id="detailModalSub" class="cell-mono" style="font-size:12.5px;color:var(--blue);margin:3px 0 0;font-weight:700;">EGM-001</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('machineDetailModal')" type="button" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-list">
+          <div class="detail-row">
+            <span class="detail-lbl">Machine ID</span>
+            <span class="detail-val cell-mono" id="detailMachineId" style="color:var(--blue);">EGM-001</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Game Title</span>
+            <span class="detail-val" id="detailName">Aristocrat Lightning Link 1</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Hardware Serial</span>
+            <span class="detail-val cell-mono" id="detailSerial">SN-AR-00112</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Assigned Venue</span>
+            <span class="detail-val" id="detailVenue">Riverside RSL Club</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Description</span>
+            <span class="detail-val" id="detailDescription">-</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Status</span>
+            <span class="detail-val" id="detailStatus"><span class="pill pass">Active</span></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Created by</span>
+            <span class="detail-val" id="detailCreatedBy">-</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-lbl">Last updated by</span>
+            <span class="detail-val" id="detailLastUpdatedBy">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal secondary" id="detailEditBtn" type="button">Edit machine</button>
+        <button class="btn-modal secondary" onclick="closeModal('machineDetailModal')" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Machine Modal -->
+  <div class="modal-overlay" id="addMachineModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="addMachineModalTitle">Add machines</h2>
+        <button class="modal-close" onclick="closeModal('addMachineModal')" type="button" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="machine-modal-tabs" role="tablist" aria-label="Add machines options">
+        <button class="machine-modal-tab active" id="singleMachineTab" type="button" role="tab" aria-selected="true" aria-controls="singleMachinePanel" data-add-mode="single">Single machine</button>
+        <button class="machine-modal-tab" id="bulkMachineTab" type="button" role="tab" aria-selected="false" aria-controls="bulkMachinePanel" data-add-mode="bulk">Bulk upload</button>
+      </div>
+
+      <form id="addMachineForm" novalidate style="display:flex;flex-direction:column;flex:1;overflow:hidden;margin:0;">
+        <div class="machine-modal-panel" id="singleMachinePanel" data-add-panel="single" role="tabpanel" aria-labelledby="singleMachineTab">
+        <div class="modal-body">
+          <div class="form-grid-5">
+            <div class="field-group">
+              <label for="machineId">Machine ID (Asset Tag) *</label>
+              <input type="text" id="machineId" required placeholder="e.g. EGM-021" />
+            </div>
+
+            <div class="field-group">
+              <label for="name">Game Title &amp; Model *</label>
+              <input type="text" id="name" required placeholder="e.g. Aristocrat Lightning Link 1" />
+            </div>
+
+            <div class="field-group">
+              <label for="serialNumber">Hardware Serial Number *</label>
+              <input type="text" id="serialNumber" required placeholder="e.g. SN-AR-00112" />
+            </div>
+
+            <div class="field-group">
+              <label for="venue">Assigned Venue *</label>
+              <select id="venue" required>
+                <option value="" disabled selected>Select a venue...</option>
+                <option value="Riverside RSL Club">Riverside RSL Club</option>
+                <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+                <option value="Northside Leagues Club">Northside Leagues Club</option>
+                <option value="Northside Sports Club">Northside Sports Club</option>
+                <option value="Harbourview Hotel">Harbourview Hotel</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="description">Description</label>
+              <textarea id="description" placeholder="Optional machine description"></textarea>
+            </div>
+
+            <div class="field-group" id="auditFields" style="display:none;">
+              <label for="createdBy">Created by</label>
+              <input type="text" id="createdBy" readonly aria-readonly="true" />
+              <label for="lastUpdatedBy" style="margin-top:6px;">Last updated by</label>
+              <input type="text" id="lastUpdatedBy" readonly aria-readonly="true" />
+            </div>
+
+            <div class="field-group">
+              <label for="status">Operational Status *</label>
+              <select id="status" required>
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-modal secondary" onclick="closeModal('addMachineModal')">Cancel</button>
+          <button type="submit" class="btn-modal primary" id="saveMachineSubmitBtn">Save machine</button>
+        </div>
+        </div>
+      </form>
+
+      <section class="machine-modal-panel" id="bulkMachinePanel" data-add-panel="bulk" role="tabpanel" aria-labelledby="bulkMachineTab" hidden>
+        <div class="modal-body bulk-upload-body">
+          <p class="modal-intro">Upload an Excel file with machine data. Use the template to keep the required columns and formatting consistent.</p>
+          <button class="template-download" id="downloadMachineTemplateBtn" type="button">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/><path d="M5 21h14"/></svg>
+            Download upload template
+          </button>
+          <label class="upload-dropzone" for="machineBulkFile">
+            <span class="upload-icon" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>
+            </span>
+            <strong>Drop your .xlsx file here</strong>
+            <span>or browse from your computer</span>
+            <span class="upload-browse">Browse files</span>
+            <input id="machineBulkFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+          </label>
+          <p class="upload-file-name" id="machineBulkFileName" aria-live="polite">No file selected</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal secondary" onclick="closeModal('addMachineModal')">Cancel</button>
+          <button type="button" class="btn-modal primary" id="importMachinesBtn" disabled>Import machines</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Export Machines Modal -->
+  <div class="modal-overlay" id="exportMachineModal">
+    <div class="modal-box export-modal-box">
+      <div class="modal-header">
+        <div>
+          <h2>Export machines</h2>
+          <p class="modal-header-sub">Download a CSV roster for the selected venue.</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('exportMachineModal')" type="button" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body export-modal-body">
+        <div class="field-group">
+          <label for="exportVenueSelect">Venue</label>
+          <select id="exportVenueSelect"></select>
+        </div>
+        <div class="export-count" aria-live="polite">
+          <strong id="exportMachineCount">0</strong>
+          <span>machines will be exported</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal secondary" onclick="closeModal('exportMachineModal')">Cancel</button>
+        <button type="button" class="btn-modal primary" id="confirmExportBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script>
+    // 20 Standard Machines matching the Strapi Schema and Onboarding Guide
+    const defaultMachines = [
+      // Riverside RSL Club (12 machines: 8 Active, 4 Archived)
+      { id: 'm-1', machineId: 'EGM-001', name: 'Aristocrat Lightning Link 1', serialNumber: 'SN-AR-00112', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-2', machineId: 'EGM-002', name: 'Aristocrat Lightning Link 2', serialNumber: 'SN-AR-00113', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-3', machineId: 'EGM-003', name: 'Aristocrat Lightning Link 3', serialNumber: 'SN-AR-00114', venue: 'Riverside RSL Club', status: 'archived' },
+      { id: 'm-4', machineId: 'EGM-004', name: 'IGT Wheel of Fortune 1', serialNumber: 'SN-IGT-2201', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-5', machineId: 'EGM-005', name: 'IGT Wheel of Fortune 2', serialNumber: 'SN-IGT-2202', venue: 'Riverside RSL Club', status: 'archived' },
+      { id: 'm-6', machineId: 'EGM-006', name: 'Konami Dragon Link 1', serialNumber: 'SN-KON-3301', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-7', machineId: 'EGM-007', name: 'Konami Dragon Link 2', serialNumber: 'SN-KON-3302', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-8', machineId: 'EGM-008', name: 'Scientific Games Monopoly', serialNumber: 'SN-SCI-4401', venue: 'Riverside RSL Club', status: 'archived' },
+      { id: 'm-9', machineId: 'EGM-009', name: 'Everi Fortune Coin 1', serialNumber: 'SN-EVE-5501', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-10', machineId: 'EGM-010', name: 'Everi Fortune Coin 2', serialNumber: 'SN-EVE-5502', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-11', machineId: 'EGM-011', name: 'Aristocrat Buffalo 1', serialNumber: 'SN-AR-00221', venue: 'Riverside RSL Club', status: 'active' },
+      { id: 'm-12', machineId: 'EGM-012', name: 'Aristocrat Buffalo 2', serialNumber: 'SN-AR-00222', venue: 'Riverside RSL Club', status: 'archived' },
+
+      // Northside Sports Club (8 machines: 5 Active, 3 Archived)
+      { id: 'm-13', machineId: 'EGM-013', name: 'Aristocrat Wild Panda 1', serialNumber: 'SN-AR-00331', venue: 'Northside Sports Club', status: 'active' },
+      { id: 'm-14', machineId: 'EGM-014', name: 'Aristocrat Wild Panda 2', serialNumber: 'SN-AR-00332', venue: 'Northside Sports Club', status: 'active' },
+      { id: 'm-15', machineId: 'EGM-015', name: 'IGT Double Diamond 1', serialNumber: 'SN-IGT-3301', venue: 'Northside Sports Club', status: 'archived' },
+      { id: 'm-16', machineId: 'EGM-016', name: 'IGT Double Diamond 2', serialNumber: 'SN-IGT-3302', venue: 'Northside Sports Club', status: 'active' },
+      { id: 'm-17', machineId: 'EGM-017', name: 'Konami China Shores', serialNumber: 'SN-KON-4401', venue: 'Northside Sports Club', status: 'active' },
+      { id: 'm-18', machineId: 'EGM-018', name: 'Scientific Games Zeus', serialNumber: 'SN-SCI-5501', venue: 'Northside Sports Club', status: 'archived' },
+      { id: 'm-19', machineId: 'EGM-019', name: 'Everi Black Diamond', serialNumber: 'SN-EVE-6601', venue: 'Northside Sports Club', status: 'archived' },
+      { id: 'm-20', machineId: 'EGM-020', name: 'Aristocrat Timber Wolf', serialNumber: 'SN-AR-00441', venue: 'Northside Sports Club', status: 'active' }
+    ];
+
+    function generateMachineUuid() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {
+        const random = Math.random() * 16 | 0;
+        const value = character === 'x' ? random : (random & 0x3 | 0x8);
+        return value.toString(16);
+      });
+    }
+
+    function currentMachineActor() {
+      return sessionStorage.getItem('username') || sessionStorage.getItem('userEmail') || (sessionStorage.getItem('userRole') === 'superadmin' ? 'Super Admin' : 'Venue Admin');
+    }
+
+    let machines = [];
+    try {
+      const stored = sessionStorage.getItem('machinesData');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const defaultMap = new Map(defaultMachines.map(m => [m.id, m]));
+        machines = parsed.map(m => {
+          if (defaultMap.has(m.id)) {
+            return { ...m, status: defaultMap.get(m.id).status };
+          }
+          return m;
+        });
+      } else {
+        machines = defaultMachines;
+      }
+    } catch(e) {
+      machines = defaultMachines;
+    }
+
+    machines = machines.map(machine => ({
+      ...machine,
+      status: machine.status === 'inactive' ? 'archived' : (machine.status || 'active'),
+      uuid: machine.uuid || generateMachineUuid(),
+      description: machine.description || '',
+      createdBy: machine.createdBy || 'System seed',
+      lastUpdatedBy: machine.lastUpdatedBy || machine.createdBy || 'System seed'
+    }));
+    sessionStorage.setItem('machinesData', JSON.stringify(machines));
+
+    let editMode = false;
+    let editRecord = null;
+    let currentFiltered = [...machines];
+
+    const tbody = document.getElementById('machinesBody');
+    const searchInput = document.getElementById('searchInput');
+    const venueFilter = document.getElementById('venueFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const resultsCount = document.getElementById('resultsCount');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    const emptyState = document.getElementById('emptyState');
+    const machinesTable = document.getElementById('machinesTable');
+
+    function renderTable(data) {
+      tbody.innerHTML = '';
+      currentFiltered = data;
+
+      if (data.length === 0) {
+        emptyState.style.display = 'block';
+        machinesTable.style.display = 'none';
+        resultsCount.textContent = 'Showing 0 machines';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      machinesTable.style.display = 'table';
+      resultsCount.textContent = 'Showing ' + data.length + ' of ' + machines.length + ' machine' + (machines.length === 1 ? '' : 's');
+
+      data.forEach(mach => {
+        const tr = document.createElement('tr');
+        const isActive = mach.status === 'active';
+
+        tr.innerHTML = `
+          <td class="cell-mono cell-id">${mach.machineId}</td>
+          <td><div class="cell-game">${mach.name}</div></td>
+          <td class="cell-mono cell-serial">${mach.serialNumber}</td>
+          <td>${mach.venue}</td>
+          <td>
+            <span class="pill ${isActive ? 'pass' : 'neutral'}">${isActive ? 'Active' : 'Archived'}</span>
+          </td>
+        `;
+
+        tr.addEventListener('click', () => {
+          openMachineDetailModal(mach);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function applyFilters() {
+      const q = searchInput.value.toLowerCase().trim();
+      const venue = venueFilter.value;
+      const status = statusFilter.value;
+
+      const isFiltered = q !== '' || venue !== 'all' || status !== 'all';
+      resetFiltersBtn.style.display = isFiltered ? 'inline-block' : 'none';
+
+      const filtered = machines.filter(m => {
+        const matchesQuery = !q || (
+          m.machineId.toLowerCase().includes(q) ||
+          m.name.toLowerCase().includes(q) ||
+          m.serialNumber.toLowerCase().includes(q) ||
+          m.venue.toLowerCase().includes(q)
+        );
+        const matchesVenue = venue === 'all' || m.venue === venue;
+        const matchesStatus = status === 'all' || m.status === status;
+
+        return matchesQuery && matchesVenue && matchesStatus;
+      });
+
+      renderTable(filtered);
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    venueFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+
+    resetFiltersBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      venueFilter.value = 'all';
+      statusFilter.value = 'all';
+      applyFilters();
+    });
+
+    // Detail Modal
+    window.openMachineDetailModal = function(record) {
+      document.getElementById('detailModalTitle').textContent = record.name;
+      document.getElementById('detailModalSub').textContent = record.machineId;
+      document.getElementById('detailMachineId').textContent = record.machineId;
+      document.getElementById('detailName').textContent = record.name;
+      document.getElementById('detailSerial').textContent = record.serialNumber;
+      document.getElementById('detailVenue').textContent = record.venue;
+      document.getElementById('detailDescription').textContent = record.description || '-';
+      document.getElementById('detailCreatedBy').textContent = record.createdBy || 'System seed';
+      document.getElementById('detailLastUpdatedBy').textContent = record.lastUpdatedBy || record.createdBy || 'System seed';
+
+      const isActive = record.status === 'active';
+      document.getElementById('detailStatus').innerHTML = `
+        <span class="pill ${isActive ? 'pass' : 'neutral'}">${isActive ? 'Active' : 'Archived'}</span>
+      `;
+
+      document.getElementById('detailEditBtn').onclick = () => {
+        closeModal('machineDetailModal');
+        openEditMachineModal(record);
+      };
+
+      openModal('machineDetailModal');
+    };
+
+    function setAddMachineMode(mode) {
+      const isBulk = mode === 'bulk';
+      document.getElementById('addMachineForm').hidden = isBulk;
+      document.querySelectorAll('[data-add-mode]').forEach(tab => {
+        const active = tab.dataset.addMode === mode;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('[data-add-panel]').forEach(panel => {
+        panel.hidden = panel.dataset.addPanel !== mode;
+      });
+    }
+
+    document.querySelectorAll('[data-add-mode]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (!editMode) setAddMachineMode(tab.dataset.addMode);
+      });
+    });
+
+    const bulkFileInput = document.getElementById('machineBulkFile');
+    const bulkFileName = document.getElementById('machineBulkFileName');
+    const importMachinesBtn = document.getElementById('importMachinesBtn');
+    bulkFileInput.addEventListener('change', () => {
+      const file = bulkFileInput.files[0];
+      bulkFileName.textContent = file ? `${file.name} selected` : 'No file selected';
+      importMachinesBtn.disabled = !file;
+    });
+
+    const bulkDropzone = document.querySelector('.upload-dropzone');
+    ['dragenter', 'dragover'].forEach(eventName => bulkDropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      bulkDropzone.classList.add('is-dragging');
+    }));
+    ['dragleave', 'drop'].forEach(eventName => bulkDropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      bulkDropzone.classList.remove('is-dragging');
+    }));
+    bulkDropzone.addEventListener('drop', event => {
+      const file = event.dataTransfer.files[0];
+      if (!file) return;
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      bulkFileInput.files = transfer.files;
+      bulkFileInput.dispatchEvent(new Event('change'));
+    });
+
+    document.getElementById('downloadMachineTemplateBtn').addEventListener('click', () => {
+      const template = 'Machine ID,Game Title,Serial Number,Venue,Status,Description\nEGM-021,Aristocrat Lightning Link 1,SN-AR-00501,Riverside RSL Club,Active,Optional description\n';
+      const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'egm_machine_upload_template.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    importMachinesBtn.addEventListener('click', () => {
+      if (bulkFileInput.files[0]) alert('The file is ready for validation and import.');
+    });
+
+    // Add Machine Modal
+    window.openAddMachineModal = function() {
+      editMode = false;
+      editRecord = null;
+      document.getElementById('addMachineModalTitle').textContent = 'Add machines';
+      document.getElementById('saveMachineSubmitBtn').textContent = 'Save machine';
+      document.getElementById('addMachineForm').reset();
+      document.getElementById('auditFields').style.display = 'none';
+      bulkFileInput.value = '';
+      bulkFileName.textContent = 'No file selected';
+      importMachinesBtn.disabled = true;
+      document.querySelector('.machine-modal-tabs').style.display = '';
+      setAddMachineMode('single');
+      
+      const isSuperAdmin = (sessionStorage.getItem('userRole') || 'admin') === 'superadmin';
+      if (isSuperAdmin) {
+        // Super Admin view: Venue should not be assigned by default
+        document.getElementById('venue').value = '';
+      } else {
+        // Admin view: default to current venue context
+        const contextStr = sessionStorage.getItem('selectedVenueContext');
+        let activeVenue = 'Riverside RSL Club';
+        if (contextStr) {
+          try {
+            const parsed = JSON.parse(contextStr);
+            if (parsed.venueName) activeVenue = parsed.venueName;
+          } catch(e) {}
+        }
+        document.getElementById('venue').value = activeVenue;
+      }
+
+      openModal('addMachineModal');
+    };
+
+    // Edit Machine Modal
+    window.openEditMachineModal = function(record) {
+      editMode = true;
+      editRecord = record;
+      document.getElementById('addMachineModalTitle').textContent = 'Edit Machine';
+      document.getElementById('saveMachineSubmitBtn').textContent = 'Update machine';
+
+      document.getElementById('machineId').value = record.machineId;
+      document.getElementById('name').value = record.name;
+      document.getElementById('serialNumber').value = record.serialNumber;
+      document.getElementById('description').value = record.description || '';
+      document.getElementById('venue').value = record.venue || '';
+      document.getElementById('status').value = record.status;
+      document.getElementById('createdBy').value = record.createdBy || 'System seed';
+      document.getElementById('lastUpdatedBy').value = record.lastUpdatedBy || record.createdBy || 'System seed';
+      document.getElementById('auditFields').style.display = '';
+      document.querySelector('.machine-modal-tabs').style.display = 'none';
+      setAddMachineMode('single');
+
+      openModal('addMachineModal');
+    };
+
+    // Save/Update Form Submit
+    document.getElementById('addMachineForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const machId = document.getElementById('machineId').value.trim();
+      const machName = document.getElementById('name').value.trim();
+      const machSerial = document.getElementById('serialNumber').value.trim();
+      const machDescription = document.getElementById('description').value.trim();
+      const machVenue = document.getElementById('venue').value;
+      const machStatus = document.getElementById('status').value;
+      const actor = currentMachineActor();
+
+      if (!machId || !machName || !machSerial) {
+        alert('Please fill in Machine ID, Game Title, and Serial Number.');
+        return;
+      }
+      if (!machVenue) {
+        alert('Please select an assigned venue for this machine.');
+        return;
+      }
+
+      if (editMode && editRecord) {
+        editRecord.uuid = editRecord.uuid || generateMachineUuid();
+        editRecord.machineId = machId;
+        editRecord.name = machName;
+        editRecord.serialNumber = machSerial;
+        editRecord.description = machDescription;
+        editRecord.venue = machVenue;
+        editRecord.status = machStatus;
+        editRecord.createdBy = editRecord.createdBy || 'System seed';
+        editRecord.lastUpdatedBy = actor;
+      } else {
+        const newMach = {
+          id: 'm-' + Date.now(),
+          uuid: generateMachineUuid(),
+          machineId: machId,
+          name: machName,
+          serialNumber: machSerial,
+          description: machDescription,
+          venue: machVenue,
+          status: machStatus,
+          createdBy: actor,
+          lastUpdatedBy: actor
+        };
+        machines.unshift(newMach);
+      }
+
+      sessionStorage.setItem('machinesData', JSON.stringify(machines));
+      closeModal('addMachineModal');
+      applyFilters();
+    });
+
+    function escapeCsvValue(value) {
+      return `"${String(value ?? '').replace(/"/g, '""')}"`;
+    }
+
+    function exportRowsForVenue(venue) {
+      return venue === 'all' ? machines : machines.filter(machine => machine.venue === venue);
+    }
+
+    function updateExportMachineCount() {
+      const venue = document.getElementById('exportVenueSelect').value;
+      document.getElementById('exportMachineCount').textContent = exportRowsForVenue(venue).length;
+    }
+
+    function populateExportVenues() {
+      const select = document.getElementById('exportVenueSelect');
+      const isSuperAdmin = sessionStorage.getItem('userRole') === 'superadmin';
+      const contextStr = sessionStorage.getItem('selectedVenueContext');
+      let selectedVenue = 'all';
+      if (contextStr) {
+        try { selectedVenue = JSON.parse(contextStr).venueName || 'all'; } catch (e) {}
+      }
+
+      const venues = [...new Set(machines.map(machine => machine.venue))].sort();
+      select.innerHTML = '';
+      if (isSuperAdmin) {
+        select.add(new Option('All Venues', 'all'));
+        venues.forEach(venue => select.add(new Option(venue, venue)));
+      } else {
+        const venue = venues.includes(selectedVenue) ? selectedVenue : venues[0];
+        select.add(new Option(venue, venue));
+        selectedVenue = venue;
+      }
+      select.value = selectedVenue;
+      updateExportMachineCount();
+    }
+
+    document.getElementById('exportVenueSelect').addEventListener('change', updateExportMachineCount);
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      populateExportVenues();
+      openModal('exportMachineModal');
+    });
+
+    document.getElementById('confirmExportBtn').addEventListener('click', () => {
+      const venue = document.getElementById('exportVenueSelect').value;
+      const rows = exportRowsForVenue(venue);
+      let csv = 'Machine ID,Game Title,Serial Number,Venue,Status\n';
+      rows.forEach(machine => {
+        csv += [machine.machineId, machine.name, machine.serialNumber, machine.venue, machine.status === 'active' ? 'Active' : 'Archived'].map(escapeCsvValue).join(',') + '\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `egm_machines_${venue === 'all' ? 'all-venues' : venue.toLowerCase().replace(/[^a-z0-9]+/g, '-')}_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      closeModal('exportMachineModal');
+    });
+
+    window.openModal = function(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.add('active');
+        modal.classList.add('open');
+      }
+    };
+    window.closeModal = function(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('active');
+        modal.classList.remove('open');
+      }
+    };
+
+    // Close modal when clicking backdrop
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+          overlay.classList.remove('open');
+        }
+      });
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active, .modal-overlay.open').forEach(m => {
+          m.classList.remove('active');
+          m.classList.remove('open');
+        });
+      }
+    });
+
+    // Role-Aware Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      const userRole = sessionStorage.getItem('userRole') || 'admin';
+      const isSuperAdmin = userRole === 'superadmin';
+
+      const roleBadge = document.getElementById('settings-role-badge') || document.querySelector('.role-badge');
+      if (roleBadge) {
+        roleBadge.textContent = isSuperAdmin ? 'SUPER ADMIN' : 'ADMIN';
+        roleBadge.className = isSuperAdmin ? 'role-badge super-admin' : 'role-badge admin';
+      }
+
+      const switchLink = document.getElementById('settings-switch-link');
+      const nav = document.getElementById('settings-admin-nav');
+
+      if (isSuperAdmin) {
+        document.getElementById('pageTitle').textContent = 'Gaming Machines';
+        document.getElementById('pageSub').textContent = 'Registered EGM machine registry across all venues in the network.';
+        venueFilter.value = 'all';
+
+        if (switchLink) {
+          switchLink.href = 'dashboard.html';
+          switchLink.textContent = '\u2192 Switch to Admin';
+          switchLink.onclick = () => sessionStorage.setItem('userRole', 'admin');
+        }
+
+        if (nav) {
+          nav.innerHTML = `
+            <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+            <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+            <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+            <a href="admin-machines.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+            <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+            <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+            <a href="super-admin-smr.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+            <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+            <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+          `;
+        }
+      } else {
+        const contextStr = sessionStorage.getItem('selectedVenueContext');
+        let selectedVenueContext = null;
+        if (contextStr) {
+          try { selectedVenueContext = JSON.parse(contextStr); } catch (e) {}
+        }
+        const venueName = selectedVenueContext ? selectedVenueContext.venueName : 'Riverside RSL Club';
+        venueFilter.value = venueName;
+        document.getElementById('pageTitle').textContent = `${venueName} \u2014 Machines`;
+        document.getElementById('pageSub').textContent = `Registered EGM machines assigned to ${venueName}.`;
+        venueFilter.remove();
+      }
+
+      applyFilters();
+    });
+  </script>
+</body>
+</html>

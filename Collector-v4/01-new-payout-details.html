@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create new payout - Step 1</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --focus-ring-rgb:85,85,85;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --error-bg:#fff5f5;
+    --success:#0d9488;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+  }
+  /* Stepper */
+  .stepper{
+    width:220px;
+    flex-shrink:0;
+    padding:4px 0;
+  }
+  .step{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    position:relative;
+    padding-bottom:24px;
+  }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:'';
+    position:absolute;
+    left:9px;
+    top:22px;
+    width:2px;
+    height:calc(100% - 6px);
+    background:#dcdcdc;
+    z-index:0;
+  }
+  .step.done::before{
+    background:#a8a8a8;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc;
+    background:#fff;
+    flex-shrink:0;
+    z-index:1;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{
+    font-size:13.5px;
+    color:var(--text-secondary);
+    font-weight:500;
+    position:relative;
+    z-index:1;
+  }
+  .step.active .step-label{color:var(--text-primary); font-weight:700; font-size:14.5px;}
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{display:block;}
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+  /* Main panel */
+  .main{flex:1; min-width:0;}
+  .title-row{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    gap:28px;
+    margin:0 0 22px;
+  }
+  h1{
+    font-size:22px;
+    font-weight:600;
+    color:var(--text-primary);
+    line-height:1;
+    margin:0;
+  }
+  .back-link{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:15.5px;
+    font-weight:600;
+    line-height:1;
+    color:var(--text-primary);
+    padding:0;
+    margin-left:-4px;
+    text-decoration:underline;
+  }
+  .back-link svg{flex-shrink:0; color:var(--accent);}
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-top:14px;
+  }
+  .proto-toggle-label{ font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:12.5px; font-weight:600; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:#5a5a5a; border-color:#5a5a5a; color:#fff; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:10px;
+    padding:24px 26px;
+  }
+  form{
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-lg);
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-xs);
+  }
+  .field-row{
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-lg);
+  }
+  .field-row .field{flex:1;}
+  label{
+    font-size:15.5px;
+    font-weight:600;
+    color:var(--text-primary);
+  }
+  .req::after{
+    content:' *';
+    color:var(--error);
+  }
+  .hint{
+    font-size:12.5px;
+    color:var(--text-secondary);
+  }
+  input[type="text"],
+  input[type="number"],
+  input[type="datetime-local"],
+  .select-display,
+  .combo-input{
+    height:var(--field-h);
+    width:100%;
+    padding:0 18px;
+    border-radius:var(--radius);
+    border:1px solid var(--field-border);
+    background:var(--field-bg);
+    font-size:17px;
+    color:var(--text-primary);
+    font-family:inherit;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{color:#9ea2b3;}
+  input:focus,
+  .combo-input:focus,
+  .select-display:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff;
+  }
+  input[readonly]{
+    cursor:default;
+    background:#f7fafc;
+    color:var(--text-primary);
+  }
+
+  /* currency prefix field */
+  .currency-field{
+    display:flex;
+    align-items:stretch;
+    border:1px solid var(--field-border);
+    border-radius:var(--radius);
+    background:var(--field-bg);
+    overflow:hidden;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .currency-field:focus-within{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff;
+  }
+  .currency-prefix{
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--text-secondary);
+    background:#f8f9fa;
+    border-right:1px solid var(--field-border);
+    letter-spacing:.02em;
+  }
+  .currency-field input{
+    border:none;
+    background:transparent;
+    box-shadow:none;
+    height:calc(var(--field-h) - 2px);
+    padding-left:12px;
+    font-variant-numeric:tabular-nums;
+  }
+  .currency-field input:focus{box-shadow:none; border:none; background:transparent;}
+  .currency-field.has-error{
+    border-color:var(--error);
+    background:var(--error-bg);
+  }
+  .currency-field.has-error .currency-prefix{
+    background:#f6d9d6;
+    border-color:var(--error);
+  }
+  .amount-preview{
+    font-size:26px;
+    font-weight:700;
+    color:var(--text-primary);
+    margin-top:6px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.01em;
+  }
+  .amount-preview.empty{
+    font-size:15px;
+    font-weight:500;
+    color:var(--text-secondary);
+  }
+  .error-msg{
+    font-size:12.5px;
+    color:var(--error);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+
+
+  /* select */
+  .select-wrap{position:relative;}
+  .select-display{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    user-select:none;
+  }
+  .select-display svg{flex-shrink:0; color:var(--text-secondary);}
+  .dropdown-panel{
+    position:absolute;
+    top:calc(100% + 6px);
+    left:0;right:0;
+    background:#fff;
+    border:1px solid var(--field-border);
+    border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(20,20,50,0.12);
+    z-index:20;
+    max-height:220px;
+    overflow-y:auto;
+    display:none;
+  }
+  .dropdown-panel.open{display:block;}
+  .dropdown-item{
+    padding:14px 16px;
+    font-size:17px;
+    cursor:pointer;
+  }
+  .dropdown-item:hover, .dropdown-item.hl{background:#f0f0f0;}
+  .dropdown-empty{
+    padding:12px 14px;
+    font-size:13.5px;
+    color:var(--text-secondary);
+  }
+
+  /* combobox (machine) */
+  .combo-wrap{position:relative;}
+  .combo-input{cursor:text;}
+
+  /* file upload */
+  .upload-box{
+    border:1.5px dashed var(--field-border);
+    border-radius:var(--radius);
+    background:var(--field-bg);
+    padding:20px;
+    min-height:var(--field-h);
+    display:flex;
+    align-items:center;
+    gap:14px;
+    cursor:pointer;
+    transition:border-color .12s, background .12s;
+  }
+  .upload-box:hover, .upload-box:focus-within{
+    border-color:var(--field-border-focus);
+    background:#f0f0f0;
+  }
+  .upload-icon{
+    width:44px;height:44px;
+    border-radius:6px;
+    background:#f8f9fa;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    color:var(--text-primary);
+  }
+  .upload-box.has-file .upload-icon{display:none;}
+  .upload-icon-success{
+    display:none;
+    width:28px;height:28px;
+    border-radius:50%;
+    background:#6b6b6b;
+    color:#fff;
+    align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .upload-icon-success svg{width:14px;height:14px;}
+  .upload-box.has-file:not(.has-thumb) .upload-icon-success{display:flex;}
+  .upload-thumb-wrap{
+    display:none;
+    position:relative;
+    flex-shrink:0;
+  }
+  .upload-box.has-thumb .upload-thumb-wrap{display:block;}
+  .upload-thumb{
+    display:block;
+    width:44px;height:44px;
+    border-radius:6px;
+    object-fit:cover;
+    border:1px solid var(--field-border);
+  }
+  .upload-thumb-badge{
+    position:absolute;
+    bottom:-4px;right:-4px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:#6b6b6b;
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid #fff;
+  }
+  .upload-thumb-badge svg{width:10px;height:10px;}
+  .upload-text-main{font-size:13.5px; font-weight:600;}
+  .upload-box.has-file .upload-text-main{font-size:13.5px; font-weight:600; color:var(--text-primary);}
+  .upload-text-sub{font-size:12.5px; color:var(--text-secondary);}
+  .upload-remove{
+    margin-left:auto;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--error);
+    background:none;border:none;cursor:pointer;
+    padding:6px 8px;
+  }
+  .upload-remove:hover{text-decoration:underline;}
+
+  .actions{
+    display:flex;
+    margin-top:10px;
+  }
+  button{
+    border-radius:var(--radius);
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    border:none;
+    font-family:inherit;
+  }
+  .btn-next{
+    background:#0d9488;
+    color:#fff;
+    width:100%;
+    height:60px;
+    font-size:19px;
+  }
+  .btn-next:hover{background:#0b7a6f;}
+  .btn-next:active{background:#095e56;}
+  .btn-next:disabled{background:var(--accent); opacity:0.4; cursor:not-allowed;}
+
+  button:focus-visible, .upload-box:focus-visible{
+    outline:3.5px solid #333333;
+    outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{flex-direction:column; gap:24px; padding:20px 16px 48px;}
+    .stepper{ width:100%; }
+    .title-row{ flex-wrap:wrap; row-gap:4px; }
+    .stepper-toggle-btn{display:flex;}
+.stepper-close-btn{display:flex;}
+.stepper{position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw); background:#fff; z-index:200; padding:24px 20px; overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15); transform:translateX(100%); transition:transform .25s ease;}
+.stepper.open{transform:translateX(0);}
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:800px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px fields / 36px gaps below are touch-target sizing.
+     On a mouse/keyboard viewport that reads as oversized, so scale it down
+     and stop the form stretching to fill the full content width. */
+  @media (min-width:1025px){
+    :root{
+      --field-h:52px;
+      --gap-lg:26px;
+    }
+    .app{max-width:944px;}
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    .select-display,
+    .combo-input{font-size:15.5px; padding:0 16px;}
+    .dropdown-item{font-size:15.5px; padding:12px 16px;}
+    .btn-next{height:52px; font-size:17px;}
+    .currency-prefix{font-size:13px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step active"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email address</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Bank account</div></div>
+    <div class="step"><div class="step-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Summary</div></div>  </nav>
+
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <div class="title-row" id="titleRow">
+      <button type="button" class="back-link" id="backLink">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <h1>New payout details</h1>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+
+    <div class="content-card">
+    <form id="payoutForm" novalidate>
+
+      <div class="field">
+        <label for="dateTime" class="req">Payout date and time</label>
+        <input type="text" id="dateTime" value="24/07/2026 09:49 am" readonly aria-required="true" />
+      </div>
+
+      <div class="field">
+        <label for="docketUpload" class="req">Upload payout docket</label>
+        <div class="hint">We'll read the docket photo and fill in the fields below.</div>
+        <div class="upload-box" id="docketBox" tabindex="0" role="button" aria-describedby="docketStatus">
+          <div class="upload-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+          </div>
+          <div class="upload-icon-success" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div class="upload-thumb-wrap">
+            <img class="upload-thumb" id="docketThumb" alt="" />
+            <span class="upload-thumb-badge" aria-hidden="true">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+            </span>
+          </div>
+          <div>
+            <div class="upload-text-main" id="docketStatus">Add docket photo</div>
+            <div class="upload-text-sub" id="docketSub"></div>
+          </div>
+        </div>
+        <input type="file" id="docketFile" accept="image/*,application/pdf" style="display:none" />
+      </div>
+
+      <div class="field-row">
+        <div class="field select-wrap" id="payoutTypeField">
+          <label for="payoutType" class="req">Payout type</label>
+          <div class="select-display" id="payoutType" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+            <span>EGM</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown-panel" role="listbox">
+            <div class="dropdown-item hl" role="option" aria-selected="true">EGM</div>
+            <div class="dropdown-item" role="option">Table Game</div>
+            <div class="dropdown-item" role="option">Keno</div>
+          </div>
+        </div>
+
+        <div class="field select-wrap" id="venueField">
+          <label for="venue" class="req">Venue</label>
+          <div class="select-display" id="venue" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+            <span>Riverside RSL Club</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown-panel" role="listbox">
+            <div class="dropdown-item hl" role="option" aria-selected="true">Riverside RSL Club</div>
+            <div class="dropdown-item" role="option">Northside Leagues Club</div>
+            <div class="dropdown-item" role="option">Harbourview Hotel</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field combo-wrap" id="machineField">
+        <label for="machineInput" class="req">Machine</label>
+        <input class="combo-input" type="text" id="machineInput" placeholder="Click to browse, or type to search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="machineList" aria-required="true" style="font-variant-numeric:tabular-nums" />
+        <div class="dropdown-panel" id="machineList" role="listbox"></div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="winAmountField">
+          <label for="winAmount" class="req">Win amount</label>
+          <div class="currency-field">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="winAmount" placeholder="0.00" aria-label="Win amount in AUD" aria-required="true" />
+          </div>
+          <div class="amount-preview empty" id="winPreview" aria-hidden="true"></div>
+        </div>
+        <div class="field" id="confirmAmountField">
+          <label for="confirmAmount" class="req">Confirm win amount</label>
+          <div class="currency-field" id="confirmWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="confirmAmount" placeholder="0.00" aria-describedby="amountError" aria-label="Confirm win amount in AUD" aria-required="true" />
+          </div>
+          <div class="amount-preview empty" id="confirmPreview" aria-hidden="true"></div>
+          <div class="error-msg" id="amountError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Win amounts do not match.
+          </div>
+        </div>
+      </div>
+
+      <div class="field" id="txnIdField">
+        <label for="txnId" class="req">Internal transaction ID</label>
+        <input type="text" id="txnId" placeholder="Internal transaction ID" aria-required="true" style="font-variant-numeric:tabular-nums" />
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-next" id="nextBtn">Next</button>
+      </div>
+    </form>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Win amount field:</span>
+      <button type="button" class="proto-btn active" id="protoOptionA">Option A – simple</button>
+      <button type="button" class="proto-btn" id="protoOptionB">Option B – with preview</button>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Docket upload:</span>
+      <button type="button" class="proto-btn active" id="protoDocketA">Option A – manual upload</button>
+      <button type="button" class="proto-btn" id="protoDocketB">Option B – simulated (pre-filled)</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ---- Cross-page data persistence (Back/Next keep entered data) ----
+  const STORAGE_KEY = 'payoutFormData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // Generic select-display dropdowns (Payout Type, Venue)
+  document.querySelectorAll('.select-display').forEach(sel=>{
+    const panel = sel.nextElementSibling;
+    sel.addEventListener('click', ()=>{
+      document.querySelectorAll('.dropdown-panel').forEach(p=>{ if(p!==panel) p.classList.remove('open'); });
+      panel.classList.toggle('open');
+      sel.setAttribute('aria-expanded', panel.classList.contains('open'));
+    });
+    panel.querySelectorAll('.dropdown-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        sel.querySelector('span').textContent = item.textContent;
+        panel.classList.remove('open');
+        sel.setAttribute('aria-expanded','false');
+        saveStoredData({ [sel.id]: item.textContent });
+      });
+    });
+  });
+
+  // Machine combobox
+  const machines = ["EGM-001","EGM-002","EGM-003","EGM-014","EGM-021","EGM-034","EGM-045","EGM-052"];
+  const machineInput = document.getElementById('machineInput');
+  const machineList = document.getElementById('machineList');
+
+  function renderMachineList(filter){
+    const items = machines.filter(m=>m.toLowerCase().includes(filter.toLowerCase()));
+    machineList.innerHTML='';
+    if(items.length===0){
+      machineList.innerHTML = '<div class="dropdown-empty">No machines found</div>';
+      return;
+    }
+    items.forEach(m=>{
+      const div = document.createElement('div');
+      div.className='dropdown-item';
+      div.setAttribute('role','option');
+      div.textContent=m;
+      div.addEventListener('click', ()=>{
+        machineInput.value=m;
+        machineList.classList.remove('open');
+        machineInput.setAttribute('aria-expanded','false');
+        saveStoredData({ machine: m });
+      });
+      machineList.appendChild(div);
+    });
+  }
+
+  machineInput.addEventListener('click', ()=>{
+    renderMachineList(machineInput.value);
+    machineList.classList.add('open');
+    machineInput.setAttribute('aria-expanded','true');
+  });
+  machineInput.addEventListener('input', ()=>{
+    renderMachineList(machineInput.value);
+    machineList.classList.add('open');
+    saveStoredData({ machine: machineInput.value });
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.combo-wrap')){ machineList.classList.remove('open'); }
+    if(!e.target.closest('.select-wrap')){ document.querySelectorAll('.select-wrap .dropdown-panel').forEach(p=>p.classList.remove('open')); }
+  });
+
+  // File upload
+  const docketBox = document.getElementById('docketBox');
+  const docketFile = document.getElementById('docketFile');
+  const docketStatus = document.getElementById('docketStatus');
+  const docketSub = document.getElementById('docketSub');
+  const docketThumb = document.getElementById('docketThumb');
+
+  // Native file inputs can't be restored after a refresh (browsers block
+  // setting .value on them for security), so upload state is tracked here
+  // and persisted separately rather than read from docketFile.files.
+  let docketProvided = false;
+
+  function openFileDialog(){ docketFile.click(); }
+  docketBox.addEventListener('click', openFileDialog);
+  docketBox.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openFileDialog(); } });
+  // recognise our sample docket by filename so the real upload control
+  // can demo the OCR fill without an actual backend
+  const DUMMY_DOCKET_NAME_PATTERN = /dummy-docket/i;
+
+  docketFile.addEventListener('change', ()=>{
+    if(docketFile.files.length){
+      const f = docketFile.files[0];
+      docketProvided = true;
+      docketBox.classList.add('has-file');
+      docketStatus.textContent = 'Uploaded';
+      docketSub.textContent = f.name + ' - click to replace';
+      if(f.type.startsWith('image/')){
+        docketBox.classList.add('has-thumb');
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          docketThumb.src = reader.result;
+          saveStoredData({ docketThumb: reader.result, docketName: f.name, docketProvided: true });
+        };
+        reader.readAsDataURL(f);
+      } else {
+        docketBox.classList.remove('has-thumb');
+        saveStoredData({ docketThumb: null, docketName: f.name, docketProvided: true });
+      }
+
+      setDocketProtoActive(protoDocketA);
+
+      if(DUMMY_DOCKET_NAME_PATTERN.test(f.name)){
+        docketStatus.textContent = 'Reading docket…';
+        setTimeout(()=>{
+          docketStatus.textContent = 'Uploaded';
+          applyOcrExtraction();
+        }, 700);
+      }
+      updateNextState();
+    }
+  });
+
+  // ---- Simulated OCR extraction (stands in for the real backend) ----
+  // Confirm Win Amount is deliberately left blank: it exists to catch
+  // transcription errors via independent re-entry, so autofilling it
+  // from the same OCR source would defeat the check.
+  function applyOcrExtraction(){
+    document.querySelector('#payoutType span').textContent = 'EGM';
+    document.querySelector('#venue span').textContent = 'Riverside RSL Club';
+    machineInput.value = 'EGM-021';
+    winAmount.value = formatWithCommas('1250.00');
+    txnId.value = 'TXN-88213';
+
+    updateAmountPreview(winAmount, winPreview);
+    updateAmountPreview(confirmAmount, confirmPreview);
+    validateAmounts();
+
+    saveStoredData({
+      payoutType: 'EGM',
+      venue: 'Riverside RSL Club',
+      machine: machineInput.value,
+      winAmount: winAmount.value,
+      txnId: txnId.value
+    });
+
+    updateNextState();
+  }
+
+  // ---- Docket Upload prototype toggle ----
+  // Option A: default/real behaviour - the user picks a file and, if it's
+  //   the sample docket, OCR extraction fires the same way it would after
+  //   a real backend read it.
+  // Option B: jumps straight to the "already uploaded and filled" end
+  //   state, using the same dummy-docket.png Option A would show, so the
+  //   two options render identically once a docket is present.
+  const protoDocketA = document.getElementById('protoDocketA');
+  const protoDocketB = document.getElementById('protoDocketB');
+
+  function setDocketProtoActive(activeBtn){
+    [protoDocketA, protoDocketB].forEach(btn=>btn.classList.toggle('active', btn===activeBtn));
+  }
+
+  function clearDocket(){
+    docketProvided = false;
+    docketBox.classList.remove('has-file','has-thumb');
+    docketStatus.textContent = 'Add docket photo';
+    docketSub.textContent = '';
+    docketThumb.src = '';
+    docketFile.value = '';
+
+    // also roll back the fields OCR would have filled, so re-uploading
+    // is visibly a fresh fill rather than a no-op
+    document.querySelector('#payoutType span').textContent = 'EGM';
+    document.querySelector('#venue span').textContent = 'Riverside RSL Club';
+    machineInput.value = '';
+    winAmount.value = '';
+    confirmAmount.value = '';
+    txnId.value = '';
+    updateAmountPreview(winAmount, winPreview);
+    updateAmountPreview(confirmAmount, confirmPreview);
+    validateAmounts();
+
+    saveStoredData({
+      docketThumb: null,
+      docketName: null,
+      docketProvided: false,
+      payoutType: 'EGM',
+      venue: 'Riverside RSL Club',
+      machine: '',
+      winAmount: '',
+      confirmAmount: '',
+      txnId: ''
+    });
+    updateNextState();
+  }
+
+  protoDocketA.addEventListener('click', ()=>{
+    setDocketProtoActive(protoDocketA);
+    clearDocket();
+  });
+
+  protoDocketB.addEventListener('click', ()=>{
+    setDocketProtoActive(protoDocketB);
+    docketProvided = true;
+    docketBox.classList.add('has-file', 'has-thumb');
+    docketStatus.textContent = 'Uploaded';
+    docketSub.textContent = 'dummy-docket.png - click to replace';
+    docketThumb.src = 'dummy-docket.png';
+    saveStoredData({ docketThumb: 'dummy-docket.png', docketName: 'dummy-docket.png', docketProvided: true });
+    applyOcrExtraction();
+  });
+
+  // Win amount validation + currency formatting
+  const winAmount = document.getElementById('winAmount');
+  const confirmAmount = document.getElementById('confirmAmount');
+  const confirmWrap = document.getElementById('confirmWrap');
+  const amountError = document.getElementById('amountError');
+
+  function sanitizeDecimal(raw){
+    // allow digits and a single decimal point, max 2 decimal places
+    let v = raw.replace(/[^0-9.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2){ v = parts[0] + '.' + parts.slice(1).join(''); }
+    const dotIndex = v.indexOf('.');
+    if(dotIndex !== -1 && v.length - dotIndex - 1 > 2){
+      v = v.slice(0, dotIndex + 3);
+    }
+    return v;
+  }
+
+  function formatWithCommas(raw){
+    if(raw === '' || raw === '.') return raw;
+    const num = parseFloat(raw.replace(/,/g,''));
+    if(isNaN(num)) return raw;
+    return num.toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+
+  const winPreview = document.getElementById('winPreview');
+  const confirmPreview = document.getElementById('confirmPreview');
+
+  function updateAmountPreview(input, previewEl){
+    const raw = input.value.replace(/,/g,'');
+    const num = parseFloat(raw);
+    if(raw === '' || isNaN(num)){
+      previewEl.textContent = '';
+      previewEl.classList.add('empty');
+    } else {
+      previewEl.textContent = 'AUD ' + num.toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits:2 });
+      previewEl.classList.remove('empty');
+    }
+  }
+
+  function attachCurrencyBehavior(input, previewEl){
+    input.addEventListener('input', ()=>{
+      input.value = sanitizeDecimal(input.value);
+      updateAmountPreview(input, previewEl);
+      validateAmounts();
+      saveStoredData({ [input.id]: input.value });
+    });
+    input.addEventListener('focus', ()=>{
+      // show raw editable number, drop commas
+      input.value = input.value.replace(/,/g,'');
+    });
+    input.addEventListener('blur', ()=>{
+      input.value = formatWithCommas(input.value);
+      updateAmountPreview(input, previewEl);
+      validateAmounts();
+      saveStoredData({ [input.id]: input.value });
+    });
+  }
+  attachCurrencyBehavior(winAmount, winPreview);
+  attachCurrencyBehavior(confirmAmount, confirmPreview);
+
+  function rawNumber(input){
+    return parseFloat(input.value.replace(/,/g,'')) || 0;
+  }
+
+  function validateAmounts(){
+    if(confirmAmount.value === ''){
+      confirmWrap.classList.remove('has-error');
+      amountError.style.display='none';
+      updateNextState();
+      return;
+    }
+    const mismatch = rawNumber(winAmount) !== rawNumber(confirmAmount);
+    confirmWrap.classList.toggle('has-error', mismatch);
+    amountError.style.display = mismatch ? 'flex' : 'none';
+    updateNextState();
+  }
+
+  // ---- Next button validation gating ----
+  const nextBtn = document.getElementById('nextBtn');
+  const txnId = document.getElementById('txnId');
+
+  function updateNextState(){
+    const docketUploaded = docketProvided;
+    const machineFilled = machineInput.value.trim() !== '';
+    const winFilled = rawNumber(winAmount) > 0;
+    const confirmFilled = confirmAmount.value.trim() !== '';
+    const amountsMatch = rawNumber(winAmount) === rawNumber(confirmAmount);
+    const txnFilled = txnId.value.trim() !== '';
+
+    const allValid = docketUploaded && machineFilled && winFilled && confirmFilled && amountsMatch && txnFilled;
+    nextBtn.disabled = !allValid;
+    nextBtn.setAttribute('aria-disabled', String(!allValid));
+  }
+
+  machineInput.addEventListener('input', updateNextState);
+  machineList.addEventListener('click', ()=> setTimeout(updateNextState, 0));
+  txnId.addEventListener('input', ()=>{ updateNextState(); saveStoredData({ txnId: txnId.value }); });
+
+  nextBtn.addEventListener('click', ()=>{
+    if(!nextBtn.disabled){ window.location.href = '02-payment-breakdown.html'; }
+  });
+
+  // restore previously entered data when navigating back to this step
+  (function restoreStoredData(){
+    const data = loadStoredData();
+    if(data.payoutType) document.querySelector('#payoutType span').textContent = data.payoutType;
+    if(data.venue) document.querySelector('#venue span').textContent = data.venue;
+    if(data.machine) machineInput.value = data.machine;
+    if(data.winAmount) winAmount.value = data.winAmount;
+    if(data.confirmAmount) confirmAmount.value = data.confirmAmount;
+    if(data.txnId) txnId.value = data.txnId;
+    if(data.docketProvided){
+      docketProvided = true;
+      docketBox.classList.add('has-file');
+      docketStatus.textContent = 'Uploaded';
+      docketSub.textContent = (data.docketName || 'Docket') + ' - click to replace';
+      if(data.docketThumb){
+        docketThumb.src = data.docketThumb;
+        docketBox.classList.add('has-thumb');
+      }
+    }
+  })();
+
+  // initial format
+  winAmount.value = formatWithCommas(winAmount.value);
+  updateAmountPreview(winAmount, winPreview);
+  updateAmountPreview(confirmAmount, confirmPreview);
+  validateAmounts();
+  updateNextState();
+
+  // ---- prototype toggle: amount preview on/off ----
+  const protoOptionA = document.getElementById('protoOptionA');
+  const protoOptionB = document.getElementById('protoOptionB');
+
+  function setAmountPreviewVisible(visible){
+    winPreview.style.display = visible ? '' : 'none';
+    confirmPreview.style.display = visible ? '' : 'none';
+  }
+  protoOptionA.addEventListener('click', ()=>{
+    protoOptionA.classList.add('active');
+    protoOptionB.classList.remove('active');
+    setAmountPreviewVisible(false);
+  });
+  protoOptionB.addEventListener('click', ()=>{
+    protoOptionB.classList.add('active');
+    protoOptionA.classList.remove('active');
+    setAmountPreviewVisible(true);
+  });
+  setAmountPreviewVisible(false);
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Identity verification</title>
+<link rel="stylesheet" href="dashboard-style.css">
+<script src="admin-shell.js" defer></script>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --accent-tint:#e6f6f4;
+    --error:#e53e3e;
+    --success:#0d9488;
+    --success-bg:#effcfa;
+    --warn:#a15c07;
+    --warn-bg:#fdf6ec;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:32px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{ max-width:1120px; margin:0 auto; padding:32px 24px 64px; display:flex; gap:44px; }
+
+  .config-nav{ width:240px; flex-shrink:0; }
+  .back-link{
+    display:inline-flex; align-items:center; gap:5px;
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:13.5px; font-weight:600; color:var(--text-secondary);
+    padding:0; margin-bottom:16px; text-decoration:underline;
+  }
+  .back-link svg{ color:var(--accent); }
+  .venue-name-nav{ font-size:18px; font-weight:700; line-height:1.25; }
+  .venue-org-nav{ font-size:13px; color:var(--text-secondary); margin-top:2px; }
+  .status-badge{
+    display:inline-flex; align-items:center; font-size:11.5px; font-weight:700;
+    padding:3px 9px; border-radius:20px; margin-top:10px;
+  }
+  .status-badge.completed{ background:var(--success-bg); color:var(--success); border:1px solid #9bd7cf; }
+  .status-badge.draft{ background:var(--warn-bg); color:var(--warn); border:1px solid #e3bd85; }
+  .progress-text{ font-size:12.5px; color:var(--text-secondary); margin:14px 0 14px; }
+  .config-nav-list{ display:flex; flex-direction:column; gap:2px; }
+  .config-nav-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 12px; border-radius:8px;
+    font-size:14.5px; font-weight:600; color:var(--text-secondary);
+    text-decoration:none; cursor:pointer;
+  }
+  .config-nav-item:hover{ background:#f0f1f4; }
+  .config-nav-item.active{ background:var(--accent-tint); color:var(--text-primary); }
+  .nav-status{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+    border:2px solid #cccccc; display:flex; align-items:center; justify-content:center;
+  }
+  .nav-status svg{ display:none; color:#fff; }
+  .nav-status.done{ background:var(--accent); border-color:var(--accent); }
+  .nav-status.done svg{ display:block; }
+
+  .main{ flex:1; min-width:0; max-width:680px; }
+  .title-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; }
+  h1{ font-size:22px; font-weight:700; margin:0; }
+  .content-card{ background:#fff; border:1px solid #e2e3ea; border-radius:10px; padding:26px; }
+
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    padding:6px 0 20px;
+  }
+  .toggle-info-title{ font-size:16px; font-weight:700; margin:0 0 6px; }
+  .toggle-info-body{ font-size:14px; color:var(--text-secondary); line-height:1.55; margin:0; max-width:440px; }
+
+  .switch{
+    position:relative; width:52px; height:30px; flex-shrink:0;
+    border-radius:20px; border:none; background:#e9e9ea; cursor:pointer; padding:0;
+    transition:background .15s ease;
+  }
+  .switch[aria-checked="true"]{ background:var(--accent); }
+  .switch-knob{
+    position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    transition:transform .15s ease;
+  }
+  .switch[aria-checked="true"] .switch-knob{ transform:translateX(22px); }
+
+  .actions{ display:flex; align-items:center; gap:16px; margin-top:26px; }
+  button{ border-radius:var(--radius); font-size:15.5px; font-weight:600; cursor:pointer; border:none; font-family:inherit; }
+  .btn-save{ height:48px; padding:0 28px; background:var(--accent); color:#fff; }
+  .btn-save:hover{ background:var(--accent-hover); }
+  button:focus-visible, .back-link:focus-visible, .config-nav-item:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; }
+
+  /* toaster, styled and behaving after Chakra UI's toaster.create() */
+  .toast-container{
+    position:fixed; right:24px; bottom:24px;
+    display:flex; flex-direction:column-reverse; gap:12px;
+    z-index:200; pointer-events:none;
+  }
+  .toast{
+    background:#fff; border-radius:8px; border:1px solid #eceef2;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    padding:16px 20px; font-size:14.5px; font-weight:400; color:var(--text-primary);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .18s ease, transform .18s ease;
+    max-width:min(90vw, 360px);
+  }
+  .toast.show{ opacity:1; transform:translateY(0); }
+
+  @media (max-width:900px){
+    .app{ flex-direction:column; gap:22px; }
+    .config-nav{ width:100%; }
+    .config-nav-list{ flex-direction:row; overflow-x:auto; gap:8px; padding-bottom:4px; }
+    .config-nav-item{ flex-shrink:0; white-space:nowrap; }
+  }
+  @media (max-width:600px){
+    .app{ padding:20px 16px 48px; }
+    .content-card{ padding:20px; }
+  }
+</style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+      <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge super-admin" id="settings-role-badge">SUPER ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="super-admin-dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-smr.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="dashboard.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+<div class="app">
+  <nav class="config-nav">
+    <button type="button" class="back-link" id="backToListBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+      All venues
+    </button>
+    <div class="venue-name-nav" id="venueNameNav">Venue</div>
+    <div class="venue-org-nav" id="venueOrgNav"></div>
+    <span class="status-badge draft" id="statusBadge">Draft</span>
+    <p class="progress-text" id="progressText">0 of 6 sections configured</p>
+    <div class="config-nav-list" id="configNavList"></div>
+  </nav>
+
+  <main class="main">
+    <div class="title-row">
+      <h1>Identity verification</h1>
+    </div>
+
+    <div class="content-card">
+      <div class="toggle-row">
+        <div>
+          <p class="toggle-info-title">Frankie One identity check</p>
+          <p class="toggle-info-body">Turn this on if the venue wants the identity check feature enabled by default for members completing a payout.</p>
+        </div>
+        <button type="button" class="switch" id="frankieSwitch" role="switch" aria-checked="true" aria-label="Frankie One identity check">
+          <span class="switch-knob" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-save" id="saveBtn">Save section</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script>
+  const STORAGE_KEY = 'venueConfigData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  }
+  function markConfigured(key, done){
+    const data = loadStoredData();
+    const configured = data.configuredSections || {};
+    configured[key] = done;
+    saveStoredData({ configuredSections: configured });
+  }
+
+  const SECTIONS = [
+    { key:'details', label:'Details', href:'venue-02-details.html' },
+    { key:'machines', label:'Machines', href:'venue-03-machines.html' },
+    { key:'payoutControls', label:'Payout controls', href:'venue-04-payout-controls.html' },
+    { key:'identityVerification', label:'Identity verification', href:'venue-05-identity-verification.html' },
+    { key:'devicesBranding', label:'Devices & branding', href:'venue-06-devices-branding.html' },
+    { key:'teamRoles', label:'Team & roles', href:'venue-07-team-roles.html' }
+  ];
+
+  function renderNav(activeKey){
+    const data = loadStoredData();
+    const configured = data.configuredSections || {};
+    document.getElementById('venueNameNav').textContent = data.venueName || 'Untitled venue';
+    document.getElementById('venueOrgNav').textContent = data.orgName || '';
+    const badge = document.getElementById('statusBadge');
+    const isActive = data.status === 'Completed';
+    badge.textContent = isActive ? 'Completed' : 'Draft';
+    badge.className = 'status-badge ' + (isActive ? 'completed' : 'draft');
+    const doneCount = SECTIONS.filter(s=> configured[s.key]).length;
+    document.getElementById('progressText').textContent = doneCount + ' of ' + SECTIONS.length + ' sections configured';
+    const list = document.getElementById('configNavList');
+    list.innerHTML = SECTIONS.map(s=>{
+      const done = !!configured[s.key];
+      const active = s.key === activeKey;
+      return '<a class="config-nav-item' + (active ? ' active' : '') + '" href="' + s.href + '">'
+        + '<span>' + s.label + '</span>'
+        + '<span class="nav-status' + (done ? ' done' : '') + '" aria-hidden="true">'
+        + '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>'
+        + '</span></a>';
+    }).join('');
+  }
+
+  document.getElementById('backToListBtn').addEventListener('click', ()=>{
+    window.location.href = 'venue-00-list.html';
+  });
+
+  const frankieSwitch = document.getElementById('frankieSwitch');
+
+  function setSwitch(on){
+    frankieSwitch.setAttribute('aria-checked', String(on));
+  }
+  frankieSwitch.addEventListener('click', ()=>{
+    setSwitch(frankieSwitch.getAttribute('aria-checked') !== 'true');
+  });
+
+  const saveBtn = document.getElementById('saveBtn');
+  const toastContainer = document.getElementById('toastContainer');
+
+  // mirrors Chakra UI's toaster.create({ description, type }) - each call
+  // pushes a new toast into the stack, newest nearest the corner, each
+  // dismissing itself independently after its own duration
+  function showToast(message){
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    requestAnimationFrame(()=> toast.classList.add('show'));
+    setTimeout(()=>{
+      toast.classList.remove('show');
+      toast.addEventListener('transitionend', ()=> toast.remove(), { once:true });
+    }, 5000);
+  }
+
+  saveBtn.addEventListener('click', ()=>{
+    const on = frankieSwitch.getAttribute('aria-checked') === 'true';
+    saveStoredData({ frankieOneEnabled: on, IdentityVerifiedEnabled: on });
+    markConfigured('identityVerification', true);
+    renderNav('identityVerification');
+    showToast('Identity verification saved successfully');
+  });
+
+  (function restore(){
+    const data = loadStoredData();
+    const enabled = data.IdentityVerifiedEnabled !== undefined ? data.IdentityVerifiedEnabled : (data.frankieOneEnabled !== false);
+    setSwitch(enabled);
+    renderNav('identityVerification');
+  })();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const role = sessionStorage.getItem('userRole') || 'admin';
+  const badge = document.getElementById('navRoleBadge');
+  const switchLink = document.getElementById('navSwitchLink');
+  const navSuper = document.getElementById('nav-superadmin');
+  const navAdmin = document.getElementById('nav-admin');
+  
+  if(role === 'superadmin') {
+    if(badge) { badge.textContent = 'SUPER ADMIN'; badge.className = 'role-badge super-admin'; }
+    if(switchLink) { switchLink.textContent = '→ Switch to Admin'; switchLink.href = 'dashboard.html'; switchLink.onclick = () => sessionStorage.setItem('userRole', 'admin'); }
+    if(navSuper) navSuper.style.display = '';
+    if(navAdmin) navAdmin.style.display = 'none';
+  } else {
+    if(badge) { badge.textContent = 'ADMIN'; badge.className = 'role-badge admin'; }
+    if(switchLink) { switchLink.textContent = '→ Switch to Super Admin'; switchLink.href = 'super-admin.html'; switchLink.onclick = () => sessionStorage.setItem('userRole', 'superadmin'); }
+    if(navSuper) navSuper.style.display = 'none';
+    if(navAdmin) navAdmin.style.display = '';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payout Details — Payment Breakdown</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --error:#c0392b;
+    --error-bg:#fdecea;
+    --success:#1e7d4b;
+    --cash-accent:#0d7a6e;
+    --bank-accent:#2E2F7A;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+  }
+  /* Stepper */
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step.done .step-dot svg{ display:block; }
+  .step-dot svg{ display:none; color:#fff; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{color:var(--brand);}
+
+  .main{flex:1; min-width:0;}
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 22px; }
+
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+
+  /* currency field - shared with view 1 */
+  .currency-field{
+    display:flex; align-items:stretch;
+    border:1px solid var(--field-border); border-radius:var(--radius);
+    background:var(--field-bg); overflow:hidden;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .currency-field:focus-within{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  .currency-field.disabled{ background:#e9eaee; }
+  .currency-prefix{
+    display:flex; align-items:center; padding:0 12px;
+    font-weight:700; font-size:13.5px; color:var(--text-secondary);
+    background:#e8e9f0; border-right:1px solid var(--field-border);
+    letter-spacing:.02em;
+  }
+  .currency-field input{
+    border:none; background:transparent; box-shadow:none;
+    height:calc(var(--field-h) - 2px); padding-left:12px;
+    width:100%; font-size:15px; color:var(--text-primary); font-family:inherit; outline:none;
+  }
+  .currency-field input:disabled{ color:var(--text-secondary); }
+  .currency-field.has-error{ border-color:var(--error); background:var(--error-bg); }
+  .currency-field.has-error .currency-prefix{ background:#f6d9d6; border-color:var(--error); }
+  .error-msg{
+    font-size:12.5px; color:var(--error); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  /* top total winnings */
+  .total-block{ margin-bottom:28px; }
+
+  /* breakdown card */
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+  .breakdown-card{
+    background:#f8f9fb;
+    border-radius:12px;
+    border:1px solid #eceef2;
+    overflow:hidden;
+  }
+  .breakdown-section{
+    padding:22px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-md);
+  }
+  .breakdown-section + .breakdown-section{
+    border-top:2px solid #d3d5e0;
+  }
+  .section-header{
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-icon{
+    width:32px; height:32px; border-radius:8px;
+    background:#fff;
+    border:1px solid #e2e3ea;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .section-cash .section-icon svg{ color:var(--cash-accent); }
+  .section-bank .section-icon svg{ color:var(--bank-accent); }
+  .section-title{
+    font-size:17px; font-weight:800; letter-spacing:.01em;
+  }
+  .section-cash .section-title{ color:var(--cash-accent); }
+  .section-bank .section-title{ color:var(--bank-accent); }
+  .section-label{
+    margin-left:auto;
+    font-size:13px;
+    font-weight:700;
+    color:var(--text-secondary);
+  }
+  .section-cash .section-label{ color:var(--cash-accent); }
+  .section-bank .section-label{ color:var(--bank-accent); }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:30px; }
+  button{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:220px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:#c3c2e0; cursor:not-allowed; }
+
+  input:focus-visible, button:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Email Address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Payment Breakdown</h1>
+
+    <div class="content-card">
+    <div class="field total-block">
+      <label for="totalWinnings">Total Winnings</label>
+      <div class="currency-field disabled">
+        <span class="currency-prefix">AUD</span>
+        <input type="text" id="totalWinnings" value="100.00" disabled aria-readonly="true" />
+      </div>
+      <div class="hint">This is fixed from the Win Amount entered in the previous step.</div>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="breakdown-section section-cash">
+        <div class="section-header">
+          <div class="section-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </div>
+          <div class="section-title">Cash Amount</div>
+          <div class="section-label">Paid in Cash</div>
+        </div>
+
+        <div class="field">
+          <label for="cashAmount" class="req">Cash Amount</label>
+          <div class="currency-field" id="cashWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="cashAmount" value="0.00" aria-label="Cash amount in AUD" aria-required="true" aria-describedby="cashCapError" />
+          </div>
+          <div class="error-msg" id="cashCapError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Cash amount cannot exceed Total Winnings (100.00 AUD).
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="confirmCash" class="req">Confirm Cash Amount</label>
+          <div class="currency-field" id="confirmCashWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="confirmCash" placeholder="0.00" aria-label="Confirm cash amount in AUD" aria-required="true" aria-describedby="cashMismatchError" />
+          </div>
+          <div class="error-msg" id="cashMismatchError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Cash amounts do not match.
+          </div>
+        </div>
+      </div>
+
+      <div class="breakdown-section section-bank">
+        <div class="section-header">
+          <div class="section-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M4 10v9M9 10v9M15 10v9M20 10v9"/><path d="M2 19h20"/></svg>
+          </div>
+          <div class="section-title">Bank Transfer</div>
+          <div class="section-label">Paid to Bank</div>
+        </div>
+
+        <div class="field">
+          <label for="bankAmount" class="req">Bank Transfer Amount</label>
+          <div class="currency-field" id="bankWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="bankAmount" value="0.00" aria-label="Bank transfer amount in AUD" aria-required="true" aria-describedby="bankCapError" />
+          </div>
+          <div class="error-msg" id="bankCapError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Bank transfer amount cannot exceed Total Winnings (100.00 AUD).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-back">Back</button>
+      <button type="button" class="btn-next">Next</button>
+    </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const TOTAL = 100.00;
+
+  const cashAmount = document.getElementById('cashAmount');
+  const confirmCash = document.getElementById('confirmCash');
+  const bankAmount = document.getElementById('bankAmount');
+
+  const cashWrap = document.getElementById('cashWrap');
+  const bankWrap = document.getElementById('bankWrap');
+  const confirmCashWrap = document.getElementById('confirmCashWrap');
+
+  const cashCapError = document.getElementById('cashCapError');
+  const bankCapError = document.getElementById('bankCapError');
+  const cashMismatchError = document.getElementById('cashMismatchError');
+
+  function sanitizeDecimal(raw){
+    let v = raw.replace(/[^0-9.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2){ v = parts[0] + '.' + parts.slice(1).join(''); }
+    const dotIndex = v.indexOf('.');
+    if(dotIndex !== -1 && v.length - dotIndex - 1 > 2){ v = v.slice(0, dotIndex + 3); }
+    return v;
+  }
+  function formatWithCommas(raw){
+    if(raw === '' || raw === '.') return raw;
+    const num = parseFloat(raw);
+    if(isNaN(num)) return raw;
+    return num.toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+  function rawNumber(input){
+    return parseFloat(String(input.value).replace(/,/g,'')) || 0;
+  }
+
+  let syncing = false; // prevents feedback loop when auto-updating counterpart field
+
+  function handleCurrencyInput(input, capErrorEl, counterpart){
+    const val = sanitizeDecimal(input.value);
+    input.value = val;
+    const num = parseFloat(val || '0');
+
+    const exceeds = num > TOTAL;
+    capErrorEl.style.display = exceeds ? 'flex' : 'none';
+    input.closest('.currency-field').classList.toggle('has-error', exceeds);
+
+    if(!syncing && counterpart){
+      syncing = true;
+      const remaining = Math.max(0, TOTAL - num);
+      counterpart.value = remaining.toFixed(2);
+      syncing = false;
+    }
+    validateCashMatch();
+    updateNextState();
+  }
+
+  cashAmount.addEventListener('input', ()=> handleCurrencyInput(cashAmount, cashCapError, bankAmount));
+  bankAmount.addEventListener('input', ()=> handleCurrencyInput(bankAmount, bankCapError, cashAmount));
+
+  [cashAmount, bankAmount].forEach(input=>{
+    input.addEventListener('focus', ()=>{ input.value = input.value.replace(/,/g,''); });
+    input.addEventListener('blur', ()=>{ input.value = formatWithCommas(input.value); });
+  });
+
+  function validateCashMatch(){
+    if(confirmCash.value === ''){
+      confirmCashWrap.classList.remove('has-error');
+      cashMismatchError.style.display = 'none';
+      updateNextState();
+      return;
+    }
+    const mismatch = rawNumber(cashAmount) !== rawNumber(confirmCash);
+    confirmCashWrap.classList.toggle('has-error', mismatch);
+    cashMismatchError.style.display = mismatch ? 'flex' : 'none';
+    updateNextState();
+  }
+
+  confirmCash.addEventListener('input', ()=>{
+    confirmCash.value = sanitizeDecimal(confirmCash.value);
+    validateCashMatch();
+  });
+  confirmCash.addEventListener('focus', ()=>{ confirmCash.value = confirmCash.value.replace(/,/g,''); });
+  confirmCash.addEventListener('blur', ()=>{
+    confirmCash.value = formatWithCommas(confirmCash.value);
+    validateCashMatch();
+  });
+
+  const nextBtn = document.querySelector('.btn-next');
+  function updateNextState(){
+    const cashExceeds = rawNumber(cashAmount) > TOTAL;
+    const bankExceeds = rawNumber(bankAmount) > TOTAL;
+    const cashMismatch = confirmCash.value !== '' && rawNumber(cashAmount) !== rawNumber(confirmCash);
+    const confirmEmpty = confirmCash.value === '';
+    const hasError = cashExceeds || bankExceeds || cashMismatch || confirmEmpty;
+    nextBtn.disabled = hasError;
+    nextBtn.setAttribute('aria-disabled', hasError);
+  }
+
+  // initial state
+  cashAmount.value = formatWithCommas(cashAmount.value);
+  bankAmount.value = formatWithCommas(bankAmount.value);
+  updateNextState();
+</script>
+
+</body>
+</html>

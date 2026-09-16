@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primary ID Document</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --error:#c0392b;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{ color:var(--brand); }
+
+  .main{ flex:1; min-width:0; max-width:680px; }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 22px; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); margin-bottom:var(--gap-lg); }
+  label{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+
+  /* select */
+  .select-wrap{ position:relative; }
+  .select-display{
+    height:var(--field-h); width:100%; padding:0 14px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15px; color:var(--text-primary);
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+  }
+  .select-display:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff; outline:none;
+  }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:#fff; border:1px solid var(--field-border); border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(20,20,50,0.12); z-index:20;
+    max-height:220px; overflow-y:auto; display:none;
+  }
+  .dropdown-panel.open{ display:block; }
+  .dropdown-item{ padding:10px 14px; font-size:14.5px; cursor:pointer; }
+  .dropdown-item:hover, .dropdown-item.hl{ background:#f0f0f8; }
+
+  /* document type toggle cards */
+  .doc-type-list{ display:flex; flex-direction:column; gap:12px; }
+  .doc-card{
+    border:1.5px solid var(--field-border);
+    border-radius:12px;
+    background:#fff;
+  }
+  .doc-card.selected{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(46,47,122,0.12);
+  }
+  .doc-card-header{
+    display:flex; align-items:center; gap:14px;
+    padding:16px 18px;
+    cursor:pointer;
+  }
+  .doc-checkbox{
+    width:22px; height:22px; border-radius:6px;
+    border:2px solid #c7c9d6;
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .12s, border-color .12s;
+  }
+  .doc-card.selected .doc-checkbox{ background:var(--accent); border-color:var(--accent); }
+  .doc-checkbox svg{ display:none; color:#fff; }
+  .doc-card.selected .doc-checkbox svg{ display:block; }
+  .doc-icon{
+    width:34px; height:34px; border-radius:8px;
+    background:#eef0f5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; color:var(--accent);
+  }
+  .doc-title-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .doc-title{ font-size:15.5px; font-weight:700; }
+  .doc-sub{ font-size:12.5px; color:var(--text-secondary); margin-top:2px; }
+  .doc-tag{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    padding:3px 8px; border-radius:5px;
+    background:#eef0f5; color:var(--accent);
+  }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:26px; }
+  button{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:220px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:#c3c2e0; cursor:not-allowed; }
+
+  .select-display:focus-visible, button:focus-visible, .doc-card-header:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  .page-header{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:16px; margin-bottom:22px;
+  }
+  .page-header h1{ margin:0; }
+  .history-link{
+    display:flex; align-items:center; gap:6px;
+    background:none; border:none; cursor:pointer;
+    color:var(--accent); font-size:13.5px; font-weight:700;
+    padding:6px 4px; white-space:nowrap; flex-shrink:0;
+    margin-top:4px; font-family:inherit;
+  }
+  .history-link:hover{ text-decoration:underline; }
+  .history-link:focus-visible{ outline:3px solid #2e6fdb; outline-offset:2px; }
+
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:100; align-items:flex-start; justify-content:center;
+    padding:60px 20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff; border-radius:16px;
+    max-width:720px; width:100%;
+    max-height:80vh; overflow-y:auto;
+    padding:28px 30px 30px;
+    box-shadow:0 20px 60px rgba(20,20,50,0.25);
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .modal-header h2{ font-size:22px; font-weight:800; color:var(--brand); margin:0; }
+  .modal-close{ background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+  .modal-close:hover{ color:var(--text-primary); }
+
+  .history-scroll{ max-height:340px; overflow-y:auto; }
+  table.history-table{ width:100%; border-collapse:collapse; }
+  .history-table thead th{
+    text-align:left; font-size:11.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--text-secondary);
+    padding:0 0 10px; border-bottom:1px solid #e6e7ee;
+    position:sticky; top:0; background:#fff;
+  }
+  .history-table tbody td{
+    padding:14px 0; border-bottom:1px solid #eceef2;
+    font-size:14.5px; vertical-align:top;
+  }
+  .history-table tbody tr:last-child td{ border-bottom:none; }
+  .result-pill{ font-weight:800; font-size:13.5px; }
+  .result-pill.fail{ color:var(--error); }
+  .result-pill.pass{ color:var(--success, #1e7d4b); }
+  .result-pill.skipped{ color:#a15c07; }
+  .history-empty{ font-size:14px; color:var(--text-secondary); text-align:center; padding:24px 0; }
+
+  @media (max-width:720px){
+    .page-header{ flex-direction:column; }
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email Address</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Primary ID Document</h1>
+      <button class="history-link" id="historyBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        View Verification History
+      </button>
+    </div>
+
+    <div class="content-card">
+    <div class="field">
+      <label for="country" class="req">Country of Document</label>
+      <div class="select-wrap">
+        <div class="select-display" id="country" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+          <span>Australia</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="dropdown-panel" role="listbox">
+          <div class="dropdown-item hl" role="option" aria-selected="true">Australia</div>
+          <div class="dropdown-item" role="option">New Zealand</div>
+          <div class="dropdown-item" role="option">United Kingdom</div>
+          <div class="dropdown-item" role="option">United States</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="req">ID Document Type</label>
+      <div class="hint">Select one or more. Driver Licence and Passport can be entered together, and each takes you to its own detail screen next.</div>
+    </div>
+
+    <div class="doc-type-list" role="group" aria-label="ID document type">
+
+      <div class="doc-card" data-doc="licence" data-exclusive="false">
+        <div class="doc-card-header" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="doc-checkbox" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="doc-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M13 10h6M13 14h4"/></svg>
+          </div>
+          <div>
+            <div class="doc-title-row">
+              <div class="doc-title">Driver Licence</div>
+              <div class="doc-tag">Automated KYC Check</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-card" data-doc="passport" data-exclusive="false">
+        <div class="doc-card-header" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="doc-checkbox" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="doc-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/></svg>
+          </div>
+          <div>
+            <div class="doc-title-row">
+              <div class="doc-title">Passport</div>
+              <div class="doc-tag">Automated KYC Check</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-card" data-doc="otherKyc" data-exclusive="true">
+        <div class="doc-card-header" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="doc-checkbox" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="doc-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div>
+            <div class="doc-title">Other Documents</div>
+            <div class="doc-sub">Manual verification by collector, no automated check</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-card" data-doc="noId" data-exclusive="true">
+        <div class="doc-card-header" tabindex="0" role="checkbox" aria-checked="false">
+          <div class="doc-checkbox" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+          <div class="doc-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+          </div>
+          <div class="doc-title">No ID</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-back">Back</button>
+      <button type="button" class="btn-next" id="nextBtn" disabled>Next</button>
+    </div>
+    </div>
+  </main>
+</div>
+
+<!-- Verification History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal-header">
+      <h2 id="historyTitle">Identity Verification (IDV) History</h2>
+      <button class="modal-close" id="historyCloseBtn" aria-label="Close history">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="history-scroll">
+      <table class="history-table">
+        <thead>
+          <tr><th>Country + Document + IDV</th><th>Date &amp; Time</th><th>Result</th></tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+      <div class="history-empty" id="historyEmpty" style="display:none">No verification runs yet for this payout.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const historyBtn = document.getElementById('historyBtn');
+  const historyModal = document.getElementById('historyModal');
+  const historyCloseBtn = document.getElementById('historyCloseBtn');
+  const historyBody = document.getElementById('historyBody');
+  const historyEmpty = document.getElementById('historyEmpty');
+
+  const historyEntries = [
+    { label:'Australia Driver Licence IDV', datetime:'20 July 2026, 9:12 am', result:'PASS' },
+    { label:'Australia Passport IDV', datetime:'20 July 2026, 9:20 am', result:'FAIL' },
+    { label:'Australia Driver Licence IDV', datetime:'22 July 2026, 2:41 pm', result:'PASS' },
+    { label:'Australia Passport IDV', datetime:'22 July 2026, 2:47 pm', result:'SKIPPED' },
+    { label:'Australia Driver Licence IDV', datetime:'23 July 2026, 11:05 am', result:'FAIL' },
+    { label:'New Zealand Passport IDV', datetime:'23 July 2026, 11:14 am', result:'PASS' },
+    { label:'Australia Driver Licence IDV', datetime:'24 July 2026, 4:58 pm', result:'FAIL' },
+    { label:'Australia Driver Licence IDV', datetime:'24 July 2026, 4:58 pm', result:'SKIPPED' },
+    { label:'Australia Passport IDV', datetime:'25 July 2026, 8:30 am', result:'PASS' },
+    { label:'Australia Driver Licence IDV', datetime:'26 July 2026, 12:28 am', result:'FAIL' }
+  ];
+
+  function renderHistory(){
+    historyBody.innerHTML = '';
+    if(historyEntries.length === 0){
+      historyEmpty.style.display = 'block';
+      return;
+    }
+    historyEmpty.style.display = 'none';
+    historyEntries.forEach(e=>{
+      const tr = document.createElement('tr');
+      const resultClass = e.result === 'PASS' ? 'pass' : (e.result === 'SKIPPED' ? 'skipped' : 'fail');
+      tr.innerHTML = `<td>${e.label}</td><td>${e.datetime}</td><td><span class="result-pill ${resultClass}">${e.result}</span></td>`;
+      historyBody.appendChild(tr);
+    });
+  }
+
+  historyBtn.addEventListener('click', ()=>{
+    renderHistory();
+    historyModal.classList.add('open');
+  });
+  historyCloseBtn.addEventListener('click', ()=> historyModal.classList.remove('open'));
+  historyModal.addEventListener('click', (e)=>{ if(e.target === historyModal) historyModal.classList.remove('open'); });
+</script>
+
+<script>
+  document.querySelectorAll('.select-display').forEach(sel=>{
+    const panel = sel.nextElementSibling;
+    sel.addEventListener('click', ()=>{
+      panel.classList.toggle('open');
+      sel.setAttribute('aria-expanded', panel.classList.contains('open'));
+    });
+    panel.querySelectorAll('.dropdown-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        sel.querySelector('span').textContent = item.textContent;
+        panel.classList.remove('open');
+        sel.setAttribute('aria-expanded','false');
+      });
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.select-wrap')){
+      document.querySelectorAll('.select-wrap .dropdown-panel').forEach(p=>p.classList.remove('open'));
+    }
+  });
+
+  const cards = Array.from(document.querySelectorAll('.doc-card'));
+  const nextBtn = document.getElementById('nextBtn');
+
+  function toggleCard(card){
+    const isExclusive = card.dataset.exclusive === 'true';
+    const willSelect = !card.classList.contains('selected');
+
+    if(willSelect && isExclusive){
+      cards.forEach(c=>{ if(c!==card) setSelected(c,false); });
+      setSelected(card, true);
+    } else if(willSelect && !isExclusive){
+      cards.forEach(c=>{ if(c.dataset.exclusive === 'true') setSelected(c,false); });
+      setSelected(card, true);
+    } else {
+      setSelected(card, false);
+    }
+    updateNextState();
+  }
+
+  function setSelected(card, value){
+    card.classList.toggle('selected', value);
+    card.querySelector('.doc-card-header').setAttribute('aria-checked', value);
+  }
+
+  cards.forEach(card=>{
+    const header = card.querySelector('.doc-card-header');
+    header.addEventListener('click', ()=> toggleCard(card));
+    header.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleCard(card); }
+    });
+  });
+
+  function updateNextState(){
+    const selected = cards.filter(c=>c.classList.contains('selected'));
+    nextBtn.disabled = selected.length === 0;
+  }
+</script>
+
+</body>
+</html>

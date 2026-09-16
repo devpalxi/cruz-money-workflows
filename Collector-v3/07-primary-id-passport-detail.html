@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Passport Details</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --error:#c0392b;
+    --error-bg:#fdecea;
+    --warn:#a15c07;
+    --success:#1e7d4b;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{ color:var(--brand); }
+
+  .main{ flex:1; min-width:0; max-width:680px; }
+
+  /* header */
+  .page-header{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:16px; margin-bottom:6px;
+  }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+  .doc-context-banner{
+    display:flex; align-items:center; gap:12px;
+    padding:0 0 16px;
+    margin:10px 0 4px;
+    border-bottom:1px solid #e2e3ea;
+  }
+  .banner-icon{
+    width:34px; height:34px; border-radius:9px;
+    background:#eef0f5;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; color:var(--accent);
+  }
+  .banner-text{ display:flex; flex-direction:column; gap:1px; }
+  .banner-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary); }
+  .banner-title{ font-size:19px; font-weight:800; color:var(--brand); line-height:1.2; }
+  .banner-meta{
+    margin-left:auto;
+    display:flex; align-items:center; gap:8px;
+    font-size:12.5px; color:var(--text-secondary);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .banner-meta .tag{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    padding:2px 7px; border-radius:5px; background:#eef0f5; color:var(--accent);
+  }
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-bottom:14px;
+  }
+  .proto-toggle-label{ font-size:11.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:12.5px; font-weight:600; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  .history-link{
+    display:flex; align-items:center; gap:6px;
+    background:none; border:none; cursor:pointer;
+    color:var(--accent); font-size:13.5px; font-weight:700;
+    padding:6px 4px; white-space:nowrap; flex-shrink:0;
+    margin-top:4px;
+  }
+  .history-link:hover{ text-decoration:underline; }
+
+  .header-spacer{ margin-bottom:24px; }
+
+  .section-heading{
+    font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-secondary);
+    margin:0 0 12px;
+    padding-top:6px;
+  }
+
+  form{ display:flex; flex-direction:column; }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); margin-bottom:var(--gap-md); }
+  .field-row{ display:flex; gap:var(--gap-md); }
+  .field-row .field{ flex:1; }
+  label{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+
+  input[type="text"], input[type="date"]{
+    height:var(--field-h); width:100%; padding:0 14px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15px; color:var(--text-primary);
+    font-family:inherit; outline:none;
+    transition:border-color .12s, box-shadow .12s;
+    text-overflow:ellipsis;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+
+  /* select */
+  .select-wrap{ position:relative; }
+  .select-display{
+    height:var(--field-h); width:100%; padding:0 14px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15px; color:var(--text-primary);
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+  }
+  .select-display:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff; outline:none;
+  }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:#fff; border:1px solid var(--field-border); border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(20,20,50,0.12); z-index:20;
+    max-height:220px; overflow-y:auto; display:none;
+  }
+  .dropdown-panel.open{ display:block; }
+  .dropdown-item{
+    padding:10px 14px; font-size:14.5px; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .dropdown-item:hover, .dropdown-item.hl{ background:#f0f0f8; }
+
+  /* address search combobox — icon scoped correctly to input only */
+  .input-icon-wrap{ position:relative; }
+  input.combo-input{
+    height:var(--field-h); width:100%; padding:0 14px 0 40px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15px; color:var(--text-primary);
+    font-family:inherit; outline:none;
+    text-overflow:ellipsis;
+  }
+  input.combo-input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  .combo-icon{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    color:var(--text-secondary); pointer-events:none;
+    display:flex;
+  }
+  .dropdown-empty{ padding:12px 14px; font-size:13.5px; color:var(--text-secondary); }
+
+  .address-fields{
+    display:none;
+    background:#f8f9fb;
+    border:1px solid #e6e7ee;
+    border-radius:12px;
+    padding:18px;
+    margin-top:14px;
+  }
+  .address-fields.show{ display:block; }
+  .address-fields .field{ margin-bottom:var(--gap-md); }
+  .address-fields .field:last-child{ margin-bottom:0; }
+
+  hr.divider{ border:none; border-top:1px solid #dfe1ea; margin:26px 0; }
+
+  /* summary */
+  .summary-block{ margin-bottom:var(--gap-lg); }
+  .summary-block-title{
+    font-size:13.5px; font-weight:800; color:var(--brand);
+    margin:0 0 10px;
+  }
+  .summary-card{
+    background:#f8f9fb;
+    border:1px solid #e6e7ee;
+    border-radius:12px;
+    padding:16px 18px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .summary-row{ display:flex; justify-content:space-between; gap:16px; font-size:14px; }
+  .summary-row dt{ color:var(--text-secondary); font-weight:600; }
+  .summary-row dd{ margin:0; font-weight:700; text-align:right; max-width:60%; }
+
+  /* consent */
+  .consent-box{
+    background:#fff;
+    border:1px solid var(--field-border);
+    border-radius:10px;
+    padding:16px 18px;
+    max-height:190px;
+    overflow-y:auto;
+    font-size:13px;
+    line-height:1.6;
+    color:var(--text-secondary);
+  }
+  .consent-check{
+    display:flex; align-items:flex-start; gap:10px;
+    margin-top:14px;
+    font-size:14px;
+  }
+  .consent-check input{ margin-top:3px; width:18px; height:18px; accent-color:var(--accent); flex-shrink:0; }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:28px; }
+  button.btn-back, button.btn-next{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:260px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:#c3c2e0; cursor:not-allowed; }
+
+  input:focus-visible, .select-display:focus-visible, button:focus-visible, .history-link:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  /* verification run states */
+  .verify-panel{
+    display:none;
+    border-radius:14px;
+    padding:26px 24px;
+    text-align:center;
+    margin-top:8px;
+  }
+  .verify-panel.show{ display:block; }
+  .verify-panel.running{ background:#f4f5f8; border:1px solid #e2e3ea; }
+  .spinner{
+    width:34px; height:34px; margin:0 auto 14px;
+    border:3px solid #d7d9e2; border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .verify-running-text{ font-size:14.5px; font-weight:600; color:var(--text-primary); }
+  .verify-running-sub{ font-size:12.5px; color:var(--text-secondary); margin-top:4px; }
+
+  .verify-panel.result-pass{ background:#eefaf2; border:1px solid #bfe6cf; }
+  .verify-panel.result-fail{ background:transparent; border:none; padding:0; text-align:left; }
+  .result-icon{
+    width:40px; height:40px; border-radius:50%;
+    margin:0 auto 12px;
+    display:flex; align-items:center; justify-content:center;
+    background:#fff;
+  }
+  .result-pass .result-icon{ border:1.5px solid #bfe6cf; color:var(--success); }
+  .result-fail .result-icon{ border:1.5px solid #f0bdb5; color:var(--error); }
+  .result-title{ font-size:16px; font-weight:800; }
+  .result-pass .result-title{ color:var(--success); }
+  .result-fail .result-title{ color:var(--error); }
+  .result-sub{ font-size:13px; color:var(--text-secondary); margin-top:4px; }
+  .edit-rerun-link{
+    display:inline-block;
+    height:auto; padding:0;
+    margin-top:12px;
+    background:none; border:none; cursor:pointer;
+    font-size:13px; font-weight:700; color:var(--accent);
+    font-family:inherit; text-align:left;
+  }
+  .edit-rerun-link:hover{ text-decoration:underline; }
+  #resultActions .btn-next{ white-space:nowrap; }
+
+  /* fail-state bypass flow */
+  .bypass-notice{
+    background:var(--error-bg);
+    border-radius:12px;
+    padding:18px 20px;
+    text-align:left;
+    margin-top:0;
+  }
+  .bypass-notice-title{ font-size:15px; font-weight:800; color:var(--error); margin:0 0 12px; }
+  .bypass-checkbox{
+    display:flex; align-items:center; gap:10px;
+    cursor:pointer;
+    font-size:14.5px; font-weight:600; color:var(--error);
+  }
+  .bypass-checkbox input{
+    width:20px; height:20px; flex-shrink:0; cursor:pointer;
+    accent-color:#2a7f86;
+  }
+
+  .confirm-card{
+    display:flex; align-items:flex-start; gap:12px;
+    background:var(--field-bg);
+    border:1px solid var(--field-border);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-top:14px;
+    text-align:left;
+    cursor:pointer;
+    font-size:14.5px; color:var(--text-primary);
+    transition:border-color .12s, background .12s;
+  }
+  .confirm-card input{
+    margin-top:2px; width:19px; height:19px;
+    accent-color:#1e7d4b; flex-shrink:0; cursor:pointer;
+  }
+
+  /* history modal */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:100; align-items:flex-start; justify-content:center;
+    padding:60px 20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff; border-radius:16px;
+    max-width:720px; width:100%;
+    max-height:80vh; overflow-y:auto;
+    padding:28px 30px 30px;
+    box-shadow:0 20px 60px rgba(20,20,50,0.25);
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .modal-header h2{ font-size:22px; font-weight:800; color:var(--brand); margin:0; }
+  .modal-close{ background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+  .modal-close:hover{ color:var(--text-primary); }
+
+  .history-scroll{
+    max-height:340px;
+    overflow-y:auto;
+  }
+  table.history-table{ width:100%; border-collapse:collapse; }
+  .history-table thead th{
+    text-align:left; font-size:11.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--text-secondary);
+    padding:0 0 10px; border-bottom:1px solid #e6e7ee;
+    position:sticky; top:0; background:#fff;
+  }
+  .history-table tbody td{
+    padding:14px 0; border-bottom:1px solid #eceef2;
+    font-size:14.5px; vertical-align:top;
+  }
+  .history-table tbody tr:last-child td{ border-bottom:none; }
+  .result-pill{ font-weight:800; font-size:13.5px; }
+  .result-pill.fail{ color:var(--error); }
+  .result-pill.pass{ color:var(--success); }
+  .result-pill.skipped{ color:var(--warn); }
+  .history-empty{ font-size:14px; color:var(--text-secondary); text-align:center; padding:24px 0; }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+    .field-row{ flex-direction:column; }
+    .summary-row{ flex-direction:column; gap:2px; }
+    .summary-row dd{ text-align:left; max-width:100%; }
+    .page-header{ flex-direction:column; }
+    .doc-context-banner{ flex-wrap:wrap; }
+    .banner-meta{ margin-left:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email Address</div></div>
+    <div class="step active" id="stepPrimaryId"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step" id="stepSecondaryId"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <h1>Primary ID Document</h1>
+      <button class="history-link" id="historyBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        View Verification History
+      </button>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Prototype preview only:</span>
+      <button type="button" class="proto-btn" data-mode="single" id="protoSingle">Only Passport selected</button>
+      <button type="button" class="proto-btn active" data-mode="double" id="protoDouble">Arrived after Driver Licence</button>
+    </div>
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Simulate result:</span>
+      <button type="button" class="proto-btn active" id="protoPass">Pass</button>
+      <button type="button" class="proto-btn" id="protoFail">Fail</button>
+    </div>
+
+    <div class="content-card">
+    <div class="doc-context-banner">
+      <div class="banner-icon" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/></svg>
+      </div>
+      <div class="banner-text">
+        <span class="banner-label">You're completing</span>
+        <span class="banner-title">Passport</span>
+      </div>
+      <div class="banner-meta">
+        <span class="tag">Automated KYC Check</span>
+        <span id="docProgressText">Document 2 of 2</span>
+      </div>
+    </div>
+    <div class="header-spacer"></div>
+
+    <form id="passportForm" novalidate>
+
+      <p class="section-heading">Document Details</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="passNumber" class="req">Passport Number</label>
+          <input type="text" id="passNumber" placeholder="Passport Number" required />
+        </div>
+        <div class="field">
+          <label for="passExpiry" class="req">Expiry Date</label>
+          <input type="date" id="passExpiry" required />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="firstName" class="req">First Name</label>
+          <input type="text" id="firstName" placeholder="First Name" required />
+        </div>
+        <div class="field">
+          <label for="middleName">Middle Name</label>
+          <input type="text" id="middleName" placeholder="Middle Name" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="lastName" class="req">Last Name</label>
+          <input type="text" id="lastName" placeholder="Last Name" required />
+        </div>
+        <div class="field">
+          <label for="dob" class="req">Date of Birth</label>
+          <input type="date" id="dob" required />
+        </div>
+      </div>
+
+      <p class="section-heading">Address</p>
+
+      <div class="field">
+        <label for="addressSearch" class="req">Search Address</label>
+        <div class="input-icon-wrap">
+          <span class="combo-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          </span>
+          <input class="combo-input" type="text" id="addressSearch" placeholder="Start typing an address..." autocomplete="off" role="combobox" aria-expanded="false" aria-controls="addressList" />
+          <div class="dropdown-panel" id="addressList" role="listbox"></div>
+        </div>
+      </div>
+
+      <div class="address-fields" id="addressFields">
+        <div class="field-row">
+          <div class="field">
+            <label for="unitNumber">Unit Number</label>
+            <input type="text" id="unitNumber" placeholder="Unit Number" />
+          </div>
+          <div class="field">
+            <label for="streetNumber" class="req">Street Number</label>
+            <input type="text" id="streetNumber" placeholder="Street Number" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="streetName" class="req">Street Name</label>
+          <input type="text" id="streetName" placeholder="Street Name" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="suburb" class="req">Suburb</label>
+            <input type="text" id="suburb" placeholder="Suburb" />
+          </div>
+          <div class="field">
+            <label for="addrState" class="req">State</label>
+            <input type="text" id="addrState" placeholder="State" />
+          </div>
+          <div class="field">
+            <label for="postcode" class="req">Postcode</label>
+            <input type="text" id="postcode" placeholder="Postcode" />
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <p class="section-heading">Summary</p>
+
+      <div class="summary-block">
+        <p class="summary-block-title">Your Details</p>
+        <div class="summary-card">
+          <div class="summary-row"><dt>Full Name</dt><dd id="sumName">—</dd></div>
+          <div class="summary-row"><dt>Date of Birth</dt><dd id="sumDob">—</dd></div>
+          <div class="summary-row"><dt>Address</dt><dd id="sumAddress" title="">—</dd></div>
+        </div>
+      </div>
+
+      <div class="summary-block">
+        <p class="summary-block-title">Passport Details</p>
+        <div class="summary-card">
+          <div class="summary-row"><dt>Passport Number</dt><dd id="sumPassNumber">—</dd></div>
+          <div class="summary-row"><dt>Expiry Date</dt><dd id="sumPassExpiry">—</dd></div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <p class="section-heading">Customer Consent</p>
+      <div class="consent-box" tabindex="0">
+        You have obtained consent from your customer to the collection, use and disclosure of their personal information in accordance with your privacy policy, and for the purposes of verifying their identity, they consent to: (a) the verification of their personal information with a credit bureau header files (for verification only); (b) against records held by official document issuers or official record holders via third party systems; and c) your verification agent(s) acting as a nominated intermediary in accordance with Australian Privacy Principles. They consent to the use by third parties of the results of any verification checks on their identity for the purposes of monitoring and improving the verification services.
+      </div>
+      <label class="consent-check">
+        <input type="checkbox" id="consentCheck" required />
+        <span>The customer confirms their consent to proceed.</span>
+      </label>
+
+      <div class="actions" id="formActions">
+        <button type="button" class="btn-back">Back</button>
+        <button type="button" class="btn-next" id="runBtn" disabled>Run Verification</button>
+      </div>
+    </form>
+
+    <div class="verify-panel running" id="runningPanel">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="verify-running-text">Running identity verification via FrankieOne…</div>
+      <div class="verify-running-sub">This is the final document check for this payout.</div>
+    </div>
+
+    <div class="verify-panel result-pass" id="resultPass" role="status">
+      <div class="result-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div class="result-title">Passport Verification Passed</div>
+      <div class="result-sub" id="autoAdvanceText">Passport has been verified.</div>
+      <div>
+        <button type="button" class="edit-rerun-link" id="editRerunBtn">Entered something wrong? Edit details and re-run</button>
+      </div>
+    </div>
+
+    <div class="verify-panel result-fail" id="resultFail" role="alert">
+      <div class="bypass-notice">
+        <p class="bypass-notice-title">Validation failed</p>
+        <label class="bypass-checkbox">
+          <input type="checkbox" id="bypassCheckbox" />
+          <span>I want to bypass identity validation</span>
+        </label>
+      </div>
+
+      <label class="confirm-card" id="manualVerifyCard" style="display:none">
+        <input type="checkbox" id="manualVerifyCheckbox" />
+        <span>I have manually verified the customer's identity document and confirm it is valid</span>
+      </label>
+
+      <div>
+        <button type="button" class="edit-rerun-link" id="editRerunFailBtn">Edit details and re-run</button>
+      </div>
+    </div>
+
+    <div class="actions" id="resultActions" style="display:none">
+      <button type="button" class="btn-next" id="continueBtn">Next</button>
+    </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Verification History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal-header">
+      <h2 id="historyTitle">Identity Verification (IDV) History</h2>
+      <button class="modal-close" id="historyCloseBtn" aria-label="Close history">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="history-scroll">
+      <table class="history-table">
+        <thead>
+          <tr><th>Country + Document + IDV</th><th>Date &amp; Time</th><th>Result</th></tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+      <div class="history-empty" id="historyEmpty" style="display:none">No verification runs yet for this payout.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- state select ----
+  document.querySelectorAll('.select-display').forEach(sel=>{
+    const panel = sel.nextElementSibling;
+    sel.addEventListener('click', ()=>{
+      panel.classList.toggle('open');
+      sel.setAttribute('aria-expanded', panel.classList.contains('open'));
+    });
+    panel.querySelectorAll('.dropdown-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        sel.querySelector('span').textContent = item.textContent;
+        sel.querySelector('span').style.color = 'var(--text-primary)';
+        panel.classList.remove('open');
+        sel.setAttribute('aria-expanded','false');
+        updateSummary();
+        updateRunState();
+      });
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.select-wrap')){
+      document.querySelectorAll('.select-wrap .dropdown-panel').forEach(p=>p.classList.remove('open'));
+    }
+    if(!e.target.closest('.input-icon-wrap')){
+      addressList.classList.remove('open');
+    }
+  });
+
+  // ---- mock address search ----
+  const sampleAddresses = [
+    { display:"4/12 Riverside Avenue, Parramatta NSW 2150", unit:"4", streetNum:"12", street:"Riverside Avenue", suburb:"Parramatta", state:"NSW", postcode:"2150" },
+    { display:"88 George Street, Sydney NSW 2000", unit:"", streetNum:"88", street:"George Street", suburb:"Sydney", state:"NSW", postcode:"2000" },
+    { display:"15 Beach Road, Bondi NSW 2026", unit:"", streetNum:"15", street:"Beach Road", suburb:"Bondi", state:"NSW", postcode:"2026" },
+    { display:"2/40 Church Street, Richmond VIC 3121", unit:"2", streetNum:"40", street:"Church Street", suburb:"Richmond", state:"VIC", postcode:"3121" },
+    { display:"101 Elizabeth Street, Melbourne VIC 3000", unit:"", streetNum:"101", street:"Elizabeth Street", suburb:"Melbourne", state:"VIC", postcode:"3000" },
+    { display:"12/250 Wentworth Avenue East, Kingsford NSW 2032", unit:"12", streetNum:"250", street:"Wentworth Avenue East", suburb:"Kingsford", state:"NSW", postcode:"2032" }
+  ];
+
+  const addressSearch = document.getElementById('addressSearch');
+  const addressList = document.getElementById('addressList');
+  const addressFields = document.getElementById('addressFields');
+
+  function renderAddressList(query){
+    const q = query.toLowerCase();
+    const matches = q === '' ? [] : sampleAddresses.filter(a=>a.display.toLowerCase().includes(q));
+    addressList.innerHTML = '';
+    if(matches.length===0){
+      addressList.innerHTML = '<div class="dropdown-empty">' + (q === '' ? 'Start typing to search' : 'No matching addresses') + '</div>';
+      return;
+    }
+    matches.forEach(a=>{
+      const div = document.createElement('div');
+      div.className='dropdown-item';
+      div.setAttribute('role','option');
+      div.textContent = a.display;
+      div.title = a.display;
+      div.addEventListener('click', ()=>{
+        addressSearch.value = a.display;
+        addressSearch.title = a.display;
+        document.getElementById('unitNumber').value = a.unit;
+        document.getElementById('streetNumber').value = a.streetNum;
+        document.getElementById('streetName').value = a.street;
+        document.getElementById('suburb').value = a.suburb;
+        document.getElementById('addrState').value = a.state;
+        document.getElementById('postcode').value = a.postcode;
+        addressFields.classList.add('show');
+        addressList.classList.remove('open');
+        updateSummary();
+        updateRunState();
+      });
+      addressList.appendChild(div);
+    });
+  }
+
+  addressSearch.addEventListener('input', ()=>{
+    renderAddressList(addressSearch.value);
+    addressList.classList.add('open');
+  });
+  addressSearch.addEventListener('focus', ()=>{
+    renderAddressList(addressSearch.value);
+    addressList.classList.add('open');
+  });
+
+  // ---- summary ----
+  function updateSummary(){
+    const first = document.getElementById('firstName').value.trim();
+    const middle = document.getElementById('middleName').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+    const fullName = [first, middle, last].filter(Boolean).join(' ');
+    document.getElementById('sumName').textContent = fullName || '—';
+    const dobValue = document.getElementById('dob').value;
+    let dobDisplay = '—';
+    if(dobValue){
+      const [y,m,d] = dobValue.split('-');
+      dobDisplay = `${d}/${m}/${y}`;
+    }
+    document.getElementById('sumDob').textContent = dobDisplay;
+    document.getElementById('sumPassNumber').textContent = document.getElementById('passNumber').value.trim() || '—';
+    const expiryValue = document.getElementById('passExpiry').value;
+    let expiryDisplay = '—';
+    if(expiryValue){
+      const [y,m,d] = expiryValue.split('-');
+      expiryDisplay = `${d}/${m}/${y}`;
+    }
+    document.getElementById('sumPassExpiry').textContent = expiryDisplay;
+    const addrParts = [
+      document.getElementById('unitNumber').value.trim() ? 'Unit ' + document.getElementById('unitNumber').value.trim() : '',
+      document.getElementById('streetNumber').value.trim(),
+      document.getElementById('streetName').value.trim(),
+      document.getElementById('suburb').value.trim(),
+      document.getElementById('addrState').value.trim(),
+      document.getElementById('postcode').value.trim()
+    ].filter(Boolean).join(' ');
+    const sumAddr = document.getElementById('sumAddress');
+    sumAddr.textContent = addrParts || '—';
+    sumAddr.title = addrParts;
+  }
+
+  // ---- validation / run button ----
+  const runBtn = document.getElementById('runBtn');
+  const requiredInputs = ['passNumber','passExpiry','firstName','lastName','dob','streetNumber','streetName','suburb','addrState','postcode'];
+
+  function updateRunState(){
+    const allFilled = requiredInputs.every(id => document.getElementById(id).value.trim() !== '');
+    const consented = document.getElementById('consentCheck').checked;
+    runBtn.disabled = !(allFilled && consented);
+  }
+
+  document.querySelectorAll('#passportForm input[type="text"], #passportForm input[type="date"]').forEach(input=>{
+    input.addEventListener('input', ()=>{ updateSummary(); updateRunState(); });
+  });
+  document.getElementById('consentCheck').addEventListener('change', updateRunState);
+
+  // ---- run verification sequence ----
+  const formActions = document.getElementById('formActions');
+  const runningPanel = document.getElementById('runningPanel');
+  const resultPass = document.getElementById('resultPass');
+  const resultFail = document.getElementById('resultFail');
+  const passportForm = document.getElementById('passportForm');
+  const resultActions = document.getElementById('resultActions');
+  const continueBtn = document.getElementById('continueBtn');
+  const bypassCheckbox = document.getElementById('bypassCheckbox');
+  const manualVerifyCard = document.getElementById('manualVerifyCard');
+  const manualVerifyCheckbox = document.getElementById('manualVerifyCheckbox');
+
+  const protoSingle = document.getElementById('protoSingle');
+  const protoDouble = document.getElementById('protoDouble');
+  const docProgressText = document.getElementById('docProgressText');
+  protoSingle.addEventListener('click', ()=>{
+    protoSingle.classList.add('active');
+    protoDouble.classList.remove('active');
+    docProgressText.textContent = 'Only document required';
+  });
+  protoDouble.addEventListener('click', ()=>{
+    protoDouble.classList.add('active');
+    protoSingle.classList.remove('active');
+    docProgressText.textContent = 'Document 2 of 2';
+  });
+
+  let simulateFail = false;
+  const protoPass = document.getElementById('protoPass');
+  const protoFail = document.getElementById('protoFail');
+  protoPass.addEventListener('click', ()=>{
+    simulateFail = false;
+    protoPass.classList.add('active');
+    protoFail.classList.remove('active');
+  });
+  protoFail.addEventListener('click', ()=>{
+    simulateFail = true;
+    protoFail.classList.add('active');
+    protoPass.classList.remove('active');
+  });
+
+  function lockForm(){
+    passportForm.querySelectorAll('input, .select-display').forEach(el=> el.style.pointerEvents = 'none');
+  }
+  function unlockForm(){
+    passportForm.querySelectorAll('input, .select-display').forEach(el=> el.style.pointerEvents = 'auto');
+  }
+
+  runBtn.addEventListener('click', ()=>{
+    lockForm();
+    formActions.style.display = 'none';
+    runningPanel.classList.add('show');
+
+    setTimeout(()=>{
+      runningPanel.classList.remove('show');
+      if(simulateFail){
+        resultFail.classList.add('show');
+        addHistoryEntry('Australia Passport IDV', 'FAIL');
+      } else {
+        resultPass.classList.add('show');
+        resultActions.style.display = 'flex';
+        addHistoryEntry('Australia Passport IDV', 'PASS');
+      }
+    }, 1600);
+  });
+
+  bypassCheckbox.addEventListener('change', ()=>{
+    manualVerifyCard.style.display = bypassCheckbox.checked ? 'flex' : 'none';
+    if(!bypassCheckbox.checked){
+      manualVerifyCheckbox.checked = false;
+      resultActions.style.display = 'none';
+    }
+    updateBypassState();
+  });
+  manualVerifyCheckbox.addEventListener('change', updateBypassState);
+  function updateBypassState(){
+    const canProceed = bypassCheckbox.checked && manualVerifyCheckbox.checked;
+    resultActions.style.display = canProceed ? 'flex' : 'none';
+  }
+
+  continueBtn.addEventListener('click', ()=>{
+    const primaryStep = document.getElementById('stepPrimaryId');
+    const secondaryStep = document.getElementById('stepSecondaryId');
+    primaryStep.classList.remove('active');
+    primaryStep.classList.add('done');
+    secondaryStep.classList.add('active');
+    document.getElementById('autoAdvanceText').textContent = 'Moved to Secondary ID.';
+    continueBtn.disabled = true;
+  });
+
+  document.getElementById('editRerunBtn').addEventListener('click', ()=>{
+    unlockForm();
+    resultPass.classList.remove('show');
+    resultActions.style.display = 'none';
+    formActions.style.display = 'flex';
+  });
+
+  document.getElementById('editRerunFailBtn').addEventListener('click', ()=>{
+    unlockForm();
+    resultFail.classList.remove('show');
+    resultActions.style.display = 'none';
+    bypassCheckbox.checked = false;
+    manualVerifyCheckbox.checked = false;
+    manualVerifyCard.style.display = 'none';
+    formActions.style.display = 'flex';
+  });
+
+  // ---- history modal ----
+  const historyBtn = document.getElementById('historyBtn');
+  const historyModal = document.getElementById('historyModal');
+  const historyCloseBtn = document.getElementById('historyCloseBtn');
+  const historyBody = document.getElementById('historyBody');
+  const historyEmpty = document.getElementById('historyEmpty');
+
+  let historyEntries = [
+    { label:'Australia Driver Licence IDV', datetime:'20 July 2026, 9:12 am', result:'PASS' },
+    { label:'Australia Passport IDV', datetime:'20 July 2026, 9:20 am', result:'FAIL' },
+    { label:'Australia Driver Licence IDV', datetime:'22 July 2026, 2:41 pm', result:'PASS' },
+    { label:'Australia Passport IDV', datetime:'22 July 2026, 2:47 pm', result:'SKIPPED' },
+    { label:'Australia Driver Licence IDV', datetime:'23 July 2026, 11:05 am', result:'FAIL' },
+    { label:'New Zealand Passport IDV', datetime:'23 July 2026, 11:14 am', result:'PASS' },
+    { label:'Australia Driver Licence IDV', datetime:'24 July 2026, 4:58 pm', result:'FAIL' },
+    { label:'Australia Driver Licence IDV', datetime:'24 July 2026, 4:58 pm', result:'SKIPPED' },
+    { label:'Australia Passport IDV', datetime:'25 July 2026, 8:30 am', result:'PASS' },
+    { label:'Australia Driver Licence IDV', datetime:'26 July 2026, 12:28 am', result:'FAIL' }
+  ];
+
+  function renderHistory(){
+    historyBody.innerHTML = '';
+    if(historyEntries.length === 0){
+      historyEmpty.style.display = 'block';
+      return;
+    }
+    historyEmpty.style.display = 'none';
+    historyEntries.forEach(e=>{
+      const tr = document.createElement('tr');
+      const resultClass = e.result === 'PASS' ? 'pass' : (e.result === 'SKIPPED' ? 'skipped' : 'fail');
+      tr.innerHTML = `<td>${e.label}</td><td>${e.datetime}</td><td><span class="result-pill ${resultClass}">${e.result}</span></td>`;
+      historyBody.appendChild(tr);
+    });
+  }
+
+  function addHistoryEntry(label, result){
+    const now = new Date();
+    const datetime = now.toLocaleString('en-AU', { day:'numeric', month:'long', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
+    historyEntries.push({ label, datetime, result });
+  }
+
+  historyBtn.addEventListener('click', ()=>{
+    renderHistory();
+    historyModal.classList.add('open');
+  });
+  historyCloseBtn.addEventListener('click', ()=> historyModal.classList.remove('open'));
+  historyModal.addEventListener('click', (e)=>{ if(e.target === historyModal) historyModal.classList.remove('open'); });
+
+  updateSummary();
+</script>
+
+</body>
+</html>

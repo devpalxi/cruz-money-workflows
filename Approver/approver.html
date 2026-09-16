@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Payout Review Portal | RIVERSIDE HOTEL</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <!-- GSAP for Cinematic Motion -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#cde5ff",
+                        "primary": "#005d90", // Fintech blue-teal
+                        "on-surface": "#191c1d",
+                        "on-secondary-fixed": "#001f25",
+                        "tertiary-fixed": "#b3ebff",
+                        "on-tertiary-container": "#ecf9ff",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#69e5ff",
+                        "on-background": "#191c1d",
+                        "surface-container": "#edeeef",
+                        "surface-bright": "#f8f9fa",
+                        "secondary-fixed-dim": "#58d6f1",
+                        "on-surface-variant": "#404850",
+                        "on-secondary-fixed-variant": "#004e5b",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#4cd6fb",
+                        "primary-fixed-dim": "#94ccff",
+                        "surface-container-low": "#f3f4f5",
+                        "error-container": "#ffdad6",
+                        "outline": "#707881",
+                        "on-primary-container": "#f3f7ff",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#94ccff",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-variant": "#e1e3e4",
+                        "inverse-surface": "#2e3132",
+                        "on-primary-fixed": "#001d32",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#004b74",
+                        "surface-dim": "#d9dadb",
+                        "background": "#ffffff",
+                        "surface-tint": "#006399",
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-tertiary-fixed-variant": "#004e5f",
+                        "surface": "#ffffff",
+                        "tertiary": "#006176",
+                        "on-tertiary-fixed": "#001f27",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary-container": "#0077b6",
+                        "outline-variant": "#bfc7d1",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary-container": "#007c95",
+                        "on-secondary-container": "#006575",
+                        "secondary": "#006878",
+                        "secondary-fixed": "#a7edff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "12px",
+                        "lg": "18px",
+                        "xl": "18px",
+                        "full": "9999px" // Pills and rounded dots only
+                    },
+                    "spacing": {
+                        "form-row-gap": "2rem",
+                        "container-padding": "2rem",
+                        "gutter": "1.5rem",
+                        "section-gap": "4rem",
+                        "margin-mobile": "1.25rem"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-md": ["Outfit"], // Geometric display headers
+                        "label-caps": ["Hanken Grotesk"],
+                        "title-sm": ["Outfit"],
+                        "label-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-caps": ["14px", { "lineHeight": "18px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+                        "title-sm": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-sm": ["15px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-md": ["36px", { "lineHeight": "44px", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f1f5f9;
+            color: #191c1d;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .dashed-divider {
+            border-top: 1px dashed #bfc7d1;
+        }
+
+        input[type="radio"]:checked {
+            background-color: #005d90;
+            border-color: #005d90;
+        }
+
+        .section-divider {
+            border-bottom: 1px solid #e1e3e4;
+        }
+
+        /* Custom Risk selector styles matching screenshot */
+        .risk-pills-container {
+            display: inline-block;
+        }
+
+        .risk-pills {
+            display: inline-flex;
+            background: #edf3f8;
+            border: 1px solid #d2dfea;
+            border-radius: 9999px;
+            padding: 4px;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .risk-pills input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .risk-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .risk-pill:hover {
+            color: #1e293b;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .risk-pills input:checked+.risk-pill {
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+            border: 1px solid #e2e8f0;
+            font-weight: 700;
+            padding-top: 7px;
+            padding-bottom: 7px;
+        }
+
+        .rpill-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        #risk-low:checked+.risk-pill {
+            color: #15803d;
+        }
+
+        #risk-low:checked+.risk-pill .rpill-dot {
+            background: #15803d;
+        }
+
+        #risk-medium:checked+.risk-pill {
+            color: #b45309;
+        }
+
+        #risk-medium:checked+.risk-pill .rpill-dot {
+            background: #b45309;
+        }
+
+        #risk-high:checked+.risk-pill {
+            color: #b91c1c;
+        }
+
+        #risk-high:checked+.risk-pill .rpill-dot {
+            background: #b91c1c;
+        }
+
+        /* Ready for Payment Checkbox container style */
+        .ready-payment-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: #f0f5fa;
+            border: 1px solid #dbe3ed;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ready-payment-container:hover {
+            background: #e6eff5;
+            border-color: #cbdbe9;
+        }
+
+        .ready-payment-box {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid #a2b6c9;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .ready-payment-box svg {
+            opacity: 0;
+            transition: opacity 0.12s ease;
+        }
+
+        .ready-payment-box.checked {
+            background: #004b74;
+            border-color: #004b74;
+        }
+
+        .ready-payment-box.checked svg {
+            opacity: 1;
+        }
+
+        .ready-payment-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0c1c2c;
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+        }
+
+        /* Premium Action Buttons matching screenshot */
+        .btn-approve-premium {
+            background-color: #005d90;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.08em;
+            border-radius: 9999px;
+            padding: 18px 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid transparent;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .btn-approve-premium:hover:not(:disabled) {
+            background-color: #004b74;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .btn-approve-premium:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .btn-approve-premium:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .btn-reject-premium {
+            background-color: #ffffff;
+            color: #b91c1c;
+            border: 1px solid #b91c1c;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.08em;
+            border-radius: 9999px;
+            padding: 18px 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .btn-reject-premium:hover {
+            background-color: rgba(185, 28, 28, 0.04);
+            border-color: #a11818;
+            color: #a11818;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .btn-reject-premium:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        /* Premium Glassmorphic Badge with Pulse Animation */
+        .glass-badge-premium {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-radius: 9999px;
+            user-select: none;
+            line-height: 1.2;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .status-dot-pulse {
+            position: relative;
+            display: inline-flex;
+            width: 7px;
+            height: 7px;
+            margin-right: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot-pulse::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: status-ping 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes status-ping {
+            75%, 100% {
+                transform: scale(2.8);
+                opacity: 0;
+            }
+        }
+
+        /* Glassmorphic State Modifiers */
+        /* Cyan (Active Member) */
+        .glass-badge-cyan {
+            background-color: rgba(105, 229, 255, 0.12);
+            border: 1px solid rgba(105, 229, 255, 0.35);
+            color: #006575;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+        .glass-badge-cyan .status-dot-pulse,
+        .glass-badge-cyan .status-dot-pulse::after {
+            background-color: #00a4cc;
+        }
+
+        /* Blue (Default Payout Status) */
+        .glass-badge-blue {
+            background-color: rgba(105, 229, 255, 0.12);
+            border: 1px solid rgba(105, 229, 255, 0.35);
+            color: #006575;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+        .glass-badge-blue .status-dot-pulse,
+        .glass-badge-blue .status-dot-pulse::after {
+            background-color: #00a4cc;
+        }
+
+        /* Green (Low Risk) */
+        .glass-badge-green {
+            background-color: rgba(21, 128, 61, 0.08);
+            border: 1px solid rgba(21, 128, 61, 0.25);
+            color: #15803d;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+        .glass-badge-green .status-dot-pulse,
+        .glass-badge-green .status-dot-pulse::after {
+            background-color: #15803d;
+        }
+
+        /* Orange (Medium Risk) */
+        .glass-badge-orange {
+            background-color: rgba(180, 83, 9, 0.08);
+            border: 1px solid rgba(180, 83, 9, 0.25);
+            color: #b45309;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+        .glass-badge-orange .status-dot-pulse,
+        .glass-badge-orange .status-dot-pulse::after {
+            background-color: #b45309;
+        }
+
+        /* Red (High Risk) */
+        .glass-badge-red {
+            background-color: rgba(185, 28, 28, 0.08);
+            border: 1px solid rgba(185, 28, 28, 0.25);
+            color: #b91c1c;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+        .glass-badge-red .status-dot-pulse,
+        .glass-badge-red .status-dot-pulse::after {
+            background-color: #b91c1c;
+        }
+
+        /* Custom checkboxes (kept from original approver.html) */
+        .check-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .hidden-check {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .check-box {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid #bfc7d1;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+            margin-top: 2px;
+        }
+
+        .check-box svg {
+            opacity: 0;
+            transition: opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .check-box.checked {
+            background: #005d90;
+            border-color: #005d90;
+            transform: scale(1.05);
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .check-box.checked svg {
+            opacity: 1;
+        }
+
+        .check-box.large {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+        }
+
+        .check-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: #2d4054;
+            line-height: 1.5;
+        }
+
+        .check-text.bold {
+            font-weight: 700;
+            color: #0e1927;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .final-confirm {
+            padding: 16px 20px;
+            background: rgba(0, 93, 144, 0.04);
+            border: 1.5px solid rgba(0, 93, 144, 0.2);
+            border-radius: 12px;
+            transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+        }
+
+        .final-confirm:hover {
+            background: rgba(0, 93, 144, 0.08);
+        }
+
+        /* ─── TICKET UPLOAD COMPONENT STYLES ────────────────────────── */
+        /* Drag and Drop States */
+        .upload-dropzone.dragover {
+            border-color: #005d90 !important;
+            background-color: rgba(0, 93, 144, 0.05) !important;
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        .upload-dropzone.dragover #idle-view {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .upload-dropzone.dragover #drag-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Glassmorphic Ticket Preview Cards */
+        .ticket-preview-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .ticket-preview-card:hover {
+            border-color: #005d90;
+            transform: translateY(-2px);
+            box-shadow: 0 1px 2px rgba(10, 28, 55, 0.04);
+        }
+
+        /* Image Thumbnail Container */
+        .ticket-thumb-container {
+            position: relative;
+            height: 140px;
+            background-color: #f1f5f9;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .ticket-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .ticket-preview-card:hover .ticket-thumb {
+            transform: scale(1.05);
+        }
+
+        /* Delete Button on Card */
+        .ticket-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .ticket-delete-btn:hover {
+            background: rgba(220, 38, 38, 0.9);
+            transform: scale(1.1);
+        }
+
+        .ticket-delete-btn .material-symbols-outlined {
+            font-size: 16px;
+            font-variation-settings: 'wght' 600;
+        }
+
+        /* Progress bar animation */
+        @keyframes progress-shine {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .upload-progress-fill {
+            background: linear-gradient(90deg, #005d90 0%, #007c95 50%, #005d90 100%);
+            background-size: 200% 200%;
+            animation: progress-shine 2s linear infinite;
+            transition: width 0.3s ease-out;
+        }
+
+    </style>
+</head>
+
+<body class="min-h-screen overflow-x-hidden w-full max-w-full">
+
+    <!-- Floating Glass Navigation (gpt-taste split nav style) -->
+    <nav class="sticky top-4 z-50 mx-auto max-w-[1280px] px-8 mt-6">
+        <div
+            class="bg-white/85 backdrop-blur-xl border border-[#94a3b8] rounded-lg py-4 px-8 flex justify-between items-center shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+            <div class="flex items-center gap-12">
+                <span class="text-xl font-black tracking-widest text-primary font-sans">RIVERSIDE HOTEL</span>
+                <div class="hidden md:flex gap-8 items-center h-full">
+                    <a class="text-slate-500 font-semibold hover:text-primary transition-colors duration-200"
+                        href="#">Dashboard</a>
+                    <a class="text-primary font-bold border-b-2 border-primary pb-1" href="#">Payouts Review</a>
+                    <a class="text-slate-500 font-semibold hover:text-primary transition-colors duration-200"
+                        href="#">Audits</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <span
+                    class="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary transition-colors duration-200 scale-110">notifications</span>
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
+                    <img class="w-full h-full object-cover" alt="User avatar"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkz4OKSaTPNJCLoM1i7QE-ccwLdr56eYzdCTMZBJxSQMMeaphlufM-VSU7RteHAt6lWs07Iyw83xtcxS-PvAFVw4RjXFuwtUGdjVjcRsQzBn8SHMYEECL2agn-DITIk0BJ_vl0tbn7aN8l0Vyb1UHp-bHZMOCc_Ta5WiA_fYHTZmWO8qvmikidF582kG-eRNijVBNlWpHnWIZYtg_RWc3Gj3Cu3haojLKiR8FGaG_PMHYVA1U1bROJ" />
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1280px] mx-auto px-8 pt-12 pb-32 flex flex-col gap-12">
+        <!-- Header Section / Attention Hero (Editorial Split) -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200">
+            <div>
+                <a class="flex items-center gap-2 text-primary font-bold mb-4 hover:opacity-80 transition-all" href="#">
+                    <span class="material-symbols-outlined text-base">arrow_back</span>
+                    <span class="text-xs uppercase tracking-wider font-sans">Back to Dashboard</span>
+                </a>
+                <div class="flex items-center gap-6">
+                    <h1 class="text-headline-md text-on-surface font-headline-md">Payout #574</h1>
+                    <span id="status-badge" class="glass-badge-premium glass-badge-blue">
+                        <span class="status-dot-pulse"></span>Awaiting Approval
+                    </span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 bg-white border-2 border-[#005d90]/15 rounded-xl py-3.5 px-6 shadow-[0_1px_2px_rgba(10,28,55,0.04)] shrink-0 self-start md:self-auto">
+                <div class="w-11 h-11 rounded-full bg-[#005d90]/10 flex items-center justify-center text-[#005d90] shrink-0">
+                    <span class="material-symbols-outlined text-xl">payments</span>
+                </div>
+                <div class="flex flex-col text-left">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans leading-none mb-2">SETTLEMENT AMOUNT</span>
+                    <span class="text-3xl font-extrabold text-primary font-mono leading-none">$50.00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bento-Grid Layout: Flat, Interlocking, Dense (cols-12) -->
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- Bento Cell 1: Payout Details (col-span-5) -->
+            <section
+                class="bento-cell col-span-12 md:col-span-5 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 flex flex-col justify-between shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">payments</span>
+                        Payout Details
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Cash Amount</span>
+                            <span class="font-bold text-on-surface font-mono">$50.00</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Transfer Amount</span>
+                            <span class="font-bold text-on-surface font-mono">$50.00</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Internal Transaction ID</span>
+                            <span class="font-bold text-on-surface font-mono">123456</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center pb-1">
+                            <span class="text-on-surface-variant text-body-md">Machine ID</span>
+                            <span class="font-bold text-on-surface font-mono">EGM-001</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 2: Member Identification (col-span-7) -->
+            <section
+                class="bento-cell col-span-12 md:col-span-7 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 flex flex-col justify-between shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">badge</span>
+                        Member Identification
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Membership #</span>
+                            <span class="font-bold text-on-surface font-mono">123456</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Full Name (System)</span>
+                            <span class="font-bold text-primary">Dineth Nimsara</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center border-b border-slate-100 pb-3">
+                            <span class="text-on-surface-variant text-body-md">Email Address</span>
+                            <span class="font-bold text-on-surface">dineth75nimsara75@gmail.com</span>
+                        </div>
+                        <div class="detail-row flex justify-between items-center pb-1">
+                            <span class="text-on-surface-variant text-body-md">Member Status</span>
+                            <span class="glass-badge-premium glass-badge-cyan">
+                                <span class="status-dot-pulse"></span>Active Member
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 3: Bank Account Details (col-span-12 - Full Width Block Grid) -->
+            <section
+                class="bento-cell col-span-12 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-2xl">account_balance</span>
+                    Bank Account Details
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">ACCOUNT NAME</span>
+                        <span class="text-[18px] font-bold text-[#005d90] font-sans">Dineth Nimsara</span>
+                    </div>
+                    <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">BSB</span>
+                        <span class="text-[18px] font-bold text-[#005d90] font-sans">453-653</span>
+                    </div>
+                    <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1]">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">ACCOUNT NUMBER</span>
+                        <span class="text-[18px] font-bold text-[#005d90] font-sans">134 243 536</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 4: Name Verification Mismatch Banner (col-span-12) -->
+            <section
+                class="bento-cell col-span-12 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-2xl">gavel</span>
+                    Name Verification
+                </h2>
+                <div class="border border-[#ba1a1a]/25 p-8 flex flex-col gap-6 rounded-2xl bg-[#ba1a1a]/4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-label-caps font-bold text-[#ba1a1a] tracking-widest font-sans text-xs">NAME MATCH VERIFICATION</h3>
+                        <span class="glass-badge-premium glass-badge-red">
+                            <span class="status-dot-pulse"></span>Mismatch
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name on ID -->
+                        <div class="bg-white p-6 rounded-xl border border-[#ba1a1a]/15 shadow-sm flex flex-col gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Name on ID Document</span>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-[18px] font-bold text-slate-800 font-sans">Dineth N. Wijetunga</span>
+                                <span class="material-symbols-outlined text-[#ba1a1a] text-xl shrink-0">close</span>
+                            </div>
+                        </div>
+
+                        <!-- Bank Account Name -->
+                        <div class="bg-white p-6 rounded-xl border border-[#ba1a1a]/15 shadow-sm flex flex-col gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Bank Account Name</span>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-[18px] font-bold text-slate-800 font-sans">Dineth Nimsara</span>
+                                <span class="material-symbols-outlined text-[#ba1a1a] text-xl shrink-0">close</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 5: Status Indicators Stack (col-span-8) -->
+            <section
+                class="bento-cell col-span-12 md:col-span-8 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-2xl">verified</span>
+                    Verification Status
+                </h2>
+                <div class="flex flex-col gap-3">
+                    <!-- Government ID -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">Government ID</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#b91c1c] bg-[#fee2e2] border border-[#fca5a5] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#b91c1c] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            FAIL
+                        </span>
+                    </div>
+
+                    <!-- ID Validation -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">ID Validation</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#b91c1c] bg-[#fee2e2] border border-[#fca5a5] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#b91c1c] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            FAIL
+                        </span>
+                    </div>
+
+                    <!-- Blacklist Check -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">Blacklist Check</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#15803d] bg-[#dcfce7] border border-[#bbf7d0] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#15803d] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="16 9 11 14 8 11"></polyline>
+                            </svg>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- Name Match -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">Name Match</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#15803d] bg-[#dcfce7] border border-[#bbf7d0] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#15803d] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="16 9 11 14 8 11"></polyline>
+                            </svg>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- DOB Match -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">DOB Match</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#15803d] bg-[#dcfce7] border border-[#bbf7d0] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#15803d] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="16 9 11 14 8 11"></polyline>
+                            </svg>
+                            PASS
+                        </span>
+                    </div>
+
+                    <!-- AML: PEP Screening -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">AML: PEP Screening</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#b45309] bg-[#fef3c7] border border-[#fde68a] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#b45309] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            ACTIVE HITS
+                        </span>
+                    </div>
+
+                    <!-- AML: Sanctions -->
+                    <div
+                        class="status-row flex items-center justify-between pl-6 pr-4 py-4 bg-white border border-[#cbd5e1] rounded-xl hover:bg-slate-50/50 transition-colors duration-150">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0"></span>
+                            <span class="text-sm font-bold text-slate-800 tracking-wider font-sans uppercase">AML: Sanctions</span>
+                        </div>
+                        <span
+                            class="px-[18px] py-[6px] text-sm font-bold text-[#b45309] bg-[#fef3c7] border border-[#fde68a] uppercase tracking-widest flex items-center gap-2 rounded-full font-sans">
+                            <svg class="w-4 h-4 text-[#b45309] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            ACTIVE HITS
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 6: Collector Details (col-span-4) -->
+            <section
+                class="bento-cell col-span-12 md:col-span-4 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 flex flex-col justify-between shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <div>
+                    <h2 class="text-title-sm font-title-md mb-8 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">group</span>
+                        Collector
+                    </h2>
+                    <div class="flex flex-col gap-6">
+                        <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1]">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">COLLECTOR</span>
+                            <span class="text-[18px] font-bold text-primary font-sans">M. Santos</span>
+                        </div>
+                        <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1]">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans block mb-2">COLLECTION TIME</span>
+                            <span class="text-[18px] font-bold text-slate-900 font-sans">13 July 2026 at 5:22 pm</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 7: IDV History Logs (col-span-12) -->
+            <section
+                class="bento-cell col-span-12 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <h2 class="text-title-sm font-title-md mb-8">IDV HISTORY (RECENT ATTEMPTS)</h2>
+                <div class="flex flex-col gap-4">
+                    <!-- Table Header -->
+                    <div class="grid grid-cols-12 gap-4 px-8 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">
+                        <div class="col-span-2">COUNTRY</div>
+                        <div class="col-span-2">DOCUMENT TYPE</div>
+                        <div class="col-span-2">METHOD</div>
+                        <div class="col-span-3">DATE &amp; TIME</div>
+                        <div class="col-span-2">STATUS</div>
+                        <div class="col-span-1">ACTION</div>
+                    </div>
+                    <!-- Table Body Rows -->
+                    <div class="grid grid-cols-12 gap-4 items-center bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl px-8 py-5 hover:bg-slate-50 transition-colors duration-150">
+                        <div class="col-span-2 font-bold text-slate-900">Australia</div>
+                        <div class="col-span-2 text-slate-600">Drivers Licence</div>
+                        <div class="col-span-2 text-slate-600">IDV</div>
+                        <div class="col-span-3 text-slate-700 font-sans">13 July 2026, 9:50 pm</div>
+                        <div class="col-span-2">
+                            <span class="flex items-center gap-2 text-[#b91c1c] font-bold font-sans">
+                                <svg class="w-[18px] h-[18px] text-[#b91c1c] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                Failed
+                            </span>
+                        </div>
+                        <div class="col-span-1">
+                            <button class="text-primary hover:underline font-bold font-sans">View Logs</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 7.5: Winning Tickets Review (col-span-12) -->
+            <section class="bento-cell col-span-12 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]" id="ticket-upload-component">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-11 h-11 rounded-full bg-[#005d90]/10 flex items-center justify-center text-[#005d90] shrink-0 mt-0.5">
+                            <span class="material-symbols-outlined text-2xl">receipt_long</span>
+                        </div>
+                        <div>
+                            <h2 class="text-title-sm font-title-md flex items-center gap-3">
+                                Winning Tickets Verification
+                            </h2>
+                            <p class="text-body-md text-slate-500 mt-1">Review the ticket scan uploaded by collector <span class="font-bold text-slate-800">M. Santos</span>.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shrink-0">
+                        <button type="button" id="toggle-ticket-btn" class="flex items-center justify-center gap-2 bg-[#005d90]/10 hover:bg-[#005d90]/20 text-[#005d90] font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-full transition-all duration-200 font-sans border border-[#005d90]/15">
+                            <span>Inspect Ticket</span>
+                            <span id="toggle-arrow-icon" class="material-symbols-outlined text-base transition-transform duration-300">expand_more</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expandable Inline Ticket Panel -->
+                <div id="ticket-expand-panel" class="h-0 overflow-hidden mt-0">
+                    <div class="pt-6 border-t border-slate-200 mt-6 flex flex-col gap-6">
+                        <div class="bg-[#f1f5f9] p-6 rounded-xl border border-[#cbd5e1] flex flex-col items-center gap-6">
+                            <!-- Image Viewer Container -->
+                            <div class="relative max-w-xl w-full border border-slate-300 rounded-xl overflow-hidden shadow-sm bg-slate-900 flex justify-center">
+                                <img src="./winning_ticket_sample.png" alt="Winning Ticket Scan" class="max-h-[500px] w-full object-contain" id="ticket-scan-image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bento Cell 8: Final Review Decision Form (col-span-12) -->
+            <section
+                class="bento-cell col-span-12 p-8 border border-[#cbd5e1] rounded-2xl bg-white hover:border-primary transition-colors duration-300 shadow-[0_1px_2px_rgba(10,28,55,0.04)]">
+                <h2 class="text-title-sm font-title-md mb-10 text-center uppercase tracking-widest text-primary">Final
+                    Review Decision</h2>
+
+                <!-- Previous Approvals -->
+                <div class="flex flex-col gap-3 mb-10">
+                    <h3 class="text-label-caps font-bold text-slate-500 opacity-80 tracking-widest text-[13px]">PREVIOUS APPROVALS</h3>
+                    <div class="border border-[#cbd5e1] rounded-xl p-6 bg-white shadow-sm">
+                        <div class="flex justify-between items-center bg-[#f1f5f9] pl-6 pr-4 py-4 rounded-xl border border-[#e2e8f0]">
+                            <div class="flex flex-col">
+                                <span class="text-[15px] font-bold text-slate-900 font-sans">M. Santos</span>
+                                <span class="text-xs text-slate-500 font-mono mt-1">13 July 2026 at 5:43 pm</span>
+                            </div>
+                            <div class="flex items-center gap-4 font-sans">
+                                <span class="px-3.5 py-1 text-xs font-bold text-[#15803d] bg-[#dcfce7] border border-[#bbf7d0] uppercase tracking-widest rounded-full">RISK: LOW</span>
+                                <span class="text-sm font-bold text-[#15803d]">✓ Approved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="flex flex-col gap-10">
+                    <!-- Name Mismatch Confirmation -->
+                    <label class="check-toggle p-6 bg-[#f1f5f9] border border-[#cbd5e1] rounded-2xl cursor-pointer hover:bg-[#cbd5e1]/30 hover:border-[#a7bbc7] transition-all" for="idConfirm">
+                        <input type="checkbox" id="idConfirm" class="hidden-check">
+                        <span class="check-box large" aria-hidden="true">
+                            <svg viewBox="0 0 14 14" width="13" height="13" fill="none" stroke="white"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                aria-hidden="true">
+                                <polyline points="2 7 5.5 10.5 12 3" />
+                            </svg>
+                        </span>
+                        <div class="flex flex-col select-none">
+                            <span class="check-text bold text-[#0e1927]">Confirm Name Mismatch</span>
+                            <p class="text-body-md text-slate-500 mt-1">I acknowledge that the account name
+                                provided does not match the system record and assume responsibility for this override.
+                            </p>
+                        </div>
+                    </label>
+
+                    <!-- Risk Assessment pills (from original approver.html) -->
+                    <div class="flex flex-col gap-4">
+                        <span class="text-label-caps opacity-60 font-bold font-sans" id="risk-label">RISK LEVEL ASSESSMENT</span>
+                        <div class="flex flex-wrap items-center gap-x-8 gap-y-4">
+                            <div class="risk-pills-container">
+                                <div class="risk-pills" role="group" aria-labelledby="risk-label">
+                                    <input type="radio" name="riskLevel" id="risk-low" value="low">
+                                    <label for="risk-low" class="risk-pill low">
+                                        <span class="rpill-dot" aria-hidden="true"></span>Low
+                                    </label>
+                                    <input type="radio" name="riskLevel" id="risk-medium" value="medium">
+                                    <label for="risk-medium" class="risk-pill medium">
+                                        <span class="rpill-dot" aria-hidden="true"></span>Medium
+                                    </label>
+                                    <input type="radio" name="riskLevel" id="risk-high" value="high" checked>
+                                    <label for="risk-high" class="risk-pill high">
+                                        <span class="rpill-dot" aria-hidden="true"></span>High
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- Themed status summary text -->
+                            <div id="risk-summary-text" class="text-sm font-semibold font-sans tracking-wide transition-all duration-300">
+                                CoP Status Match, ID name Match, PEP Foreign Match (resolved), Sanction Clear
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Final payment confirmation checkbox (from original approver.html) -->
+                    <div class="flex flex-col gap-4">
+                        <label class="ready-payment-container" for="approvalConfirm">
+                            <input type="checkbox" id="approvalConfirm" class="hidden-check" checked>
+                            <span class="check-box ready-payment-box" aria-hidden="true">
+                                <svg viewBox="0 0 14 14" width="12" height="12" fill="none" stroke="white"
+                                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                                    aria-hidden="true">
+                                    <polyline points="2 7 5.5 10.5 12 3" />
+                                </svg>
+                            </span>
+                            <span class="ready-payment-text">I confirm this transaction is ready for payment</span>
+                        </label>
+                    </div>
+
+                    <!-- Approver Note -->
+                    <div class="flex flex-col gap-4">
+                        <label class="text-label-caps opacity-60 font-bold">APPROVER COMMENTS &amp; AUDIT TRAIL</label>
+                        <textarea id="approvalNote"
+                            class="w-full border border-[#94a3b8] rounded bg-white focus:border-primary focus:ring-0 min-h-[160px] text-body-md p-6"
+                            placeholder="Provide detailed reasoning for your final decision..."></textarea>
+                    </div>
+
+                    <!-- Primary Action Buttons (from code.html) -->
+                    <div class="flex flex-col sm:flex-row gap-6 mt-6">
+                        <button id="btn-approve"
+                            class="flex-1 btn-approve-premium"
+                            type="button">
+                            <span class="material-symbols-outlined text-2xl">gpp_good</span>
+                            APPROVE PAYOUT
+                        </button>
+                        <button id="btn-reject"
+                            class="flex-1 btn-reject-premium"
+                            type="button">
+                            <span class="material-symbols-outlined text-2xl">block</span>
+                            REJECT TRANSACTION
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-4 pb-12">
+                        <p class="text-label-sm opacity-50 font-bold uppercase tracking-widest font-mono">Logged: Admin
+                            ID ADM-94 • IP: 192.168.1.45</p>
+                    </div>
+                </form>
+            </section>
+
+        </div>
+    </main>
+
+
+    <!-- Continuous Audit Log Marquee at the bottom (gpt-taste Component) -->
+    <footer class="w-full bg-slate-50 border-t border-slate-200 py-6 overflow-hidden">
+        <div
+            class="flex whitespace-nowrap gap-16 animate-[marquee_30s_linear_infinite] hover:[animation-play-state:paused] cursor-default select-none text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AUDIT
+                LOG: TXN-123456 SIGNED BY M. SANTOS</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> KYC FAIL:
+                GOVERNMENT ID FAILURE FOR MEMBER 123456</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AML
+                SCRUB COMPLETE: PEP SCREENING COMPLETED AT 22:11</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> COP
+                MATCH VALIDATED FOR BSB 453-653</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AUDIT
+                LOG: TXN-123456 SIGNED BY M. SANTOS</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> KYC FAIL:
+                GOVERNMENT ID FAILURE FOR MEMBER 123456</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> AML
+                SCRUB COMPLETE: PEP SCREENING COMPLETED AT 22:11</span>
+            <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> COP
+                MATCH VALIDATED FOR BSB 453-653</span>
+        </div>
+    </footer>
+
+    <style>
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Checkbox visual sync
+            document.querySelectorAll('.hidden-check').forEach(cb => {
+                function sync() {
+                    const box = cb.nextElementSibling;
+                    if (box) box.classList.toggle('checked', cb.checked);
+                }
+                cb.addEventListener('change', sync);
+                sync(); // initial state
+            });
+
+            const idConfirm = document.getElementById('idConfirm');
+            const approvalConfirm = document.getElementById('approvalConfirm');
+            const btnApprove = document.getElementById('btn-approve');
+
+            function validateForm() {
+                const hasTickets = (typeof window.uploadedTicketsCount !== 'undefined')
+                    ? window.uploadedTicketsCount > 0
+                    : false;
+
+                if (idConfirm.checked && approvalConfirm.checked && hasTickets) {
+                    btnApprove.disabled = false;
+                    btnApprove.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btnApprove.disabled = true;
+                    btnApprove.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            window.validateForm = validateForm;
+
+            idConfirm.addEventListener('change', validateForm);
+            approvalConfirm.addEventListener('change', validateForm);
+
+            validateForm(); // initial state
+
+            // Dynamic status badge theme according to selected risk level
+            const statusBadge = document.getElementById('status-badge');
+            const riskRadios = document.querySelectorAll('input[name="riskLevel"]');
+            const riskSummaryText = document.getElementById('risk-summary-text');
+
+            function updateStatusTheme() {
+                const checkedRadio = document.querySelector('input[name="riskLevel"]:checked');
+                if (!statusBadge) return;
+
+                // The status badge always remains blue (Awaiting Approval)
+                statusBadge.className = 'glass-badge-premium glass-badge-blue';
+
+                if (riskSummaryText) {
+                    riskSummaryText.classList.remove('text-[#15803d]', 'text-[#b45309]', 'text-[#b91c1c]', 'text-slate-500');
+                }
+
+                if (checkedRadio) {
+                    if (checkedRadio.value === 'low') {
+                        if (riskSummaryText) riskSummaryText.classList.add('text-[#15803d]');
+                    } else if (checkedRadio.value === 'medium') {
+                        if (riskSummaryText) riskSummaryText.classList.add('text-[#b45309]');
+                    } else if (checkedRadio.value === 'high') {
+                        if (riskSummaryText) riskSummaryText.classList.add('text-[#b91c1c]');
+                    }
+                } else {
+                    if (riskSummaryText) riskSummaryText.classList.add('text-slate-500');
+                }
+            }
+
+            riskRadios.forEach(radio => {
+                radio.addEventListener('change', updateStatusTheme);
+            });
+
+            // Initialize status theme on load
+            updateStatusTheme();
+
+            // GSAP Scroll Animations
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Staggered Bento Cell Load Reveal
+            gsap.fromTo(".bento-cell", 
+                { opacity: 0, y: 24 },
+                { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: "power2.out", clearProps: "opacity,transform" }
+            );
+
+            // Detail rows slide reveal
+            gsap.fromTo(".detail-row",
+                { opacity: 0, x: -16 },
+                { opacity: 1, x: 0, duration: 0.6, stagger: 0.04, ease: "power1.out", delay: 0.4, clearProps: "opacity,transform" }
+            );
+
+            // Status rows entry
+            gsap.fromTo(".status-row",
+                { opacity: 0.3, x: 10 },
+                { opacity: 1, x: 0, duration: 0.5, stagger: 0.05, ease: "sine.out", clearProps: "opacity,transform",
+                  scrollTrigger: {
+                      trigger: ".status-row",
+                      start: "top 85%"
+                  }
+                }
+            );
+
+            // Initialize ticket count for preloaded collector ticket
+            window.uploadedTicketsCount = 1;
+            if (typeof window.validateForm === 'function') {
+                window.validateForm();
+            }
+
+            // ─── TICKET INLINE ACCORDION INTEGRATION ────────────────
+            const toggleBtn = document.getElementById('toggle-ticket-btn');
+            const expandPanel = document.getElementById('ticket-expand-panel');
+            const arrowIcon = document.getElementById('toggle-arrow-icon');
+
+            if (toggleBtn && expandPanel) {
+                let isExpanded = false;
+                toggleBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    isExpanded = !isExpanded;
+                    if (isExpanded) {
+                        gsap.to(expandPanel, { 
+                            height: 'auto', 
+                            duration: 0.4, 
+                            ease: 'power2.out',
+                            onStart: () => {
+                                expandPanel.classList.remove('h-0');
+                            }
+                        });
+                        gsap.to(arrowIcon, { rotation: 180, duration: 0.3, ease: 'power1.out' });
+                    } else {
+                        gsap.to(expandPanel, { 
+                            height: 0, 
+                            duration: 0.3, 
+                            ease: 'power2.inOut'
+                        });
+                        gsap.to(arrowIcon, { rotation: 0, duration: 0.3, ease: 'power1.out' });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

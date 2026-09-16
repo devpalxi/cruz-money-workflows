@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primary ID</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --success:#0d9488;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{ display:block; }
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+
+  .main{ flex:1; min-width:0; max-width:680px; }
+  h1{ font-size:23px; font-weight: 700; color:var(--text-primary); line-height:1; margin:0; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:10px;
+    padding:24px 26px;
+  }
+
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); margin-bottom:var(--gap-lg); }
+  label{ font-size:16.5px; font-weight: 700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:14.5px; color:var(--text-secondary); }
+
+  /* select */
+  .select-wrap{ position:relative; }
+  .select-display{
+    height:var(--field-h); width:100%; padding:0 18px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:18px; color:var(--text-primary);
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+  }
+  .select-display:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff; outline:none;
+  }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:#fff; border:1px solid var(--field-border); border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(20,20,50,0.12); z-index:20;
+    max-height:220px; overflow-y:auto; display:none;
+  }
+  .dropdown-panel.open{ display:block; }
+  .dropdown-item{ padding:14px 16px; font-size:18px; cursor:pointer; }
+  .dropdown-item:hover, .dropdown-item.hl{ background:#f0f0f0; }
+
+  /* Document type - segmented bars */
+  .doc-seg-list{ display:flex; flex-direction:column; gap:10px; }
+  .doc-seg{
+    height:var(--field-h); width:100%;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px;
+    border:2px solid var(--field-border); border-radius:var(--radius);
+    background:#fff; color:var(--text-primary);
+    font-size:17.5px; font-weight: 700;
+    cursor:pointer; transition:background .12s, border-color .12s;
+  }
+  .doc-seg-check{
+    width:24px; height:24px; border-radius:50%; flex-shrink:0;
+    display:none; align-items:center; justify-content:center;
+    border:2px solid #cccccc; background:#fff; color:#fff;
+    transition:background .12s, border-color .12s;
+  }
+  .doc-seg-check svg{ width:13px; height:13px; display:none; }
+  .doc-seg-list.manual-mode .doc-seg-check{ display:flex; }
+  .doc-seg:not(.selected):hover{ background:#f0f0f0; }
+  .doc-seg.selected{ background:#eafaf6; }
+  .doc-seg.selected .doc-seg-check{ background:var(--accent); border-color:var(--accent); }
+  .doc-seg.selected .doc-seg-check svg{ display:block; }
+  .doc-seg:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; }
+
+  /* Auto-advance mode: bars act as direct navigation buttons */
+  .doc-seg-arrow{ display:none; color:var(--text-secondary); flex-shrink:0; }
+  .doc-seg-arrow svg{ width:20px; height:20px; }
+  .doc-seg-list:not(.manual-mode) .doc-seg{
+    background:var(--accent); border-color:var(--accent);
+    color:#fff; justify-content:center;
+  }
+  .doc-seg-list:not(.manual-mode) .doc-seg:hover{ background:var(--accent-hover); border-color:var(--accent-hover); }
+  .doc-seg-list:not(.manual-mode) .doc-seg:active{ background:#095e56; border-color:#095e56; }
+
+  .proto-toggle{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    border:1px dashed #c7c9d6; border-radius:8px;
+    padding:8px 12px;
+    margin-top:14px;
+  }
+  .proto-toggle-label{ font-size:12.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
+  .proto-btn{
+    font-size:13.5px; font-weight: 700; font-family:inherit;
+    padding:5px 10px; border-radius:6px;
+    border:1px solid var(--field-border); background:#fff;
+    color:var(--text-secondary); cursor:pointer;
+  }
+  .proto-btn.active{ background:#5a5a5a; border-color:#5a5a5a; color:#fff; }
+
+  .actions{ display:flex; justify-content:space-between; align-items:center; gap:var(--gap-md); margin-top:46px; }
+  button{
+    border-radius:var(--radius); font-size:17px; font-weight: 700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-next{ height:60px; width:100%; background:var(--accent); color:#fff; padding:0 32px; font-size:20px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:active{ background:#095e56; }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+
+  button:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  .back-to-summary{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:14px; font-weight: 700; color:var(--text-secondary);
+    text-decoration:none; margin-bottom:10px;
+  }
+  .back-to-summary-text{ text-decoration:underline; }
+  .page-header{
+    display:grid; grid-template-columns:1fr auto; align-items:flex-end;
+    column-gap:16px; margin-bottom:22px;
+  }
+  .icon-actions{ display:flex; align-items:flex-end; gap:var(--gap-sm); }
+  .icon-actions .stepper-toggle-btn{ margin-left:0; }
+  .page-header h1{ margin:0; }
+  .title-row{ display:flex; align-items:flex-end; gap:28px; min-width:0; }
+  .back-link{
+    display:flex; align-items:flex-end; gap:5px;
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:16.5px; font-weight: 700; line-height:1; color:var(--text-primary);
+    padding:0; margin-left:-4px; text-decoration:underline;
+  }
+  .back-link svg{ flex-shrink:0; color:var(--accent); }
+  .history-link{
+    display:flex; align-items:flex-end; gap:5px;
+    background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:14.5px; font-weight: 700; line-height:1; color:var(--text-primary);
+    padding:0; white-space:nowrap; flex-shrink:0; text-decoration:underline;
+  }
+  .history-link .history-icon{ display:none; }
+
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:100; align-items:flex-start; justify-content:center;
+    padding:60px 20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff; border-radius:var(--radius);
+    max-width:720px; width:100%;
+    max-height:80vh; overflow-y:auto;
+    padding:28px 30px 30px;
+    box-shadow:0 20px 60px rgba(20,20,50,0.25);
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .modal-header h2{ font-size:23px; font-weight: 700; color:var(--text-primary); margin:0; }
+  .modal-close{ background:none; border:none; cursor:pointer; color:var(--text-secondary); padding:4px; }
+  .modal-close:hover{ color:var(--text-primary); }
+
+    .history-scroll{ max-height:400px; overflow-y:auto; padding-right:14px; margin-right:-14px; }
+  .history-filters{ display:flex; gap:8px; margin-bottom:16px; }
+  .chip{
+    font-size:13.5px; font-weight: 700; padding:6px 12px; border-radius:20px;
+    border:1px solid var(--field-border); color:var(--text-secondary);
+    background:#fff; cursor:pointer;
+  }
+  .chip:hover{ background:#f4f4f4; }
+  .chip.active{ background:var(--text-primary); color:#fff; border-color:var(--text-primary); }
+  .grp{ padding:6px 0; }
+  .grp + .grp{ border-top:1px solid #eceef2; }
+  .grp-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 2px; cursor:pointer; user-select:none;
+  }
+  .grp-title{ font-size:15px; font-weight: 700; color:var(--text-primary); }
+  .grp-count{ font-size:13.5px; font-weight:500; color:var(--text-secondary); }
+  .chevron{ color:var(--text-secondary); transition:transform .15s ease; flex-shrink:0; }
+  .grp-head.collapsed .chevron{ transform:rotate(-90deg); }
+  .grp-rows{ padding:0 2px 10px; }
+  .grp-rows.collapsed{ display:none; }
+  .grp-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 0 9px 16px; border-top:1px solid #f2f3f6;
+    font-size:14.5px;
+  }
+  .grp-row:first-child{ border-top:none; }
+  .grp-row .dt{ color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  
+  
+  
+  .pill.skipped{ color:var(--warn, #a15c07); background:#fdf6ec; border:1px solid #e3bd85; }
+  .history-empty{ font-size:15px; color:var(--text-secondary); text-align:center; padding:32px 0; }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+    .title-row{ flex-wrap:wrap; row-gap:4px; }
+    .history-link{
+      width:36px; height:36px; padding:0; justify-content:center;
+      text-decoration:none; border-radius:8px;
+    }
+    .history-link:hover{ background:#e2e3ea; }
+    .history-link .history-icon{ display:flex; }
+    .history-link .history-text{ display:none; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px fields below are touch-target sizing. On a
+     mouse/keyboard viewport that reads as oversized, so scale it down. */
+  @media (min-width:1025px){
+    :root{
+      --field-h:52px;
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    .select-display{font-size:16.5px; padding:0 16px;}
+    .doc-seg{font-size:16px;}
+    .dropdown-item{font-size:16.5px; padding:12px 16px;}
+    .btn-next{height:52px; font-size:18px;}
+  }
+
+/* STANDARDIZED UI STYLES */
+:root {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --t1: #0f172a;
+  --t2: #334155;
+  --tm: #475569;
+  --bd: #e2e8f0;
+  --ok: #059669; --ok-bg: #ecfdf5; --ok-b: #a7f3d0;
+  --wn: #b45309; --wn-bg: #fffbeb; --wn-b: #fde68a;
+  --er: #e53e3e; --er-bg: #fff5f5; --er-b: #fed7d7;
+  --in: #3182ce; --in-bg: #ebf8ff; --in-b: #bee3f8;
+}
+
+/* BUTTONS */
+.btn-primary {
+  height: 44px; padding: 0 28px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #0d9488; color: #fff; border: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover:not(:disabled) { background: #0b7a6f; }
+.btn-primary.danger { background: #ef4444; }
+.btn-primary.danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-secondary {
+  height: 44px; padding: 0 26px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #fff; border: 1px solid #e2e8f0; color: #1a202c;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover { background: #f4f4f4; border-color: #e2e8f0; }
+.btn-secondary.danger { border-color: #fca5a5; color: #ef4444; }
+.btn-secondary.danger:hover { background: #fef2f2; border-color: #f87171; }
+
+.btn-action-req {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 20px; border-radius: 6px; font-size: 15.5px; font-weight: 700;
+  border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease;
+}
+.btn-action-req.warn { color: var(--wn); background: transparent; border-color: var(--wn); }
+.btn-action-req.warn:hover { background: var(--wn-bg); }
+.btn-action-req.pass { color: var(--ok); background: transparent; border-color: var(--ok); }
+.btn-action-req.pass:hover { background: var(--ok-bg); }
+.btn-action-req.fail { color: var(--er); background: transparent; border-color: var(--er); }
+.btn-action-req.fail:hover { background: var(--er-bg); }
+
+/* PILLS */
+.pill {
+  font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.pill.pass { color: var(--ok); background: var(--ok-bg); border: 1px solid var(--ok-b); }
+.pill.fail { color: var(--er); background: var(--er-bg); border: 1px solid var(--er-b); }
+.pill.warn { color: var(--wn); background: var(--wn-bg); border: 1px solid var(--wn-b); }
+.pill.neutral { color: var(--t2); background: #f1f5f9; border: 1px solid var(--bd); }
+
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+  border-radius: 20px; font-size: 15.5px; font-weight: 700;
+  background: var(--in-bg); color: var(--in); border: 1.5px solid var(--in-b);
+}
+.status-pill .sdot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--in);
+  animation: pulse 2s infinite;
+}
+
+/* MISMATCH BOX */
+.id-mismatch-box {
+  background: transparent; border: 1.5px solid var(--wn-b);
+  border-radius: 8px; padding: 16px 18px; margin-bottom: 18px;
+}
+/* END STANDARDIZED UI STYLES */
+
+</style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email address</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Primary ID</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <a class="back-to-summary" id="backToSummary" href="13-summary.html" style="display:none"><span aria-hidden="true">&larr;</span><span class="back-to-summary-text">Back to summary</span></a>
+    <div class="page-header">
+      <div class="title-row">
+        <button type="button" class="back-link" id="backBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+          Back
+        </button>
+        <h1>Primary ID</h1>
+      </div>
+      <div class="icon-actions">
+        <button class="history-link" id="historyBtn" aria-label="View history" title="View history">
+          <svg class="history-icon" width="17" height="17" viewBox="2 2 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <span class="history-text">View history</span>
+        </button>
+        <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content-card">
+    <div class="field">
+      <label for="country" class="req">Country of document</label>
+      <div class="select-wrap">
+        <div class="select-display" id="country" tabindex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-required="true">
+          <span>Australia</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+        <div class="dropdown-panel" role="listbox">
+          <div class="dropdown-item hl" role="option" aria-selected="true">Australia</div>
+          <div class="dropdown-item" role="option">New Zealand</div>
+          <div class="dropdown-item" role="option">United Kingdom</div>
+          <div class="dropdown-item" role="option">United States</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="req">ID document type</label>
+    </div>
+
+    <div class="doc-seg-list manual-mode" id="docListSegmented" role="radiogroup" aria-label="ID document type">
+
+      <div class="doc-seg" data-doc="licence" tabindex="0" role="radio" aria-checked="false">
+        Driver licence
+        <div class="doc-seg-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="doc-seg-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="doc-seg" data-doc="passport" tabindex="0" role="radio" aria-checked="false">
+        Passport
+        <div class="doc-seg-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="doc-seg-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="doc-seg" data-doc="otherKyc" tabindex="0" role="radio" aria-checked="false">
+        Manual KYC documents
+        <div class="doc-seg-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="doc-seg-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="doc-seg" data-doc="noId" tabindex="0" role="radio" aria-checked="false">
+        No ID
+        <div class="doc-seg-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="doc-seg-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions" id="actionsRow">
+      <button type="button" class="btn-next" id="nextBtn" disabled>Next</button>
+    </div>
+    </div>
+
+    <div class="proto-toggle">
+      <span class="proto-toggle-label">Document type selection:</span>
+      <button type="button" class="proto-btn active" id="protoManual">Manual – select + next</button>
+      <button type="button" class="proto-btn" id="protoAuto">Auto-advance – tap to continue</button>
+    </div>
+  </main>
+</div>
+
+<!-- Verification history Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal-header">
+      <h2 id="historyTitle">Verification history</h2>
+      <button class="modal-close" id="historyCloseBtn" aria-label="Close history">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="history-filters">
+      <div class="chip active" data-filter="all">All</div>
+      <div class="chip" data-filter="fail">Fail</div>
+      <div class="chip" data-filter="pass">Pass</div>
+      <div class="chip" data-filter="skipped">Skipped</div>
+    </div>
+    <div class="history-scroll" id="historyScroll"></div>
+    <div class="history-empty" id="historyEmpty" style="display:none">No verification runs match this filter.</div>
+  </div>
+</div>
+
+<script>
+  // ---- Cross-page data persistence ----
+  const STORAGE_KEY = 'payoutFormData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  // downstream fields collected by the document-type detail pages (06-09) -
+  // cleared when the user changes document type mid-edit so stale data from
+  // the previously-selected document type doesn't linger
+  const detailFieldKeys = ['firstName','middleName','lastName','dobText','dob',
+    'unitNumber','streetNumber','streetName','suburb','addrState','postcode',
+    'licNumber','cardNumber','state','passNumber','passExpiryText','passExpiry',
+    'medicareNumber','irn','cardColor','cardExpiryText','cardExpiry','notes',
+    'docsProvided','manualVerify'];
+  function clearDetailFields(){
+    const data = loadStoredData();
+    detailFieldKeys.forEach(k=> delete data[k]);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  const editingFromSummary = new URLSearchParams(location.search).get('from') === 'summary';
+  const originalDocType = loadStoredData().docType || null;
+
+  if (editingFromSummary) {
+    document.getElementById('backToSummary').style.display = '';
+  }
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = '04-email-address.html';
+  });
+
+  const historyBtn = document.getElementById('historyBtn');
+  const historyModal = document.getElementById('historyModal');
+  const historyCloseBtn = document.getElementById('historyCloseBtn');
+  const historyEmpty = document.getElementById('historyEmpty');
+
+  const historyEntries = [
+    { label:'Australia Driver licence IDV', datetime:'20 July 2026, 9:12 am', result:'Pass' },
+    { label:'Australia Passport IDV', datetime:'20 July 2026, 9:20 am', result:'Fail' },
+    { label:'Australia Driver licence IDV', datetime:'22 July 2026, 2:41 pm', result:'Pass' },
+    { label:'Australia Passport IDV', datetime:'22 July 2026, 2:47 pm', result:'Skipped' },
+    { label:'Australia Driver licence IDV', datetime:'23 July 2026, 11:05 am', result:'Fail' },
+    { label:'New Zealand Passport IDV', datetime:'23 July 2026, 11:14 am', result:'Pass' },
+    { label:'Australia Driver licence IDV', datetime:'24 July 2026, 4:58 pm', result:'Fail' },
+    { label:'Australia Driver licence IDV', datetime:'24 July 2026, 4:58 pm', result:'Skipped' },
+    { label:'Australia Passport IDV', datetime:'25 July 2026, 8:30 am', result:'Pass' },
+    { label:'Australia Driver licence IDV', datetime:'26 July 2026, 12:28 am', result:'Fail' }
+  ];
+
+  const docRank = (label)=>{
+    if(/driver licence/i.test(label)) return 0;
+    if(/passport/i.test(label)) return 1;
+    if(/medicare/i.test(label)) return 2;
+    return 3;
+  };
+  let activeFilter = 'all';
+  const collapsedGroups = new Set();
+
+  function buildGroups(entries){
+    const byDoc = new Map();
+    entries.forEach(e=>{
+      if(!byDoc.has(e.label)) byDoc.set(e.label, []);
+      byDoc.get(e.label).push(e);
+    });
+    const groups = [...byDoc.entries()].map(([label, rows])=>({ label, rows }));
+    groups.sort((a,b)=> docRank(a.label) - docRank(b.label));
+    return groups;
+  }
+
+  function render(){
+    const scroll = document.getElementById('historyScroll');
+    const groups = buildGroups(historyEntries);
+    scroll.innerHTML = '';
+    let anyVisible = false;
+
+    groups.forEach(g=>{
+      const visibleRows = activeFilter === 'all' ? g.rows : g.rows.filter(r=> r.result.toLowerCase() === activeFilter);
+      if(visibleRows.length === 0) return;
+      anyVisible = true;
+
+      const isCollapsed = collapsedGroups.has(g.label);
+      const grp = document.createElement('div');
+      grp.className = 'grp';
+      grp.innerHTML = `
+        <div class="grp-head${isCollapsed ? ' collapsed' : ''}" data-doc="${g.label}">
+          <div class="grp-title">${g.label.replace(' IDV','')} <span class="grp-count">· ${g.rows.length} attempt${g.rows.length>1?'s':''}</span></div>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+        <div class="grp-rows${isCollapsed ? ' collapsed' : ''}">
+          ${visibleRows.map(r=>`
+            <div class="grp-row">
+              <span class="dt">${r.datetime}</span>
+              <span class="pill ${r.result.toLowerCase()}">${r.result}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      scroll.appendChild(grp);
+    });
+
+    historyEmpty.style.display = anyVisible ? 'none' : 'block';
+
+    scroll.querySelectorAll('.grp-head').forEach(head=>{
+      head.addEventListener('click', ()=>{
+        const doc = head.dataset.doc;
+        if(collapsedGroups.has(doc)) collapsedGroups.delete(doc);
+        else collapsedGroups.add(doc);
+        render();
+      });
+    });
+  }
+
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      render();
+    });
+  });
+
+  historyBtn.addEventListener('click', ()=>{
+    render();
+    historyModal.classList.add('open');
+  });
+  historyCloseBtn.addEventListener('click', ()=> historyModal.classList.remove('open'));
+  historyModal.addEventListener('click', (e)=>{ if(e.target === historyModal) historyModal.classList.remove('open'); });
+</script>
+
+<script>
+  document.querySelectorAll('.select-display').forEach(sel=>{
+    const panel = sel.nextElementSibling;
+    sel.addEventListener('click', ()=>{
+      panel.classList.toggle('open');
+      sel.setAttribute('aria-expanded', panel.classList.contains('open'));
+    });
+    panel.querySelectorAll('.dropdown-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        sel.querySelector('span').textContent = item.textContent;
+        panel.classList.remove('open');
+        sel.setAttribute('aria-expanded','false');
+        if(sel.id === 'country'){ saveStoredData({ country: item.textContent }); }
+      });
+    });
+  });
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.select-wrap')){
+      document.querySelectorAll('.select-wrap .dropdown-panel').forEach(p=>p.classList.remove('open'));
+    }
+  });
+
+  const nextBtn = document.getElementById('nextBtn');
+  const actionsRow = document.getElementById('actionsRow');
+  const docListSegmented = document.getElementById('docListSegmented');
+  const cards = Array.from(document.querySelectorAll('.doc-seg'));
+  let selectedDoc = null;
+  let autoAdvance = false;
+
+  const docNextPage = {
+    licence: '06-primary-id-licence-detail-paginated.html',
+    passport: '07-primary-id-passport-detail-paginated.html',
+    otherKyc: '08-primary-id-other-documents-detail.html',
+    noId: '09-primary-id-no-id-detail.html'
+  };
+
+  function selectDoc(doc){
+    selectedDoc = doc;
+    cards.forEach(c=>{
+      const isSelected = c.dataset.doc === doc;
+      c.classList.toggle('selected', isSelected);
+      c.setAttribute('aria-checked', isSelected);
+    });
+    nextBtn.disabled = selectedDoc === null;
+  }
+
+  // restore previously entered data when navigating back to this step
+  (function restoreStoredData(){
+    const data = loadStoredData();
+    if(data.country) document.querySelector('#country span').textContent = data.country;
+    if(data.docType) selectDoc(data.docType);
+  })();
+
+  function goToDoc(doc){
+    saveStoredData({ docType: doc });
+    // document type changed - the previously-collected detail data no
+    // longer applies, so clear it. Detail subpages are always visited
+    // (even when the type is unchanged) so the user can view/edit them.
+    if(editingFromSummary && doc !== originalDocType){
+      clearDetailFields();
+    }
+    window.location.href = docNextPage[doc] + (editingFromSummary ? '?from=summary' : '');
+  }
+
+  cards.forEach(card=>{
+    card.addEventListener('click', ()=>{
+      if(autoAdvance){ goToDoc(card.dataset.doc); }
+      else{ selectDoc(card.dataset.doc); }
+    });
+    card.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault();
+        if(autoAdvance){ goToDoc(card.dataset.doc); }
+        else{ selectDoc(card.dataset.doc); }
+      }
+    });
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    if(selectedDoc) goToDoc(selectedDoc);
+  });
+
+  // ---- prototype toggle: document type selection behavior ----
+  const protoManual = document.getElementById('protoManual');
+  const protoAuto = document.getElementById('protoAuto');
+
+  protoManual.addEventListener('click', ()=>{
+    protoManual.classList.add('active');
+    protoAuto.classList.remove('active');
+    autoAdvance = false;
+    actionsRow.style.display = '';
+    docListSegmented.classList.add('manual-mode');
+  });
+  protoAuto.addEventListener('click', ()=>{
+    protoAuto.classList.add('active');
+    protoManual.classList.remove('active');
+    autoAdvance = true;
+    actionsRow.style.display = 'none';
+    docListSegmented.classList.remove('manual-mode');
+  });
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+
+<!-- PEP & Sanctions Base Modal CSS -->
+<style>
+.modal-backdrop {
+  background: rgba(18, 19, 43, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop.show .modal-container,
+.modal-backdrop.active .modal-container {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop#cancelConfirmModal .cancel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active .cancel-card {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal .cancel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn:hover {
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .cancel-body {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+</style>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+  function executeCancel() {
+    closeCancelConfirmModal();
+    alert('Payout has been cancelled.');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+</body>
+</html>

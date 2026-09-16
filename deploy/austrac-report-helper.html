@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUSTRAC Report Helper - Palxi</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <style>
+    :root {
+      --bg:#f1f5f9; --panel:#ffffff; --surface:#ffffff;
+      --brand:#0f172a; --accent:#0f172a; 
+      --al:rgba(13,148,136,.07); --ar:rgba(13,148,136,.16);
+      --t1:#0f172a; --t2:#334155; --tm:#475569;
+      --bd:#e2e8f0; --bdl:#edf2f7;
+      --ok:#059669; --ok-bg:#ecfdf5; --ok-b:#a7f3d0;
+      --wn:#b45309; --wn-bg:#fffbeb; --wn-b:#fde68a;
+      --er:#e53e3e; --er-bg:#fff5f5; --er-b:#fed7d7;
+      --in:#3182ce; --in-bg:#ebf8ff; --in-b:#bee3f8;
+      --r:6px; --rl:8px; --rx:10px;
+      --ease:cubic-bezier(.22,1,.36,1);
+      --spring:cubic-bezier(.32,.72,0,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;color:var(--t1);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+    .page{max-width:840px;margin:0 auto;padding:40px 24px 80px}
+
+    /* Header */
+    .page-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:32px}
+    .hd-left{display:flex;flex-direction:column;gap:6px}
+    .back-link { 
+      display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; 
+      color: var(--t2); text-decoration: none; margin-bottom: 12px; width: fit-content;
+    }
+    .back-link:hover { color: var(--t1); }
+    h1{font-size:34px;font-weight: 700;color:var(--t1);letter-spacing:-.02em}
+    .meta{font-size:15.5px;color:var(--t2);font-weight:500}
+
+    /* Shell Architecture */
+    .shell{background:rgba(255,255,255,.5);border:1px solid var(--bd);border-radius:var(--rx);padding:3px;margin-bottom:24px;box-shadow:none}
+    .action-card{background:var(--panel);border-radius:calc(var(--rx) - 3px);padding:28px 28px 24px}
+    .action-ttl{font-size:18px;font-weight: 700;color:var(--t1);padding-bottom:12px;border-bottom:1px solid var(--bdl);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+    .ttl-badge{font-size:13px;font-weight:700;color:var(--tm);background:var(--bg);padding:4px 8px;border-radius:6px;border:1px solid var(--bdl);letter-spacing:normal}
+
+    /* Detail Grid */
+    .detail-g{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .di{padding:11px 14px;border-bottom:1px solid var(--bdl);display:flex;flex-direction:column;gap:3px;position:relative;min-height:64px;justify-content:center}
+    .di:nth-last-child(-n+2){border-bottom:none}
+    .di:nth-child(odd){border-right:1px solid var(--bdl)}
+    
+    .di-lbl{font-size:14.5px;font-weight:700;color:var(--tm)}
+    .di-val{font-size:16px;font-weight:500;color:var(--t1);padding-right:40px;word-break:break-word}
+    .di-val.mono{font-variant-numeric:tabular-nums;font-size:15.5px;letter-spacing:.02em;font-family:'JetBrains Mono', monospace}
+    .di-val.empty{color:var(--tm);font-style:italic}
+
+    /* Inline Copy Button */
+    .copy-btn {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: var(--r); border: 1px solid transparent;
+      background: transparent; color: var(--tm); cursor: pointer;
+      transition: all .15s var(--ease);
+    }
+    .copy-btn:hover { background: var(--bdl); color: var(--t1); }
+    .copy-btn:focus-visible { outline: 2px solid var(--in); outline-offset: 2px; }
+    .copy-btn.copied { background: var(--ok-bg); color: var(--ok); border-color: var(--ok-b); }
+
+    /* Part E Specifics */
+    .indicators-group { margin-bottom: 24px; }
+    .indicators-title { font-size: 15px; font-weight: 700; color: var(--t1); margin-bottom: 16px; display:block }
+    
+    .checkbox-list { display: flex; flex-direction: column; gap: 12px; }
+    .confirm-box { display:flex; align-items:flex-start; gap:12px; padding:0; background:transparent; border:none; cursor:pointer; transition:opacity .2s var(--ease) }
+    .confirm-box:hover { opacity:0.8 }
+    .confirm-box input[type=checkbox] { width:20px; height:20px; accent-color:#000; cursor:pointer; flex-shrink:0; margin-top:2px }
+    .confirm-box-txt { font-size:16px; color:var(--t1); line-height:1.55; font-weight:500 }
+    
+    .btn-primary{
+      height: 44px; padding: 0 28px; border-radius: 6px; font-size: 17px; font-weight: 700; font-family:inherit;
+      cursor: pointer; background: #0d9488; color: #fff; border: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover:not(:disabled){background:#0b7a6f;transform:none;box-shadow:none}
+    .btn-primary:active:not(:disabled){background:#095e56;transform:none}
+    .btn-primary:focus-visible { outline: 2px solid var(--in); outline-offset: 2px; }
+    
+    .narrative-box { margin-top: 28px; display: none; }
+    .narrative-box.visible { display: block; }
+    
+    .sec-h{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--tm);margin-bottom:14px;display:flex;align-items:center;gap:8px;text-transform:uppercase}
+    .sec-h::after{content:'';flex:1;height:1px;background:var(--bdl)}
+    
+    textarea{width:100%;min-height:180px;padding:12px 16px;border-radius:var(--r);border:1.5px solid var(--bd);background:#fff;font-size:16px;color:var(--t1);font-family:inherit;outline:none;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);resize:vertical;line-height:1.6;display:block}
+    textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3.5px var(--al)}
+    
+    .narrative-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+    
+    .btn-secondary {
+      height: 44px; padding: 0 26px; border-radius: 6px; font-size: 17px; font-weight: 700; font-family:inherit;
+      cursor: pointer; background: #fff; color: #1a202c; border: 1px solid #e2e8f0;
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover{background:#f4f4f4;border-color:#e2e8f0;transform:none}
+    .btn-secondary.copied { background: var(--ok-bg); color: var(--ok); border-color: var(--ok-b); }
+    
+    @media (max-width: 640px) {
+      .detail-g { grid-template-columns: 1fr; }
+      .di:nth-child(odd) { border-right: none; }
+      .di:nth-last-child(-n+2) { border-bottom: 1px solid var(--bdl); }
+      .di:last-child { border-bottom: none; }
+      .action-card { padding: 20px; }
+    }
+  </style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="austrac-transactions.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <div class="page">
+    <header class="page-hd">
+      <div class="hd-left">
+        <a href="austrac-transactions.html" class="back-link" id="backLink">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <span id="backLinkText">Back to AUSTRAC Reports</span>
+        </a>
+        <h1>AUSTRAC Report Helper</h1>
+        <p class="meta">Use the copy icons to quickly paste pre-filled data into the government portal.</p>
+      </div>
+    </header>
+
+    <!-- PART A -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">PART A - Report Details</div>
+        <div class="detail-g" style="border-top:1px solid var(--bdl)">
+          <div class="di">
+            <div class="di-lbl">Report Type</div>
+            <div class="di-val empty">Manual selection required (e.g. Suspicious Matter Report)</div>
+          </div>
+          <div class="di">
+            <div class="di-lbl">Report Reference No.</div>
+            <div class="di-val empty">Generated by AUSTRAC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PART B -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">
+          PART B - Reporting Entity
+        </div>
+        <div class="detail-g" id="partBGrid" style="border-top:1px solid var(--bdl)">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PART C -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">PART C - Transaction Details</div>
+        <div class="detail-g" id="partCGrid" style="border-top:1px solid var(--bdl)">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PART D -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">PART D - Subject Details</div>
+        <div class="detail-g" id="partDGrid" style="border-top:1px solid var(--bdl)">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PART E -->
+    <div class="shell">
+      <div class="action-card">
+        <div class="action-ttl">PART E - Grounds for Suspicion</div>
+        
+        <div class="indicators-group">
+          <span class="indicators-title">Select suspicious matter indicators to include in the narrative:</span>
+          <div class="checkbox-list">
+            <label class="confirm-box">
+              <input type="checkbox" value="sub-threshold amount" id="ind-threshold">
+              <span class="confirm-box-txt">Payout amount just below TTR threshold ($10k)</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="minimal active play relative to payout" id="ind-play">
+              <span class="confirm-box-txt">Minimal play relative to payout amount</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="name mismatch on bank account" id="ind-name">
+              <span class="confirm-box-txt">Bank account name mismatch</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="failure to provide identification" id="ind-noid">
+              <span class="confirm-box-txt">Refusal or failure to provide identification</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="patron income inconsistent with activity" id="ind-income">
+              <span class="confirm-box-txt">Patron income inconsistent with activity level</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="multiple large payouts in short period" id="ind-freq">
+              <span class="confirm-box-txt">Multiple large payouts over a short period</span>
+            </label>
+          </div>
+        </div>
+        
+        <button type="button" class="btn-primary" id="generateBtn" style="margin-top:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Generate Narrative Summary
+        </button>
+        
+        <div class="narrative-box" id="narrativeBox">
+          <div class="sec-h">Generated Narrative (Editable)</div>
+          <textarea id="narrativeArea"></textarea>
+          <div class="narrative-footer">
+            <button type="button" class="btn-secondary" id="copyNarrativeBtn">
+              <svg class="icon-copy" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg class="icon-check" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Copy Narrative</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PART F -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">PART F - Related Reports</div>
+        <div class="detail-g" id="relatedReportsGrid" style="border-top:1px solid var(--bdl)">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- PART G -->
+    <div class="shell">
+      <div class="action-card">
+        <div class="action-ttl">PART G - Actions Taken</div>
+        
+        <div class="indicators-group">
+          <span class="indicators-title">Select the actions taken in response to the suspicion:</span>
+          <div class="checkbox-list" id="actionsChecklist">
+            <label class="confirm-box">
+              <input type="checkbox" value="Payout was processed normally" id="act-process">
+              <span class="confirm-box-txt">Payout was processed normally</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="Payout was withheld pending further investigation" id="act-withhold">
+              <span class="confirm-box-txt">Payout was withheld pending further investigation</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="Law enforcement was notified directly" id="act-police">
+              <span class="confirm-box-txt">Law enforcement was notified directly</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="Patron was asked to leave the premises" id="act-leave">
+              <span class="confirm-box-txt">Patron was asked to leave the premises</span>
+            </label>
+            <label class="confirm-box">
+              <input type="checkbox" value="Internal escalation to AML Compliance Officer" id="act-escalate">
+              <span class="confirm-box-txt">Internal escalation to AML Compliance Officer</span>
+            </label>
+          </div>
+        </div>
+        
+        <button type="button" class="btn-primary" id="generateActionsBtn" style="margin-top:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Generate Actions Summary
+        </button>
+        
+        <div class="narrative-box" id="actionsBox">
+          <div class="sec-h">Generated Actions (Editable)</div>
+          <textarea id="actionsArea" style="min-height:120px"></textarea>
+          <div class="narrative-footer">
+            <button type="button" class="btn-secondary" id="copyActionsBtn">
+              <svg class="icon-copy" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg class="icon-check" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Copy Actions</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- PART H -->
+    <div class="shell">
+      <div class="action-card" style="padding:0; overflow:hidden">
+        <div class="action-ttl" style="margin:24px 28px 16px; border:none; padding:0">PART H - Declaration</div>
+        <div class="detail-g" id="partGGrid" style="border-top:1px solid var(--bdl)">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Data Sources ---
+    
+    // Venue constants
+    const venueData = {
+      entityName: "Riverside RSL Club",
+      abn: "12 345 678 901",
+      austracId: "RE-00987-AB",
+      designatedService: "Electronic gaming machine (EGM) - payout of winnings",
+      address: "123 Riverside Drive, Riverside NSW 2150",
+      contactOfficer: "J. Doe - AML/CTF Compliance Officer - compliance@riversidersl.com.au"
+    };
+    
+    // Dummy payout data representing a suspicious scenario, aligned with Palxi demo flow
+    const dummyPayoutData = {
+      payoutType: "EGM",
+      venue: "Riverside RSL Club",
+      winAmount: "9850.00",
+      txnId: "TXN-2026-0889",
+      machine: "EGM-002",
+      cashAmount: "0.00",
+      bankAmount: "9850.00",
+      date: "2026-07-14",
+      
+      membership: "3e23e",
+      email: "stacy@gmail.com",
+      firstName: "STACY",
+      middleName: "K",
+      lastName: "TESTTWENTY",
+      dob: "15/08/1980",
+      
+      docType: "licence",
+      state: "NSW",
+      licNumber: "12345678",
+      
+      streetNumber: "42",
+      streetName: "Maple Street",
+      suburb: "Riverside",
+      addrState: "NSW",
+      postcode: "2150",
+      
+      accountName: "STACY K TESTTWENTY",
+      bsb: "321-312",
+      accountNumber: "213-123-123",
+      copResult: "close"
+    };
+
+    // --- Utility Functions ---
+
+    function createFieldRow(label, value, isMono = false, isPlaceholder = false) {
+      if (value === null || value === undefined || value === '') value = '-';
+      
+      const div = document.createElement('div');
+      div.className = 'di';
+      
+      const valClass = isPlaceholder ? 'di-val empty' : (isMono ? 'di-val mono' : 'di-val');
+      
+      let copyBtnHtml = '';
+      if (value !== '-' && !isPlaceholder) {
+        copyBtnHtml = `
+          <button class="copy-btn" title="Copy to clipboard" aria-label="Copy ${label}" data-copy="${value.toString().replace(/"/g, '&quot;')}">
+            <svg class="icon-copy" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <svg class="icon-check" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </button>
+        `;
+      }
+      
+      div.innerHTML = `
+        <div class="di-lbl">${label}</div>
+        <div class="${valClass}">${value}</div>
+        ${copyBtnHtml}
+      `;
+      return div;
+    }
+
+    function handleCopyClick(e) {
+      const btn = e.currentTarget;
+      const textToCopy = btn.getAttribute('data-copy');
+      
+      if (!textToCopy) return;
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const iconCopy = btn.querySelector('.icon-copy');
+        const iconCheck = btn.querySelector('.icon-check');
+        const textSpan = btn.querySelector('span'); // For the narrative copy button
+        
+        btn.classList.add('copied');
+        if (iconCopy) iconCopy.style.display = 'none';
+        if (iconCheck) iconCheck.style.display = 'block';
+        if (textSpan) textSpan.textContent = 'Copied!';
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          if (iconCopy) iconCopy.style.display = 'block';
+          if (iconCheck) iconCheck.style.display = 'none';
+          if (textSpan) textSpan.textContent = 'Copy Narrative';
+        }, 1500);
+      });
+    }
+
+    function initCopyButtons() {
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.removeEventListener('click', handleCopyClick);
+        btn.addEventListener('click', handleCopyClick);
+      });
+    }
+
+    // --- Initialization ---
+
+    function init() {
+      const role = sessionStorage.getItem('userRole') || 'admin';
+      const isSuperAdmin = role === 'superadmin';
+      const badge = document.getElementById('settings-role-badge') || document.querySelector('.role-badge');
+      const switchLink = document.getElementById('settings-switch-link') || document.querySelector('.switch-role-link');
+      const nav = document.getElementById('settings-admin-nav') || document.querySelector('.header-nav');
+      const backLink = document.getElementById('backLink');
+      const backLinkText = document.getElementById('backLinkText');
+
+      if (badge) {
+        badge.className = isSuperAdmin ? 'role-badge super-admin' : 'role-badge admin';
+        badge.textContent = isSuperAdmin ? 'SUPER ADMIN' : 'ADMIN';
+      }
+
+      if (switchLink) {
+        switchLink.href = isSuperAdmin ? 'dashboard.html' : 'super-admin.html';
+        switchLink.onclick = () => sessionStorage.setItem('userRole', isSuperAdmin ? 'admin' : 'superadmin');
+        switchLink.textContent = isSuperAdmin ? '→ Switch to Admin' : '→ Switch to Super Admin';
+      }
+
+      if (backLink && backLinkText) {
+        if (isSuperAdmin) {
+          backLink.href = 'super-admin-smr.html';
+          backLinkText.textContent = 'Back to AUSTRAC / SMRs';
+        } else {
+          backLink.href = 'austrac-transactions.html';
+          backLinkText.textContent = 'Back to AUSTRAC Reports';
+        }
+      }
+
+      if (nav) {
+        if (isSuperAdmin) {
+          nav.innerHTML = `
+            <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+            <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+            <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+            <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+            <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+            <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+            <a href="super-admin-smr.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+            <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+            <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+          `;
+        } else {
+          nav.innerHTML = `
+            <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+            <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+            <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+            <a href="austrac-transactions.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+            <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+            <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+          `;
+        }
+      }
+
+      // Merge session storage data into default payload
+      const data = { ...dummyPayoutData };
+      
+      const sessionDataStr = sessionStorage.getItem('austracTransactionData');
+      if (sessionDataStr) {
+        try {
+          const sessionData = JSON.parse(sessionDataStr);
+          if (sessionData.id) data.txnId = sessionData.id;
+          if (sessionData.venue) data.venue = sessionData.venue;
+          if (sessionData.amount !== undefined) {
+            const formattedAmt = typeof sessionData.amount === 'number' ? sessionData.amount.toFixed(2) : sessionData.amount.toString();
+            data.winAmount = formattedAmt;
+            data.bankAmount = formattedAmt;
+          }
+          if (sessionData.created) data.date = sessionData.created;
+          if (sessionData.patron) {
+            const parts = sessionData.patron.split(' ');
+            data.firstName = parts[0] || data.firstName;
+            data.lastName = parts.slice(1).join(' ') || data.lastName;
+            data.accountName = sessionData.patron;
+          }
+          if (sessionData.venue) {
+            venueData.entityName = sessionData.venue;
+          }
+        } catch(e) {}
+      }
+      
+      // Auto-check indicators based on data
+      const winVal = parseFloat(data.winAmount);
+      if (!isNaN(winVal) && winVal > 9000 && winVal < 10000) {
+        const indThresh = document.getElementById('ind-threshold');
+        if (indThresh) indThresh.checked = true;
+      }
+      if (data.copResult === 'close' || data.copResult === 'fail') {
+        const indName = document.getElementById('ind-name');
+        if (indName) indName.checked = true;
+      }
+      if (data.docType === 'noId') {
+        const indNoId = document.getElementById('ind-noid');
+        if (indNoId) indNoId.checked = true;
+      }
+
+      // Populate Part B
+      const pb = document.getElementById('partBGrid');
+      if (pb) {
+        pb.innerHTML = '';
+        pb.appendChild(createFieldRow('Entity Name', venueData.entityName));
+        pb.appendChild(createFieldRow('ABN', venueData.abn, true));
+        pb.appendChild(createFieldRow('AUSTRAC Reporting Entity ID', venueData.austracId, true));
+        pb.appendChild(createFieldRow('Designated Service', venueData.designatedService));
+        pb.appendChild(createFieldRow('Principal Place of Business', venueData.address));
+        pb.appendChild(createFieldRow('Contact Officer', venueData.contactOfficer));
+      }
+
+      // Populate Part C
+      const pc = document.getElementById('partCGrid');
+      if (pc) {
+        pc.innerHTML = '';
+        pc.appendChild(createFieldRow('Transaction Date', data.date));
+        pc.appendChild(createFieldRow('Win Amount', `$${data.winAmount}`, true));
+        pc.appendChild(createFieldRow('Cash Amount', `$${data.cashAmount}`, true));
+        pc.appendChild(createFieldRow('Transfer Amount', `$${data.bankAmount}`, true));
+        pc.appendChild(createFieldRow('Machine ID', data.machine, true));
+        pc.appendChild(createFieldRow('Internal Transaction ID', data.txnId, true));
+      }
+
+      // Populate Part D
+      const fullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ');
+      const address = [data.streetNumber, data.streetName, data.suburb, data.addrState, data.postcode].filter(Boolean).join(' ');
+      
+      const pd = document.getElementById('partDGrid');
+      if (pd) {
+        pd.innerHTML = '';
+        pd.appendChild(createFieldRow('Full Name', fullName));
+        pd.appendChild(createFieldRow('Date of Birth', data.dob || '', false, !data.dob));
+        pd.appendChild(createFieldRow('Nationality', 'Manual lookup required', false, true));
+        pd.appendChild(createFieldRow('Address', address));
+        pd.appendChild(createFieldRow('Membership Number', data.membership, true));
+        pd.appendChild(createFieldRow('Email', data.email));
+        pd.appendChild(createFieldRow('Occupation (self-reported)', 'Manual lookup required', false, true));
+        pd.appendChild(createFieldRow('Bank Account Name', data.accountName));
+        pd.appendChild(createFieldRow('BSB Number', data.bsb, true));
+        pd.appendChild(createFieldRow('Account Number', data.accountNumber, true));
+      }
+
+      // Populate Related Reports
+      const pf = document.getElementById('relatedReportsGrid');
+      if (pf) {
+        pf.innerHTML = '';
+        const ttrLodged = parseFloat(data.winAmount) >= 10000 ? "Yes (Generated automatically)" : "No - amount below $10,000 threshold";
+        pf.appendChild(createFieldRow('TTR Lodged?', ttrLodged));
+        pf.appendChild(createFieldRow('Prior SMRs for same person?', 'Manual AUSTRAC lookup required', false, true));
+      }
+      
+      // Populate Part H (Declaration)
+      const pg = document.getElementById('partGGrid');
+      if (pg) {
+        pg.innerHTML = '';
+        const officerParts = venueData.contactOfficer.split('-');
+        const declName = officerParts[0] ? officerParts[0].trim() : 'Compliance Officer';
+        const declTitle = officerParts[1] ? officerParts[1].trim() : 'AML/CTF Compliance Officer';
+        pg.appendChild(createFieldRow('Authorised Officer Name', declName));
+        pg.appendChild(createFieldRow('Authorised Officer Title', declTitle));
+      }
+
+      initCopyButtons();
+      
+      // Setup Narrative Generation
+      const genBtn = document.getElementById('generateBtn');
+      if (genBtn) {
+        genBtn.onclick = () => generateNarrative(data);
+      }
+      
+      // Setup Narrative Copy
+      const copyNarrBtn = document.getElementById('copyNarrativeBtn');
+      if (copyNarrBtn) {
+        copyNarrBtn.onclick = function(e) {
+          const text = document.getElementById('narrativeArea').value;
+          this.setAttribute('data-copy', text);
+          handleCopyClick(e);
+        };
+      }
+      
+      // Setup Actions Generation
+      const genActBtn = document.getElementById('generateActionsBtn');
+      if (genActBtn) {
+        genActBtn.onclick = generateActionsNarrative;
+      }
+      
+      // Setup Actions Copy
+      const copyActBtn = document.getElementById('copyActionsBtn');
+      if (copyActBtn) {
+        copyActBtn.onclick = function(e) {
+          const text = document.getElementById('actionsArea').value;
+          this.setAttribute('data-copy', text);
+          handleCopyClick(e);
+        };
+      }
+    }
+
+    function generateActionsNarrative() {
+      const checkedActions = Array.from(document.querySelectorAll('#actionsChecklist input:checked')).map(cb => cb.value);
+      
+      let narrative = '';
+      if (checkedActions.length === 0) {
+        narrative = 'No specific actions have been recorded yet.';
+      } else {
+        narrative = checkedActions.join('. ') + '.';
+      }
+
+      const actionsArea = document.getElementById('actionsArea');
+      actionsArea.value = narrative;
+      document.getElementById('actionsBox').classList.add('visible');
+    }
+
+    function generateNarrative(data) {
+      const fullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ');
+      
+      let narrative = `On ${data.date}, loyalty member ${fullName} (membership ${data.membership}) collected a payout of AUD $${data.winAmount} from ${data.machine} at ${venueData.entityName}. The payout was requested as AUD $${data.cashAmount} cash and AUD $${data.bankAmount} via bank transfer.\n\n`;
+      
+      const amount = parseFloat(data.winAmount);
+      if (amount >= 10000) {
+        narrative += `The total payout amount meets or exceeds the $10,000 threshold that triggers a mandatory Threshold Transaction Report (TTR).\n\n`;
+      } else if (amount > 9000) {
+        narrative += `The payout amount of $${data.winAmount} falls just below the $10,000 threshold that would trigger a mandatory Threshold Transaction Report (TTR).\n\n`;
+      }
+      
+      if (data.docType === 'licence') {
+        narrative += `Primary identification presented: Driver licence (${data.state}, number ${data.licNumber}).\n\n`;
+      } else if (data.docType === 'noId') {
+        narrative += `No identity document was presented by the patron.\n\n`;
+      }
+      
+      if (data.copResult === 'close') {
+        narrative += `During processing, the bank account name provided by the patron ("${data.accountName}") did not exactly match the registered name on the ID/membership. This close match was flagged for manual review.\n\n`;
+      }
+
+      const checkedIndicators = Array.from(document.querySelectorAll('.checkbox-list input:checked')).map(cb => cb.value);
+      if (checkedIndicators.length > 0) {
+        narrative += `Compliance staff assess this transaction as suspicious based on the following indicators: ${checkedIndicators.join(', ')}. `;
+        narrative += `This pattern of behaviour may indicate an attempt to structure transactions or avoid reporting obligations.\n\n`;
+      }
+      
+      narrative += `This report is filed in accordance with AUSTRAC reporting obligations under the AML/CTF Act 2006.`;
+
+      const narrativeArea = document.getElementById('narrativeArea');
+      narrativeArea.value = narrative;
+      document.getElementById('narrativeBox').classList.add('visible');
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', init);
+
+  </script>
+</body>
+</html>

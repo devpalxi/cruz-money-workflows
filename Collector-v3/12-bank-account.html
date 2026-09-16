@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Details</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-bg:#f4f5f8;
+    --field-border:#dcdfe6;
+    --field-border-focus:#4a4a9e;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --success:#1e7d4b;
+    --error:#c0392b;
+    --error-bg:#fdecea;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    --field-h:44px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex; max-width:1080px; margin:0 auto;
+    padding:32px 24px 64px; gap:56px; position:relative;
+  }
+  .close-btn{
+    position:absolute; top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); padding:6px; border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.active .step-dot{
+    border-color:var(--brand); background:var(--brand);
+    box-shadow:0 0 0 3px rgba(56,54,110,0.15);
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.active .step-label, .step.done .step-label{ color:var(--brand); }
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 22px; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+
+  form{ display:flex; flex-direction:column; gap:var(--gap-lg); }
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:13.5px; font-weight:700; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+
+  input[type="text"]{
+    height:var(--field-h); width:100%; padding:0 14px;
+    border-radius:var(--radius); border:1px solid var(--field-border);
+    background:var(--field-bg); font-size:15px; color:var(--text-primary);
+    font-family:inherit; outline:none;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  input::placeholder{ color:#9ea2b3; }
+  input:focus{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 3px rgba(74,74,158,0.15);
+    background:#fff;
+  }
+  input.has-error{ border-color:var(--error); background:var(--error-bg); }
+  .error-msg{
+    font-size:12.5px; color:var(--error); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  .actions{ display:flex; gap:var(--gap-md); margin-top:6px; }
+  button{
+    height:46px; border-radius:var(--radius); font-size:15px; font-weight:700;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-back{ background:#fff; border:1px solid var(--field-border); color:var(--text-primary); padding:0 26px; }
+  .btn-back:hover{ background:#f5f5fa; }
+  .btn-next{ background:var(--accent); color:#fff; padding:0 32px; flex:1; max-width:240px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:disabled{ background:#c3c2e0; cursor:not-allowed; }
+
+  .confirm-box{
+    display:none;
+    align-items:center; gap:10px;
+    background:#eefaf2;
+    border:1px solid #bfe6cf;
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:14px; font-weight:600; color:var(--success);
+    margin-top:6px;
+  }
+  .confirm-box.show{ display:flex; }
+
+  .edit-rerun-link{
+    display:inline-block;
+    height:auto; padding:0;
+    margin-top:10px;
+    background:none; border:none; cursor:pointer;
+    font-size:13px; font-weight:700; color:var(--accent);
+    font-family:inherit; text-align:left;
+  }
+  .edit-rerun-link:hover{ text-decoration:underline; }
+
+  input:focus-visible, button:focus-visible, .close-btn:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Email Address</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step active" id="stepBankAccount"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step" id="stepSummary"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Bank Details</h1>
+
+    <div class="content-card">
+    <form id="bankForm" novalidate>
+
+      <div class="field">
+        <label for="accountName" class="req">Account Name</label>
+        <input type="text" id="accountName" placeholder="Account Name" required />
+      </div>
+
+      <div class="field">
+        <label for="bsb" class="req">BSB Number</label>
+        <input type="text" id="bsb" placeholder="000-000" inputmode="numeric" maxlength="7" required />
+        <div class="hint">6-digit BSB, e.g. 062-000</div>
+      </div>
+
+      <div class="field">
+        <label for="accountNumber" class="req">Account Number</label>
+        <input type="text" id="accountNumber" placeholder="Account Number" inputmode="numeric" maxlength="10" required />
+        <div class="error-msg" id="accountError" role="alert" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          Enter a valid account number.
+        </div>
+      </div>
+
+      <div class="confirm-box" id="confirmBox" role="status">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+        <span id="confirmText">Account name matches bank records.</span>
+      </div>
+      <div id="editRerunWrap" style="display:none">
+        <button type="button" class="edit-rerun-link" id="editRerunBtn">Entered something wrong? Edit details and re-validate</button>
+      </div>
+
+      <div class="actions" id="formActions">
+        <button type="button" class="btn-back">Back</button>
+        <button type="button" class="btn-next" id="validateBtn" disabled>Validate Account</button>
+      </div>
+
+      <div class="actions" id="resultActions" style="display:none">
+        <button type="button" class="btn-back">Back</button>
+        <button type="button" class="btn-next" id="nextBtn">Next</button>
+      </div>
+    </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  const accountName = document.getElementById('accountName');
+  const bsb = document.getElementById('bsb');
+  const accountNumber = document.getElementById('accountNumber');
+  const validateBtn = document.getElementById('validateBtn');
+  const accountError = document.getElementById('accountError');
+  const confirmBox = document.getElementById('confirmBox');
+  const confirmText = document.getElementById('confirmText');
+  const formActions = document.getElementById('formActions');
+
+  // BSB auto-format as 000-000
+  bsb.addEventListener('input', ()=>{
+    let digits = bsb.value.replace(/[^0-9]/g,'').slice(0,6);
+    if(digits.length > 3){
+      bsb.value = digits.slice(0,3) + '-' + digits.slice(3);
+    } else {
+      bsb.value = digits;
+    }
+    updateValidateState();
+  });
+
+  accountNumber.addEventListener('input', ()=>{
+    accountNumber.value = accountNumber.value.replace(/[^0-9]/g,'');
+    accountError.style.display = 'none';
+    accountNumber.classList.remove('has-error');
+    updateValidateState();
+  });
+
+  accountName.addEventListener('input', updateValidateState);
+
+  function updateValidateState(){
+    const nameFilled = accountName.value.trim() !== '';
+    const bsbComplete = bsb.value.replace(/[^0-9]/g,'').length === 6;
+    const acctFilled = accountNumber.value.trim().length >= 5;
+    validateBtn.disabled = !(nameFilled && bsbComplete && acctFilled);
+  }
+
+  const editRerunWrap = document.getElementById('editRerunWrap');
+  const resultActions = document.getElementById('resultActions');
+  const nextBtn = document.getElementById('nextBtn');
+
+  validateBtn.addEventListener('click', ()=>{
+    document.querySelectorAll('#bankForm input').forEach(el=> el.style.pointerEvents = 'none');
+    formActions.style.display = 'none';
+    confirmBox.classList.add('show');
+    editRerunWrap.style.display = 'block';
+    resultActions.style.display = 'flex';
+  });
+
+  document.getElementById('editRerunBtn').addEventListener('click', ()=>{
+    document.querySelectorAll('#bankForm input').forEach(el=> el.style.pointerEvents = 'auto');
+    confirmBox.classList.remove('show');
+    editRerunWrap.style.display = 'none';
+    resultActions.style.display = 'none';
+    formActions.style.display = 'flex';
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    const bankStep = document.getElementById('stepBankAccount');
+    const summaryStep = document.getElementById('stepSummary');
+    bankStep.classList.remove('active');
+    bankStep.classList.add('done');
+    summaryStep.classList.add('active');
+    nextBtn.disabled = true;
+  });
+</script>
+
+</body>
+</html>

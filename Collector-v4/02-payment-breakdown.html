@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payout details – payment breakdown</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --focus-ring-rgb:85,85,85;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --error:#e53e3e;
+    --error-bg:#fff5f5;
+    --success:#0d9488;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:60px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+  }
+  /* Stepper */
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:13.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{display:block;}
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+
+  .main{flex:1; min-width:0;}
+  .back-to-summary{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:13px; font-weight:600; color:var(--text-secondary);
+    text-decoration:none; margin-bottom:10px;
+  }
+  .back-to-summary-text{ text-decoration:underline; }
+  .title-row{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-end;
+    gap:28px;
+    margin:0 0 22px;
+  }
+  .back-link{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:15.5px;
+    font-weight:600;
+    line-height:1;
+    color:var(--text-primary);
+    padding:0;
+    margin-left:-4px;
+    text-decoration:underline;
+  }
+  .back-link svg{flex-shrink:0; color:var(--accent);}
+  h1{ font-size:22px; font-weight:600; color:var(--text-primary); line-height:1; margin:0; }
+
+  .field{ display:flex; flex-direction:column; gap:var(--gap-xs); }
+  label{ font-size:15.5px; font-weight:600; color:var(--text-primary); }
+  .req::after{ content:' *'; color:var(--error); }
+  .hint{ font-size:12.5px; color:var(--text-secondary); }
+
+  /* currency field - shared with view 1 */
+  .currency-field{
+    display:flex; align-items:stretch;
+    border:1px solid var(--field-border); border-radius:var(--radius);
+    background:var(--field-bg); overflow:hidden;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .currency-field:focus-within{
+    border-color:var(--field-border-focus);
+    box-shadow:0 0 0 1px var(--field-border-focus);
+    background:#fff;
+  }
+  .currency-field.disabled{ background:#f7fafc; }
+  .currency-prefix{
+    display:flex; align-items:center; padding:0 12px;
+    font-weight:600; font-size:13.5px; color:var(--text-secondary);
+    background:#f8f9fa; border-right:1px solid var(--field-border);
+    letter-spacing:.02em;
+  }
+  .currency-field input{
+    border:none; background:transparent; box-shadow:none;
+    height:calc(var(--field-h) - 2px); padding-left:12px;
+    display:flex; align-items:center;
+    width:100%; font-size:15px; color:var(--text-primary); font-family:inherit; outline:none;
+    font-variant-numeric:tabular-nums;
+  }
+  .currency-field input:disabled{ color:var(--text-secondary); }
+  .currency-field.has-error{ border-color:var(--error); background:var(--error-bg); }
+  .currency-field.has-error .currency-prefix{ background:#fed7d7; border-color:var(--error); }
+  .error-msg{
+    font-size:12.5px; color:var(--error); font-weight:600;
+    display:flex; align-items:center; gap:5px;
+  }
+
+  /* top total winnings */
+  .total-block{ margin-bottom:28px; }
+
+  /* breakdown card */
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:10px;
+    padding:24px 26px;
+  }
+  .breakdown-card{
+    border:1px solid #e6e6e6;
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .breakdown-section{
+    padding:22px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-md);
+  }
+  .breakdown-section + .breakdown-section{
+    border-top:1px solid #e6e6e6;
+  }
+  .section-header{
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-icon{
+    width:36px; height:36px; border-radius:8px;
+    background:#fff;
+    border:1px solid #e2e3ea;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    color:var(--text-primary);
+  }
+  .section-title{
+    font-size:17px; font-weight:750; letter-spacing:.01em;
+    color:var(--text-primary);
+  }
+  .section-label{
+    margin-left:auto;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-secondary);
+  }
+
+  .actions{ display:flex; justify-content:space-between; align-items:center; gap:var(--gap-md); margin-top:46px; }
+  button{
+    border-radius:var(--radius); font-size:16px; font-weight:600;
+    cursor:pointer; border:none; font-family:inherit;
+  }
+  .btn-next{ height:60px; width:100%; background:var(--accent); color:#fff; padding:0 32px; font-size:19px; }
+  .btn-next:hover{ background:var(--accent-hover); }
+  .btn-next:active{ background:#095e56; }
+  .btn-next:disabled{ background:var(--accent); opacity:0.4; cursor:not-allowed; }
+
+  button:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+    .title-row{ flex-wrap:wrap; row-gap:4px; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop: the 60px fields below are touch-target sizing. On a
+     mouse/keyboard viewport that reads as oversized, so scale it down. */
+  @media (min-width:1025px){
+    :root{
+      --field-h:52px;
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    .btn-next{height:52px; font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step active"><div class="step-dot"></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Email address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <a class="back-to-summary" id="backToSummary" href="13-summary.html" style="display:none"><span aria-hidden="true">&larr;</span><span class="back-to-summary-text">Back to summary</span></a>
+    <div class="title-row" id="titleRow">
+      <button type="button" class="back-link" id="backBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M15 6l-6 6 6 6"/></svg>
+        Back
+      </button>
+      <h1>Payment breakdown</h1>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+
+    <div class="content-card">
+    <div class="field total-block">
+      <label for="totalWinnings">Total winnings</label>
+      <div class="currency-field disabled">
+        <span class="currency-prefix">AUD</span>
+        <input type="text" id="totalWinnings" value="0.00" disabled aria-readonly="true" />
+      </div>
+      <div class="hint">This is fixed from the win amount entered in the previous step.</div>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="breakdown-section section-cash">
+        <div class="section-header">
+          <div class="section-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </div>
+          <div class="section-title">Cash amount</div>
+        </div>
+
+        <div class="field">
+          <label for="cashAmount" class="req">Cash amount</label>
+          <div class="currency-field" id="cashWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="cashAmount" placeholder="0.00" aria-label="Cash amount in AUD" aria-required="true" aria-describedby="cashCapError" />
+          </div>
+          <div class="error-msg" id="cashCapError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            <span id="cashCapErrorText">Cash amount cannot exceed total winnings.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="confirmCash" class="req">Confirm cash amount</label>
+          <div class="currency-field" id="confirmCashWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="confirmCash" placeholder="0.00" aria-label="Confirm cash amount in AUD" aria-required="true" aria-describedby="cashMismatchError" />
+          </div>
+          <div class="error-msg" id="cashMismatchError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            Cash amounts do not match.
+          </div>
+        </div>
+      </div>
+
+      <div class="breakdown-section section-bank">
+        <div class="section-header">
+          <div class="section-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M4 10v9M9 10v9M15 10v9M20 10v9"/><path d="M2 19h20"/></svg>
+          </div>
+          <div class="section-title">Bank transfer</div>
+        </div>
+
+        <div class="field">
+          <label for="bankAmount" class="req">Bank transfer amount</label>
+          <div class="currency-field" id="bankWrap">
+            <span class="currency-prefix">AUD</span>
+            <input type="text" inputmode="decimal" id="bankAmount" placeholder="0.00" aria-label="Bank transfer amount in AUD" aria-required="true" aria-describedby="bankCapError" />
+          </div>
+          <div class="error-msg" id="bankCapError" role="alert" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+            <span id="bankCapErrorText">Bank transfer amount cannot exceed total winnings.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-next">Next</button>
+    </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const editingFromSummary = new URLSearchParams(location.search).get('from') === 'summary';
+  if (editingFromSummary) {
+    document.getElementById('backToSummary').style.display = '';
+  }
+
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    window.location.href = '01-new-payout-details.html';
+  });
+
+  // ---- Cross-page data persistence (Back/Next keep entered data) ----
+  const STORAGE_KEY = 'payoutFormData';
+  function loadStoredData(){
+    try{ return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveStoredData(patch){
+    const data = loadStoredData();
+    Object.assign(data, patch);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // Total Winnings is fixed by the Win Amount entered on step 1, not editable here.
+  const storedWinAmount = loadStoredData().winAmount;
+  const TOTAL = parseFloat(String(storedWinAmount || '0').replace(/,/g,'')) || 0;
+
+  const cashAmount = document.getElementById('cashAmount');
+  const confirmCash = document.getElementById('confirmCash');
+  const bankAmount = document.getElementById('bankAmount');
+
+  const cashWrap = document.getElementById('cashWrap');
+  const bankWrap = document.getElementById('bankWrap');
+  const confirmCashWrap = document.getElementById('confirmCashWrap');
+
+  const cashCapError = document.getElementById('cashCapError');
+  const bankCapError = document.getElementById('bankCapError');
+  const cashMismatchError = document.getElementById('cashMismatchError');
+
+  function sanitizeDecimal(raw){
+    let v = raw.replace(/[^0-9.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2){ v = parts[0] + '.' + parts.slice(1).join(''); }
+    const dotIndex = v.indexOf('.');
+    if(dotIndex !== -1 && v.length - dotIndex - 1 > 2){ v = v.slice(0, dotIndex + 3); }
+    return v;
+  }
+  function formatWithCommas(raw){
+    if(raw === '' || raw === '.') return raw;
+    const num = parseFloat(raw.replace(/,/g,''));
+    if(isNaN(num)) return raw;
+    return num.toLocaleString('en-AU', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+  function rawNumber(input){
+    return parseFloat(String(input.value).replace(/,/g,'')) || 0;
+  }
+
+  let syncing = false; // prevents feedback loop when auto-updating counterpart field
+
+  function handleCurrencyInput(input, capErrorEl, counterpart){
+    const val = sanitizeDecimal(input.value);
+    input.value = val;
+    const num = parseFloat(val || '0');
+
+    const exceeds = num > TOTAL;
+    capErrorEl.style.display = exceeds ? 'flex' : 'none';
+    input.closest('.currency-field').classList.toggle('has-error', exceeds);
+
+    if(!syncing && counterpart){
+      syncing = true;
+      const remaining = Math.max(0, TOTAL - num);
+      counterpart.value = remaining.toFixed(2);
+      syncing = false;
+    }
+    validateCashMatch();
+    updateNextState();
+    saveStoredData({ [input.id]: input.value });
+    if(counterpart){ saveStoredData({ [counterpart.id]: counterpart.value }); }
+  }
+
+  cashAmount.addEventListener('input', ()=> handleCurrencyInput(cashAmount, cashCapError, bankAmount));
+  bankAmount.addEventListener('input', ()=> handleCurrencyInput(bankAmount, bankCapError, cashAmount));
+
+  [cashAmount, bankAmount].forEach(input=>{
+    input.addEventListener('focus', ()=>{ input.value = input.value.replace(/,/g,''); });
+    input.addEventListener('blur', ()=>{ input.value = formatWithCommas(input.value); saveStoredData({ [input.id]: input.value }); });
+  });
+
+  function validateCashMatch(){
+    if(confirmCash.value === ''){
+      confirmCashWrap.classList.remove('has-error');
+      cashMismatchError.style.display = 'none';
+      updateNextState();
+      return;
+    }
+    const mismatch = rawNumber(cashAmount) !== rawNumber(confirmCash);
+    confirmCashWrap.classList.toggle('has-error', mismatch);
+    cashMismatchError.style.display = mismatch ? 'flex' : 'none';
+    updateNextState();
+  }
+
+  confirmCash.addEventListener('input', ()=>{
+    confirmCash.value = sanitizeDecimal(confirmCash.value);
+    validateCashMatch();
+    saveStoredData({ confirmCash: confirmCash.value });
+  });
+  confirmCash.addEventListener('focus', ()=>{ confirmCash.value = confirmCash.value.replace(/,/g,''); });
+  confirmCash.addEventListener('blur', ()=>{
+    confirmCash.value = formatWithCommas(confirmCash.value);
+    validateCashMatch();
+    saveStoredData({ confirmCash: confirmCash.value });
+  });
+
+  const nextBtn = document.querySelector('.btn-next');
+  if(editingFromSummary){ nextBtn.textContent = 'Save and return to summary'; }
+  nextBtn.addEventListener('click', ()=>{
+    if(nextBtn.disabled) return;
+    window.location.href = editingFromSummary ? '13-summary.html' : '03-before-you-start.html';
+  });
+  function updateNextState(){
+    const cashExceeds = rawNumber(cashAmount) > TOTAL;
+    const bankExceeds = rawNumber(bankAmount) > TOTAL;
+    const cashMismatch = confirmCash.value !== '' && rawNumber(cashAmount) !== rawNumber(confirmCash);
+    const confirmEmpty = confirmCash.value === '';
+    const hasError = cashExceeds || bankExceeds || cashMismatch || confirmEmpty;
+    nextBtn.disabled = hasError;
+    nextBtn.setAttribute('aria-disabled', hasError);
+  }
+
+  // restore previously entered data when navigating back to this step
+  (function restoreStoredData(){
+    const data = loadStoredData();
+    if(data.cashAmount) cashAmount.value = data.cashAmount;
+    if(data.confirmCash) confirmCash.value = data.confirmCash;
+    if(data.bankAmount) bankAmount.value = data.bankAmount;
+  })();
+
+  // initial state
+  const formattedTotal = formatWithCommas(TOTAL.toFixed(2));
+  document.getElementById('totalWinnings').value = formattedTotal;
+  document.getElementById('cashCapErrorText').textContent = `Cash amount cannot exceed total winnings (${formattedTotal} AUD).`;
+  document.getElementById('bankCapErrorText').textContent = `Bank transfer amount cannot exceed total winnings (${formattedTotal} AUD).`;
+
+  cashAmount.value = formatWithCommas(cashAmount.value);
+  bankAmount.value = formatWithCommas(bankAmount.value);
+  confirmCash.value = formatWithCommas(confirmCash.value);
+  validateCashMatch();
+  updateNextState();
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

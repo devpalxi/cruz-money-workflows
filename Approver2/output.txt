@@ -1,0 +1,9 @@
+Payouts - Payout ID 578 Dashboard d.walsh Dashboard Payout #578 14/07/2026, 7:09:22 am Status: Awaiting Approval Collapse All ▲ Payout Details Cash Amount: 500 Transfer Amount: 1000 Internal Transaction ID: 213 Machine ID: EGM-002 Member Identification Membership #: 3e23e Email: stacy@gmail.com Full Name: STACY TESTTWENTY Bank Account Details Account Name: Stacy K BSB Number: 321312 Account Number: 213123123 Name Verification Name Verification Comparison NAME ON ID DOCUMENT STACY K TESTTWENTY ⚠ Different Provided Bank Account Name Stacy K The names do not match exactly. The approver
+                                        should review and determine if the difference is acceptable. Verification Results Identity
+                                        Verification Government ID PASS ID Validation PASS Blacklist PASS Name Match PASS DOB Match PASS AML Screening PEP Active Hits Sanctions Active Hits Identity Verification (IDV)
+                            History Country + Document + IDV Date & Time Result Australia Passport IDV 14 July 2026, 11:41 am PASS Collector m.santos 14/07/2026 07:12am Approvals CoP Status: ✓ Match ID Name Match: ✕ No The name on the bank account does not match
+                                            the name on the identity document. Please review the name comparison above
+                                            and confirm if acceptable. I have reviewed the names
+                                                and confirm the difference is acceptable. Approver Note
+                                            (optional) Risk Level Select risk level 🟢 Low 🟡 Medium 🔴 High I confirm this
+                                            transaction is ready for payment Approve Payouts

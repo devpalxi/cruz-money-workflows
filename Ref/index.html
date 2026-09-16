@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riverside Hotel - Payouts Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Import Google Fonts: Outfit for display & Hanken Grotesk for body and details -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <div class="logo-area">
+          <div class="logo-text">
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE & AML DATABASE</span>
+          </div>
+        </div>
+        
+        <nav class="header-nav">
+          <a href="#" class="nav-link active">Dashboard</a>
+          <button id="nav-new-payout" class="btn-primary-pill">
+            New Payout
+            <span class="btn-icon-circle">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </span>
+          </button>
+          
+          <div class="user-profile">
+            <span class="user-name">J.Chen</span>
+            <div class="avatar">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content Dashboard -->
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      
+      <!-- Hero Intro -->
+      <section class="dashboard-intro fade-in-section">
+        <span class="eyebrow-tag">Compliance & AML Dashboard</span>
+        <h1 class="dashboard-title">Payouts Dashboard</h1>
+        <p class="dashboard-subtitle">Manage, audit, and coordinate transaction disbursements across venues.</p>
+      </section>
+
+
+
+      <!-- Filters & Actions (Nested double bezel layout) -->
+      <section class="controls-card double-bezel-outer fade-in-section">
+        <div class="double-bezel-inner controls-inner">
+          <div class="filters-row">
+            <div class="filters-group">
+              <span class="filters-label">FILTERS</span>
+              
+              <!-- Custom Styled Status Dropdown -->
+              <div class="select-wrapper">
+                <select id="status-select" aria-label="Filter by Status">
+                  <option value="All">All Statuses</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Payment Delayed">Payment Delayed</option>
+                  <option value="Payment Completed">Payment Completed</option>
+                  <option value="Pending Authorisation">Pending Authorisation</option>
+                  <option value="Awaiting Approval">Awaiting Approval</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+
+              <!-- Search Field -->
+              <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="search-input" placeholder="Search payout ID, venue..." aria-label="Search payout ID or venue">
+              </div>
+
+              <!-- Filter Buttons -->
+              <button id="apply-filters-btn" class="btn-apply">Apply Filters</button>
+              <button id="clear-filters-btn" class="btn-clear">Clear</button>
+            </div>
+          </div>
+
+          <!-- Table Operations Info -->
+          <div class="table-operations-row">
+            <span id="showing-results" class="results-count">Showing 0 results</span>
+            
+            <div class="actions-group">
+              <button id="export-csv-btn" class="btn-action">
+                <svg class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export CSV
+              </button>
+              <button id="refresh-btn" class="btn-action">
+                <svg id="refresh-icon" class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section (Double Bezel outer) -->
+      <section class="table-card double-bezel-outer fade-in-section">
+        <div class="double-bezel-inner table-inner">
+          <div class="table-responsive">
+            <table class="payouts-table" id="payouts-table">
+              <thead>
+                <tr>
+                  <th style="width: 10%;">PAYOUT ID</th>
+                  <th style="width: 18%;">CREATED</th>
+                  <th style="width: 20%;">VENUE</th>
+                  <th style="width: 12%;">KYC (IDV)</th>
+                  <th style="width: 12%;">RISK RATING</th>
+                  <th style="width: 10%;">AMOUNT</th>
+                  <th style="width: 8%;">PAYMENT ETA</th>
+                  <th style="width: 10%;">STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="payouts-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <footer class="pagination-footer">
+            <div class="pagination-container" id="pagination-container">
+              <!-- Dynamic pagination buttons -->
+            </div>
+          </footer>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- New Payout Overlay Modal -->
+  <div class="modal-overlay" id="new-payout-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Create New Payout</h2>
+        <button class="modal-close" id="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <form id="new-payout-form">
+        <div class="form-group">
+          <label for="payout-venue">Venue</label>
+          <input type="text" id="payout-venue" value="Riverside RSL Club" placeholder="Enter venue name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="payout-idv">IDV Status</label>
+            <select id="payout-idv">
+              <option value="None">None</option>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+              <option value="Manual verification">Manual verification</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="payout-amount">Amount ($)</label>
+            <input type="number" id="payout-amount" min="1" step="any" placeholder="e.g. 500.00" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="payout-eta">Payment ETA (optional)</label>
+            <input type="text" id="payout-eta" placeholder="e.g. 13h 20m or -">
+          </div>
+          <div class="form-group">
+            <label for="payout-status">Status</label>
+            <select id="payout-status">
+              <option value="Draft">Draft</option>
+              <option value="Awaiting Approval">Awaiting Approval</option>
+              <option value="Payment Completed">Payment Completed</option>
+              <option value="Payment Delayed">Payment Delayed</option>
+              <option value="Pending Authorisation">Pending Authorisation</option>
+              <option value="Failed">Failed</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group kyc-consent-group">
+          <label class="kyc-section-label">KYC / AML Compliance Requirements</label>
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="consent-general" required>
+            <label for="consent-general" class="checkbox-label">Patron has consented to general identity verification</label>
+          </div>
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="consent-docs" required>
+            <label for="consent-docs" class="checkbox-label">Patron has consented to government Document Verification Service (DVS) checks</label>
+          </div>
+          <div class="checkbox-wrapper">
+            <input type="checkbox" id="consent-credit" required>
+            <label for="consent-credit" class="checkbox-label">Patron has consented to credit header database checks</label>
+          </div>
+          <div class="checkbox-wrapper manual-verify-only" id="manual-verify-wrapper" style="display: none;">
+            <input type="checkbox" id="consent-manual-verify">
+            <label for="consent-manual-verify" class="checkbox-label highlight-label">I attest that I have physically viewed and verified the patron's secondary ID documents</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-modal-cancel" id="modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn-modal-submit">Create Payout</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

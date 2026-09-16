@@ -1,0 +1,167 @@
+/* Riverside Payouts semantic pill colors.
+   Loaded after page-local styles so every workflow uses the same state language. */
+:root {
+  --pill-green-bg: #ecfdf5;
+  --pill-green-text: #065f46;
+  --pill-green-border: #6ee7b7;
+  --pill-red-bg: #fef2f2;
+  --pill-red-text: #991b1b;
+  --pill-red-border: #fca5a5;
+  --pill-amber-bg: #fffbeb;
+  --pill-amber-text: #78350f;
+  --pill-amber-border: #fcd34d;
+  --pill-blue-bg: #eff6ff;
+  --pill-blue-text: #1d4ed8;
+  --pill-blue-border: #93c5fd;
+  --pill-slate-bg: #f8fafc;
+  --pill-slate-text: #475569;
+  --pill-slate-border: #cbd5e1;
+}
+
+.pill,
+.badge,
+.status-pill,
+.status-badge,
+.sa-status,
+.kyc-badge,
+.risk-badge {
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+}
+
+/* Success and completed states. */
+.pill.pass,
+.badge.pass,
+.badge-green,
+.status-badge.active,
+.status-badge.completed,
+.status-pill.completed,
+.status-pill.payment-completed,
+.status-pill.paid,
+.status-pill.submitted,
+.status-pill.reviewed,
+.sa-status.active,
+.sa-status.completed,
+.sa-status.submitted,
+.kyc-badge.pass,
+.risk-badge.low {
+  background: var(--pill-green-bg) !important;
+  color: var(--pill-green-text) !important;
+  border-color: var(--pill-green-border) !important;
+}
+
+/* Review, pending, manual, and draft states. */
+.pill.warn,
+.pill.skipped,
+.badge.warn,
+.badge-amber,
+.status-badge.draft,
+.status-pill.pending,
+.status-pill.pending-authorisation,
+.status-pill.payment-delayed,
+.status-pill.awaiting-approval,
+.status-pill.draft,
+.status-pill.required,
+.status-pill.manual,
+.sa-status.pending,
+.sa-status.draft,
+.sa-status.ready-for-review,
+.sa-status.awaiting-approval,
+.sa-status.required,
+.kyc-badge.manual,
+.risk-badge.medium {
+  background: var(--pill-amber-bg) !important;
+  color: var(--pill-amber-text) !important;
+  border-color: var(--pill-amber-border) !important;
+}
+
+/* Failure, rejection, blocked, and high-risk states. */
+.pill.fail,
+.badge.fail,
+.badge-red,
+.status-badge.inactive,
+.status-pill.failed,
+.status-pill.rejected,
+.status-pill.blocked,
+.status-pill.high,
+.sa-status.inactive,
+.sa-status.blocked,
+.sa-status.failed,
+.sa-status.rejected,
+.sa-status.high,
+.kyc-badge.fail,
+.risk-badge.high {
+  background: var(--pill-red-bg) !important;
+  color: var(--pill-red-text) !important;
+  border-color: var(--pill-red-border) !important;
+}
+
+/* Informational states. */
+.badge-blue,
+.status-pill.awaiting,
+.status-pill.info,
+.sa-status.info,
+.sa-status.active-review {
+  background: var(--pill-blue-bg) !important;
+  color: var(--pill-blue-text) !important;
+  border-color: var(--pill-blue-border) !important;
+}
+
+/* Neutral states and unqualified workflow status pills. */
+.pill.neutral,
+.badge-slate,
+.status-pill,
+.status-pill.none,
+.status-pill.paused,
+.status-pill.cancelled,
+.sa-status,
+.kyc-badge.none {
+  background: var(--pill-slate-bg) !important;
+  color: var(--pill-slate-text) !important;
+  border-color: var(--pill-slate-border) !important;
+}
+
+/* Re-apply semantic variants after the neutral base selector. */
+.status-pill.payment-completed,
+.status-pill.paid,
+.status-pill.completed,
+.status-pill.submitted,
+.status-pill.reviewed,
+.sa-status.active,
+.sa-status.completed,
+.sa-status.submitted,
+.kyc-badge.pass,
+.risk-badge.low { background: var(--pill-green-bg) !important; color: var(--pill-green-text) !important; border-color: var(--pill-green-border) !important; }
+.status-pill.pending,
+.status-pill.pending-authorisation,
+.status-pill.payment-delayed,
+.status-pill.awaiting-approval,
+.status-pill.draft,
+.status-pill.required,
+.sa-status.pending,
+.sa-status.draft,
+.sa-status.ready-for-review,
+.sa-status.awaiting-approval,
+.sa-status.required,
+.kyc-badge.manual { background: var(--pill-amber-bg) !important; color: var(--pill-amber-text) !important; border-color: var(--pill-amber-border) !important; }
+.status-pill.failed,
+.status-pill.rejected,
+.sa-status.failed,
+.sa-status.blocked,
+.sa-status.inactive,
+.kyc-badge.fail,
+.risk-badge.high { background: var(--pill-red-bg) !important; color: var(--pill-red-text) !important; border-color: var(--pill-red-border) !important; }
+
+/* Role badges are labels, not operational statuses. */
+.role-badge.admin {
+  background: var(--pill-blue-bg) !important;
+  color: var(--pill-blue-text) !important;
+  border-color: var(--pill-blue-border) !important;
+}
+.role-badge.super-admin {
+  background: var(--pill-amber-bg) !important;
+  color: var(--pill-amber-text) !important;
+  border-color: var(--pill-amber-border) !important;
+}

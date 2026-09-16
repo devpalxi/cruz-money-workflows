@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUSTRAC Transactions</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <!-- Import Google Fonts: JetBrains Mono for tabular numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    #payouts-table-body tr:not(.skeleton-row) {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #payouts-table-body tr:not(.skeleton-row):hover {
+      background: var(--blue-light, #f0fdfa);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #payouts-table-body tr:not(.skeleton-row) {
+        transition: none;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link " onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content Dashboard -->
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      
+      <!-- Hero Intro -->
+      <section class="dashboard-intro fade-in-section">
+        <h1 class="dashboard-title" id="venue-title">AUSTRAC Transactions</h1>
+        <p class="dashboard-subtitle">Transactions flagged for AUSTRAC reporting due to High or Medium risk rating.</p>
+      </section>
+
+      <!-- Filters & Actions (Nested double bezel layout) -->
+      <section class="controls-card double-bezel-outer fade-in-section">
+        <div class="double-bezel-inner controls-inner">
+          <div class="filter-trigger-bar">
+            <button id="filter-btn" class="filter-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              Filters <span id="filter-badge" class="filter-badge" style="display: none;">0</span>
+            </button>
+            <div class="search-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="search-input" placeholder="Search payout ID, venue..." aria-label="Search payout ID or venue">
+            </div>
+            
+            <div class="actions-group table-actions" style="margin-left: auto;">
+              <button id="clear-filters-btn" class="btn-ghost">Clear Filters</button>
+              <div class="divider-vertical"></div>
+              <span id="showing-results" class="results-count">Showing 0 results</span>
+              <button id="export-csv-btn" class="btn-action">
+                <svg class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export CSV
+              </button>
+              <button id="refresh-btn" class="btn-action">
+                <svg id="refresh-icon" class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                Refresh
+              </button>
+            </div>
+            
+            <div id="filter-popup" class="filter-popup">
+              <div class="filter-popup-group status-checkboxes">
+                <div class="filter-popup-label">STATUS</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Draft" data-group="status"><div class="filter-checkbox-square"></div>Draft</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Pending Authorisation" data-group="status"><div class="filter-checkbox-square"></div>Pending Auth</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Awaiting Approval" data-group="status"><div class="filter-checkbox-square"></div>Awaiting</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Payment Completed" data-group="status"><div class="filter-checkbox-square"></div>Completed</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Payment Delayed" data-group="status"><div class="filter-checkbox-square"></div>Delayed</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Failed" data-group="status"><div class="filter-checkbox-square"></div>Failed</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Rejected" data-group="status"><div class="filter-checkbox-square"></div>Rejected</label>
+                </div>
+              </div>
+              
+              <div class="filter-popup-group kyc-checkboxes">
+                <div class="filter-popup-label">ID MATCH</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Pass" data-group="kyc"><div class="filter-checkbox-square"></div>Pass</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Fail" data-group="kyc"><div class="filter-checkbox-square"></div>Fail</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Manual verification" data-group="kyc"><div class="filter-checkbox-square"></div>Manual</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="None" data-group="kyc"><div class="filter-checkbox-square"></div>None</label>
+                </div>
+              </div>
+
+              <div class="filter-popup-group pep-checkboxes">
+                <div class="filter-popup-label">PEP</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Clear" data-group="pep"><div class="filter-checkbox-square"></div>Clear</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Hit" data-group="pep"><div class="filter-checkbox-square"></div>Hit</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Pending" data-group="pep"><div class="filter-checkbox-square"></div>Pending</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="—" data-group="pep"><div class="filter-checkbox-square"></div>None (—)</label>
+                </div>
+              </div>
+
+              <div class="filter-popup-group sanctions-checkboxes">
+                <div class="filter-popup-label">SANCTIONS</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Clear" data-group="sanctions"><div class="filter-checkbox-square"></div>Clear</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Hit" data-group="sanctions"><div class="filter-checkbox-square"></div>Hit</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Pending" data-group="sanctions"><div class="filter-checkbox-square"></div>Pending</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="—" data-group="sanctions"><div class="filter-checkbox-square"></div>None (—)</label>
+                </div>
+              </div>
+
+              <div class="filter-popup-group cop-checkboxes">
+                <div class="filter-popup-label">COP STATUS</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Match" data-group="cop"><div class="filter-checkbox-square"></div>Match</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="Close match" data-group="cop"><div class="filter-checkbox-square"></div>Close match</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="No match" data-group="cop"><div class="filter-checkbox-square"></div>No match</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="—" data-group="cop"><div class="filter-checkbox-square"></div>None (—)</label>
+                </div>
+              </div>
+
+              <div class="filter-popup-group risk-checkboxes">
+                <div class="filter-popup-label">RISK RATING</div>
+                <div class="filter-popup-items">
+                  <label class="filter-popup-item"><input type="checkbox" value="Medium" data-group="risk"><div class="filter-checkbox-square"></div>Medium</label>
+                  <label class="filter-popup-item"><input type="checkbox" value="High" data-group="risk"><div class="filter-checkbox-square"></div>High</label>
+                </div>
+              </div>
+              
+              <div class="filter-popup-footer">
+                <button id="popup-select-all" class="btn-primary" style="height:32px; font-size:13px; padding:0 16px;">Select all</button>
+                <button id="popup-clear" class="btn-secondary" style="height:32px; font-size:13px; padding:0 16px;">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section (Double Bezel outer) -->
+      <section class="table-card double-bezel-outer fade-in-section">
+        <div class="double-bezel-inner table-inner">
+          <div class="table-responsive">
+            <table class="payouts-table" id="payouts-table">
+              <thead>
+                <tr>
+                  <th style="width: 7%;">Payout ID</th>
+                  <th style="width: 13%;">Created</th>
+                  <th style="width: 16%;">Venue</th>
+                  <th style="width: 9%;">ID match</th>
+                  <th style="width: 7%;">PEP</th>
+                  <th style="width: 8%;">Sanctions</th>
+                  <th style="width: 9%;">COP status</th>
+                  <th style="width: 8%;">Risk rating</th>
+                  <th style="width: 9%;">Amount</th>
+                  <th style="width: 14%;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="payouts-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <footer class="pagination-footer">
+            <div class="pagination-container" id="pagination-container">
+              <!-- Dynamic pagination buttons -->
+            </div>
+          </footer>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="dashboard-app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const role = sessionStorage.getItem('userRole') || 'admin';
+      const isAdmin = role === 'admin';
+      const badge = document.getElementById('settings-role-badge');
+      const nav = document.getElementById('settings-admin-nav');
+      const switchLink = document.getElementById('settings-switch-link');
+      const contextStr = sessionStorage.getItem('selectedVenueContext');
+      let selectedVenueContext = null;
+      if (contextStr) {
+        try { selectedVenueContext = JSON.parse(contextStr); } catch(e) {}
+      }
+
+      if (isAdmin && !selectedVenueContext) {
+        selectedVenueContext = RiversideAdminData.getContext('Riverside RSL Club');
+        sessionStorage.setItem('selectedVenueContext', JSON.stringify(selectedVenueContext));
+      }
+
+      const reportVenue = selectedVenueContext?.venueName || 'Riverside RSL Club';
+      const curatedAustracEntries = [
+        { id: 'TX-570', created: 'Jul 13, 2026 06:31AM', venue: reportVenue, idv: 'Fail', pep: 'Clear', sanctions: 'Clear', cop: 'No match', risk: 'High', amount: 25000, status: 'Payment Delayed' },
+        { id: 'TX-567', created: 'Jul 09, 2026 12:31PM', venue: reportVenue, idv: 'Manual verification', pep: 'Clear', sanctions: 'Clear', cop: 'Close match', risk: 'Medium', amount: 5600, status: 'Pending Authorisation' },
+        { id: 'TX-566', created: 'Jul 09, 2026 10:22AM', venue: reportVenue, idv: 'Manual verification', pep: 'Pending', sanctions: 'Clear', cop: 'Close match', risk: 'High', amount: 18500, status: 'Awaiting Approval' },
+        { id: 'TX-563', created: 'Jul 09, 2026 09:13AM', venue: reportVenue, idv: 'Fail', pep: 'Hit', sanctions: 'Clear', cop: 'No match', risk: 'High', amount: 25000, status: 'Failed' },
+        { id: 'TX-562', created: 'Jul 09, 2026 06:57AM', venue: reportVenue, idv: 'Fail', pep: 'Clear', sanctions: 'Hit', cop: 'No match', risk: 'High', amount: 35000, status: 'Rejected' },
+        { id: 'TX-560', created: 'Jul 08, 2026 12:50PM', venue: reportVenue, idv: 'Manual verification', pep: 'Clear', sanctions: 'Clear', cop: 'Close match', risk: 'Medium', amount: 9800, status: 'Awaiting Approval' },
+        { id: 'TX-556', created: 'Jul 07, 2026 12:17PM', venue: reportVenue, idv: 'Manual verification', pep: 'Pending', sanctions: 'Clear', cop: 'Close match', risk: 'High', amount: 14200, status: 'Awaiting Approval' },
+        { id: 'TX-554', created: 'Jul 07, 2026 07:50AM', venue: reportVenue, idv: 'Fail', pep: 'Hit', sanctions: 'Clear', cop: 'Close match', risk: 'High', amount: 25000, status: 'Awaiting Approval' },
+        { id: 'TX-553', created: 'Jul 07, 2026 07:06AM', venue: reportVenue, idv: 'Fail', pep: 'Clear', sanctions: 'Hit', cop: 'No match', risk: 'High', amount: 28000, status: 'Failed' },
+        { id: 'TX-551', created: 'Jul 06, 2026 12:59PM', venue: reportVenue, idv: 'Manual verification', pep: 'Clear', sanctions: 'Clear', cop: 'Close match', risk: 'Medium', amount: 7450, status: 'Draft' },
+        { id: 'TX-548', created: 'Jul 06, 2026 10:15AM', venue: reportVenue, idv: 'Manual verification', pep: 'Pending', sanctions: 'Clear', cop: 'Match', risk: 'High', amount: 11000, status: 'Awaiting Approval' },
+        { id: 'TX-542', created: 'Jul 05, 2026 03:40PM', venue: reportVenue, idv: 'Pass', pep: 'Clear', sanctions: 'Clear', cop: 'Close match', risk: 'Medium', amount: 6800, status: 'Pending Authorisation' },
+        { id: 'TX-539', created: 'Jul 05, 2026 11:20AM', venue: reportVenue, idv: 'Fail', pep: 'Hit', sanctions: 'Clear', cop: 'No match', risk: 'High', amount: 15000, status: 'Rejected' },
+        { id: 'TX-535', created: 'Jul 04, 2026 05:10PM', venue: reportVenue, idv: 'Manual verification', pep: 'Clear', sanctions: 'Clear', cop: 'Close match', risk: 'Medium', amount: 8200, status: 'Payment Completed' }
+      ];
+
+      if (selectedVenueContext) {
+        document.getElementById('venue-title').textContent = `${selectedVenueContext.venueName} — AUSTRAC Reports`;
+        const canonicalPayouts = RiversideAdminData.payouts();
+        const scopedPayouts = RiversideAdminData.scopeByVenue(canonicalPayouts, selectedVenueContext);
+        const austracFilter = (items) => items.filter(item => ['high', 'medium'].includes(String(item.risk || '').toLowerCase()));
+        
+        let loadedPayouts = austracFilter(isAdmin ? scopedPayouts : canonicalPayouts);
+        if (loadedPayouts.length < 5) {
+          loadedPayouts = curatedAustracEntries.map((p) => ({ ...p, venue: selectedVenueContext.venueName }));
+        }
+        payouts = loadedPayouts;
+      } else {
+        payouts = curatedAustracEntries;
+      }
+
+      // Strictly ensure only High & Medium risk payouts are displayed
+      payouts = payouts.filter(item => ['high', 'medium'].includes(String(item.risk || '').toLowerCase()));
+      filteredPayouts = [...payouts];
+      if (typeof updateUI === 'function') updateUI();
+
+      if (isAdmin) {
+        badge.className = 'role-badge admin';
+        badge.innerText = 'ADMIN';
+        nav.innerHTML = `
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="austrac-transactions.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        `;
+        switchLink.href = 'super-admin.html';
+        switchLink.onclick = function(){ sessionStorage.setItem('userRole','superadmin'); };
+        switchLink.innerText = '→ Switch to Super Admin';
+      } else {
+        badge.className = 'role-badge super-admin';
+        badge.innerText = 'SUPER ADMIN';
+        nav.innerHTML = `
+          <a href="super-admin-dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-smr.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        `;
+        switchLink.href = 'dashboard.html';
+        switchLink.onclick = function(){ sessionStorage.setItem('userRole','admin'); };
+        switchLink.innerText = '→ Switch to Admin';
+      }
+    });
+  </script>
+</body>
+</html>

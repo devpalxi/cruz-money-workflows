@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Venues</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-bg:#ffffff;
+    --field-border:#e2e8f0;
+    --field-border-focus:#555555;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --accent-tint:#e6f6f4;
+    --error:#e53e3e;
+    --warn:#a15c07;
+    --warn-bg:#fdf6ec;
+    --success:#0d9488;
+    --success-bg:#effcfa;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    --field-h:52px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{ max-width:1080px; margin:0 auto; padding:36px 24px 64px; }
+  .page-header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:16px; margin-bottom:26px; flex-wrap:wrap;
+  }
+  h1{ font-size:24px; font-weight:700; margin:0; }
+  .page-sub{ font-size:14px; color:var(--text-secondary); margin:6px 0 0; }
+  .btn-primary{
+    display:inline-flex; align-items:center; gap:8px;
+    height:44px; padding:0 20px; border-radius:var(--radius);
+    background:var(--accent); color:#fff; border:none;
+    font-size:15px; font-weight:600; font-family:inherit; cursor:pointer;
+    text-decoration:none; white-space:nowrap;
+  }
+  .btn-primary:hover{ background:var(--accent-hover); }
+
+  .toolbar{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .search-field{
+    display:flex; align-items:center; gap:8px;
+    height:44px; padding:0 14px; border-radius:var(--radius);
+    border:1px solid var(--field-border); background:#fff;
+    max-width:320px; flex:1;
+  }
+  .search-field svg{ color:var(--text-secondary); flex-shrink:0; }
+  .search-field input{
+    border:none; outline:none; background:transparent;
+    font-size:15px; font-family:inherit; color:var(--text-primary); width:100%;
+  }
+  .search-field input::placeholder{ color:#9ea2b3; }
+
+  .content-card{ background:#fff; border:1px solid #e2e3ea; border-radius:10px; overflow:hidden; }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left; font-size:12.5px; font-weight:700;
+    color:var(--text-secondary);
+    padding:14px 20px; border-bottom:1px solid #eceef2;
+  }
+  tbody tr{ cursor:pointer; }
+  tbody tr:hover{ background:#f7fafc; }
+  tbody tr + tr td{ border-top:1px solid #eceef2; }
+  tbody td{ padding:16px 20px; font-size:14.5px; vertical-align:middle; }
+  .venue-name{ font-weight:700; color:var(--text-primary); }
+  .venue-org{ color:var(--text-secondary); }
+  .status-badge{
+    display:inline-flex; align-items:center; font-size:12px; font-weight:700;
+    padding:4px 10px; border-radius:20px; white-space:nowrap;
+  }
+  .status-badge.active{ background:var(--success-bg); color:var(--success); border:1px solid #9bd7cf; }
+  .status-badge.draft{ background:var(--warn-bg); color:var(--warn); border:1px solid #e3bd85; }
+  .cell-chevron{ text-align:right; color:var(--text-secondary); }
+  .empty-state{ text-align:center; padding:56px 20px; color:var(--text-secondary); font-size:14.5px; }
+
+  @media (max-width:720px){
+    .app{ padding:24px 16px 48px; }
+    thead{ display:none; }
+    table, tbody, tr, td{ display:block; width:100%; }
+    tbody tr{ padding:14px 16px; }
+    tbody tr + tr{ border-top:1px solid #eceef2; }
+    tbody td{ padding:2px 0; border:none !important; }
+    .cell-org{ margin-bottom:6px; }
+    .cell-meta{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+    .cell-chevron{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="page-header">
+    <div>
+      <h1>Venues</h1>
+      <p class="page-sub">Onboard and configure venues for the Cruz Payouts App.</p>
+    </div>
+    <a class="btn-primary" href="venue-01-create.html">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      New venue
+    </a>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-field">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search venues" />
+    </div>
+  </div>
+
+  <div class="content-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Venue</th>
+          <th>Organisation</th>
+          <th>Status</th>
+          <th>Last updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="venueRows">
+        <tr data-name="Riverside RSL Club" data-org="Riverside Leagues Ltd" data-href="venue-02-details.html">
+          <td class="venue-name">Riverside RSL Club</td>
+          <td class="venue-org cell-org">Riverside Leagues Ltd</td>
+          <td><span class="status-badge active">Active</span></td>
+          <td>12/07/2026</td>
+          <td class="cell-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></td>
+        </tr>
+        <tr data-name="Northside Leagues Club" data-org="Northside Community Club" data-href="venue-02-details.html">
+          <td class="venue-name">Northside Leagues Club</td>
+          <td class="venue-org cell-org">Northside Community Club</td>
+          <td><span class="status-badge draft">Draft</span></td>
+          <td>30/07/2026</td>
+          <td class="cell-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></td>
+        </tr>
+        <tr data-name="Harbourview Hotel" data-org="Harbourview Hospitality Group" data-href="venue-02-details.html">
+          <td class="venue-name">Harbourview Hotel</td>
+          <td class="venue-org cell-org">Harbourview Hospitality Group</td>
+          <td><span class="status-badge draft">Draft</span></td>
+          <td>02/08/2026</td>
+          <td class="cell-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none">No venues match your search.</div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'venueConfigData';
+
+  document.querySelectorAll('#venueRows tr').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const status = row.querySelector('.status-badge').classList.contains('active') ? 'Active' : 'Draft';
+      // ticks in the config hub should only reflect sections actually saved
+      // for this venue, so configuredSections starts empty here rather than
+      // being faked from the row's status badge
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        venueName: row.dataset.name,
+        orgName: row.dataset.org,
+        status,
+        configuredSections: {}
+      }));
+      window.location.href = row.dataset.href;
+    });
+  });
+
+  const searchInput = document.getElementById('searchInput');
+  const emptyState = document.getElementById('emptyState');
+  searchInput.addEventListener('input', ()=>{
+    const q = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('#venueRows tr').forEach(row=>{
+      const match = row.dataset.name.toLowerCase().includes(q) || row.dataset.org.toLowerCase().includes(q);
+      row.style.display = match ? '' : 'none';
+      if(match) visible++;
+    });
+    emptyState.style.display = visible === 0 ? 'block' : 'none';
+  });
+</script>
+
+</body>
+</html>

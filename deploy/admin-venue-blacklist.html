@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Venue Blacklist - Riverside RSL Club | Riverside Payouts</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <link rel="stylesheet" href="pill-colors.css">
+  <script src="blacklist-data.js"></script>
+  <script src="admin-shell.js" defer></script>
+  <!-- Google Fonts: JetBrains Mono for tabular and ID numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Table row hover and styling */
+    .payouts-table tbody tr {
+      cursor: pointer;
+      transition: background-color var(--t) var(--ease);
+      background: var(--bg-card);
+    }
+    .payouts-table tbody tr:hover {
+      background: var(--bg-hover) !important;
+    }
+    .payouts-table td {
+      border-bottom: 1px solid var(--border) !important;
+      padding: 12px 16px !important;
+      vertical-align: middle;
+    }
+    .payouts-table th {
+      border-bottom: 1px solid var(--border) !important;
+      padding: 13px 16px !important;
+      background: var(--bg-th) !important;
+      color: var(--text-mid) !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.02em !important;
+      text-transform: none !important;
+      white-space: nowrap;
+    }
+
+    .patron-name-title {
+      font-weight: 700;
+      color: var(--text-hi);
+      font-size: 13.5px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .cell-id-info {
+      font-size: 12px;
+      color: var(--text-mid);
+      font-family: var(--font-mono);
+      margin-top: 3px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    /* Search input padding fix */
+    .search-wrapper input#blacklistSearchInput {
+      padding-left: 38px !important;
+      height: 38px !important;
+    }
+
+    .reason-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.2;
+      border-style: solid;
+      border-width: 1px;
+    }
+    .reason-pill.sanctions { background: var(--pill-red-bg); color: var(--pill-red-text); border-color: var(--pill-red-border); }
+    .reason-pill.pep { background: var(--pill-amber-bg); color: var(--pill-amber-text); border-color: var(--pill-amber-border); }
+    .reason-pill.fraud { background: #faf5ff; color: #7e22ce; border-color: #e9d5ff; }
+    .reason-pill.media { background: var(--pill-blue-bg); color: var(--pill-blue-text); border-color: var(--pill-blue-border); }
+    .reason-pill.self-ex { background: #fdf2f8; color: #be185d; border-color: #fbcfe8; }
+    .reason-pill.other { background: var(--pill-slate-bg); color: var(--pill-slate-text); border-color: var(--pill-slate-border); }
+
+    /* Action Buttons in Table */
+    .btn-table-action {
+      height: 30px;
+      padding: 0 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1.5px solid var(--border-mid);
+      background: var(--bg-card);
+      color: var(--text-hi);
+      cursor: pointer;
+      transition: all var(--t) var(--ease);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .btn-table-action:hover {
+      background: var(--bg-hover);
+      border-color: var(--text-mid);
+    }
+    .btn-table-action.danger {
+      color: #dc2626;
+      border-color: #fca5a5;
+      background: #fff;
+    }
+    .btn-table-action.danger:hover {
+      background: #fef2f2;
+      border-color: #dc2626;
+      color: #b91c1c;
+    }
+
+    /* Stat Cards */
+    .sa-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .sa-stat-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border-light, #e2e8f0);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sa-stat-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-mid, #64748b);
+      text-transform: uppercase;
+    }
+    .sa-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-hi, #0f172a);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sa-stat-sub {
+      font-size: 12px;
+      color: var(--text-mid, #64748b);
+      margin-top: 2px;
+    }
+
+    /* Modal Overlay */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(18, 19, 43, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      opacity: 0; visibility: hidden;
+      transition: opacity .25s ease, visibility .25s ease;
+    }
+    .modal-backdrop.active {
+      opacity: 1; visibility: visible;
+    }
+    .modal-container {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      width: 100%;
+      max-width: 560px;
+      max-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px -10px rgba(18, 19, 43, 0.25);
+      transform: scale(.95) translateY(10px);
+      transition: transform .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+    }
+    .modal-backdrop.active .modal-container {
+      transform: scale(1) translateY(0);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc; flex-shrink: 0;
+    }
+    .modal-close-btn {
+      width: 32px; height: 32px; border: none; background: transparent;
+      color: #64748b; font-size: 24px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .modal-close-btn:hover {
+      background: #e2e8f0; color: #0f172a;
+    }
+    .modal-body {
+      padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px;
+    }
+    .modal-footer {
+      padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc;
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-shrink: 0;
+    }
+
+    @media (max-width: 860px) {
+      .sa-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .sa-stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Island Header Navigation -->
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge admin" id="settings-role-badge">ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="dashboard.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Dashboard</a>
+          <a href="admin-machines.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Machines</a>
+          <a href="admin-users.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Users</a>
+          <a href="admin-venue-blacklist.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','admin')">Venue Blacklist</a>
+          <a href="austrac-transactions.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">AUSTRAC Reports</a>
+          <a href="billing.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Billing</a>
+          <a href="venue-settings.html" class="nav-link" onclick="sessionStorage.setItem('userRole','admin')">Venue settings</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="super-admin-blacklist.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','superadmin')">&rarr; Switch to Super Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- Main Content Dashboard -->
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      
+      <!-- Hero Intro Section -->
+      <section class="dashboard-intro" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <h1 class="dashboard-title" style="margin-bottom: 0;">Venue Blacklist</h1>
+            <span class="pill fail" style="font-size: 12px; font-weight: 700;">Riverside RSL Club</span>
+          </div>
+          <p class="dashboard-subtitle" style="margin-bottom: 0;">Active patron exclusion register, automated payout barring, and AML compliance oversight for Riverside RSL Club.</p>
+        </div>
+        
+        <div class="actions-group table-actions">
+          <button id="exportCsvBtn" class="btn-action" onclick="exportBlacklistCsv()">
+            <svg class="action-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export Register
+          </button>
+          <button id="addPatronBtn" class="btn-primary" onclick="openAddBlacklistModal()" style="background:#dc2626; border-color:#dc2626;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add to Blacklist
+          </button>
+        </div>
+      </section>
+
+      <!-- Stat Metrics Section -->
+      <section class="sa-stat-grid" aria-label="Venue Blacklist Snapshot">
+        <div class="sa-stat-card">
+          <div class="sa-stat-label">Active Exclusions</div>
+          <div class="sa-stat-value" id="statActiveExclusions" style="color:#dc2626;">-</div>
+          <div class="sa-stat-sub">Automated payouts blocked</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-label">PEP / Sanctions Matches</div>
+          <div class="sa-stat-value" id="statHighRiskExclusions" style="color:#b45309;">-</div>
+          <div class="sa-stat-sub">Elevated AML watch-list hits</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-label">DVS Fraud / Barred</div>
+          <div class="sa-stat-value" id="statFraudExclusions">-</div>
+          <div class="sa-stat-sub">Identity &amp; patron integrity blocks</div>
+        </div>
+        <div class="sa-stat-card">
+          <div class="sa-stat-label">Total Historical Logs</div>
+          <div class="sa-stat-value" id="statTotalAuditLogs" style="color:#0d9488;">-</div>
+          <div class="sa-stat-sub">Audit &amp; clearance records</div>
+        </div>
+      </section>
+
+      <!-- Filters & Actions (Double Bezel Outer) -->
+      <section class="controls-card double-bezel-outer ">
+        <div class="double-bezel-inner controls-inner">
+          <div class="filters-row" style="flex-wrap: wrap; gap: 12px; align-items: center;">
+            <div class="search-wrapper" style="min-width: 260px; flex: 1; max-width: 360px;">
+              <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="blacklistSearchInput" placeholder="Search patron, DOB, ID, ref..." aria-label="Search blacklist" oninput="renderTable()">
+            </div>
+
+            <div class="filters-group" style="width: auto; gap: 10px;">
+              <div class="select-wrapper">
+                <select id="reasonFilter" onchange="renderTable()">
+                  <option value="all">All Reason Categories</option>
+                  <option value="FrankieOne PEP Match">FrankieOne PEP Match</option>
+                  <option value="FrankieOne Sanctions Match">FrankieOne Sanctions Match</option>
+                  <option value="DVS Document Fraud / Fake ID">DVS Document Fraud / Fake ID</option>
+                  <option value="Adverse Media Match">Adverse Media Match</option>
+                  <option value="Self-Exclusion / Venue Barred">Self-Exclusion / Venue Barred</option>
+                  <option value="Patron Misconduct / Barred">Patron Misconduct / Barred</option>
+                </select>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="statusFilter" onchange="renderTable()">
+                  <option value="active">Active Exclusions Only</option>
+                  <option value="all">All Records (incl. Lifted)</option>
+                  <option value="removed">Lifted / Removed Only</option>
+                </select>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+
+            <div class="actions-group" style="margin-left: auto;">
+              <span id="resultsCount" class="results-count">Showing 0 exclusions</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section (Double Bezel Outer) -->
+      <section class="table-card double-bezel-outer " style="margin-top: 18px;">
+        <div class="double-bezel-inner table-inner">
+          <div class="table-responsive">
+            <table class="payouts-table" id="blacklistTable">
+              <thead>
+                <tr>
+                  <th style="width: 20%;">Patron &amp; DOB</th>
+                  <th style="width: 17%;">Document &amp; Ref</th>
+                  <th style="width: 18%;">Reason Category</th>
+                  <th style="width: 10%;">Status</th>
+                  <th style="width: 18%;">Barring Rationale</th>
+                  <th style="width: 11%;">Added By</th>
+                  <th style="width: 6%; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="blacklistTbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Audit Trail Log for Riverside RSL Club -->
+      <section class="controls-card double-bezel-outer " style="margin-top: 24px;">
+        <div class="double-bezel-inner" style="padding: 20px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 700; color: var(--text-hi); margin: 0;">Riverside Exclusion Compliance Audit Trail</h2>
+              <p style="font-size: 13px; color: var(--text-mid); margin: 2px 0 0;">Immutable record of patron barring additions, statutory appeals, and exclusion revocations.</p>
+            </div>
+            <span class="pill pass" style="font-size: 11.5px; font-weight: 700;">AUDIT COMPLIANT</span>
+          </div>
+
+          <div id="auditLogList" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Add to Blacklist Modal -->
+  <div class="modal-backdrop" id="addBlacklistModal" tabindex="-1">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--text-hi);">Add Patron to Venue Blacklist</div>
+          <div style="font-size: 13px; color: var(--text-mid); margin-top: 2px;">Bar patron from automated gaming payouts at Riverside RSL Club</div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeAddBlacklistModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addBlacklistForm" onsubmit="handleAddBlacklist(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 13.5px;">
+            <div style="color: var(--text-mid); font-size: 11.5px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Target Venue</div>
+            <strong style="color: var(--text-hi);">Riverside RSL Club</strong> (Venue ID: venue-riverside-rsl)
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label for="patronNameInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Patron Full Name <span style="color:#dc2626;">*</span></label>
+              <input type="text" id="patronNameInput" placeholder="e.g. STACY K TESTTWENTY" required style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+            </div>
+            <div>
+              <label for="patronDobInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Date of Birth <span style="color:#dc2626;">*</span></label>
+              <input type="text" id="patronDobInput" placeholder="DD/MM/YYYY" required style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label for="docTypeInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Document Type</label>
+              <select id="docTypeInput" style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+                <option value="Passport">Passport</option>
+                <option value="Driver Licence">Driver Licence</option>
+                <option value="Medicare">Medicare</option>
+                <option value="Other">Other / Identity Card</option>
+              </select>
+            </div>
+            <div>
+              <label for="docNumberInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Document Number <span style="color:#dc2626;">*</span></label>
+              <input type="text" id="docNumberInput" placeholder="e.g. PA-BLK-9876" required style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label for="reasonCategoryInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Reason Category <span style="color:#dc2626;">*</span></label>
+              <select id="reasonCategoryInput" required style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+                <option value="FrankieOne PEP Match">FrankieOne PEP Match</option>
+                <option value="FrankieOne Sanctions Match">FrankieOne Sanctions Match</option>
+                <option value="DVS Document Fraud / Fake ID">DVS Document Fraud / Fake ID</option>
+                <option value="Adverse Media Match">Adverse Media Match</option>
+                <option value="Self-Exclusion / Venue Barred">Self-Exclusion / Venue Barred</option>
+                <option value="Patron Misconduct / Barred">Patron Misconduct / Barred</option>
+              </select>
+            </div>
+            <div>
+              <label for="searchRefInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">FrankieOne Case / Ref ID</label>
+              <input type="text" id="searchRefInput" placeholder="e.g. Fr-SCEN-09" style="width: 100%; height: 38px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font-family: inherit; font-size: 13.5px;">
+            </div>
+          </div>
+
+          <div>
+            <label for="notesInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Investigation Notes &amp; Rationale <span style="color:#dc2626;">*</span></label>
+            <textarea id="notesInput" rows="3" placeholder="Provide full audit justification for barring this patron from electronic disbursements..." required style="width: 100%; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13.5px; resize: vertical;"></textarea>
+          </div>
+
+          <div class="modal-footer" style="padding: 14px 0 0; margin-top: 6px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary" style="height: 38px;" onclick="closeAddBlacklistModal()">Cancel</button>
+            <button type="submit" class="btn-primary" style="height: 38px; background: #dc2626; border-color: #dc2626;">Confirm &amp; Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove from Blacklist Modal -->
+  <div class="modal-backdrop" id="removeBlacklistModal" tabindex="-1">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 18px; font-weight: 700; color: #dc2626;">Remove from Venue Blacklist</div>
+          <div style="font-size: 13px; color: var(--text-mid); margin-top: 2px;">Lift active exclusion and restore payout eligibility</div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeRemoveBlacklistModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 14px; color: var(--text-hi); line-height: 1.5; margin: 0 0 14px;">
+          You are lifting the exclusion for <strong id="removePatronName">-</strong> at <strong>Riverside RSL Club</strong>.
+        </p>
+        <form id="removeBlacklistForm" onsubmit="handleRemoveBlacklist(event)" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="hidden" id="removeRecordId">
+          <div>
+            <label for="removalReasonInput" style="font-size: 12.5px; font-weight: 700; color: var(--text-hi); display: block; margin-bottom: 5px;">Removal Justification &amp; Compliance Rationale <span style="color:#dc2626;">*</span></label>
+            <textarea id="removalReasonInput" rows="3" placeholder="State reason for lifting exclusion (e.g. Identity resolution completed, statutory declaration verified, false positive confirmed)..." required style="width: 100%; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13.5px; resize: vertical;"></textarea>
+          </div>
+          <div class="modal-footer" style="padding: 14px 0 0; margin-top: 6px; border-top: 1px solid #e2e8f0;">
+            <button type="button" class="btn-secondary" style="height: 38px;" onclick="closeRemoveBlacklistModal()">Cancel</button>
+            <button type="submit" class="btn-primary" style="height: 38px; background: #dc2626; border-color: #dc2626;">Lift Exclusion</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-backdrop" id="detailModal" tabindex="-1">
+    <div class="modal-container" style="max-width: 540px;">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--text-hi);">Patron Exclusion Details</div>
+          <div id="detailSubtitle" style="font-size: 13px; color: var(--text-mid); margin-top: 2px;">Record Ref: -</div>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closeDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" style="height: 38px;" onclick="closeDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CURRENT_VENUE_NAME = 'Riverside RSL Club';
+
+    function getReasonClass(cat) {
+      if (!cat) return 'other';
+      if (cat.includes('Sanctions')) return 'sanctions';
+      if (cat.includes('PEP')) return 'pep';
+      if (cat.includes('Fraud')) return 'fraud';
+      if (cat.includes('Media')) return 'media';
+      if (cat.includes('Self-Exclusion') || cat.includes('Barred')) return 'self-ex';
+      return 'other';
+    }
+
+    function renderTable() {
+      if (!window.VenueBlacklistService) return;
+      const records = VenueBlacklistService.getVenueRecords(CURRENT_VENUE_NAME);
+      const auditLogs = VenueBlacklistService.getVenueAuditLogs(CURRENT_VENUE_NAME);
+
+      const activeCount = records.filter(r => r.status === 'Active').length;
+      const highRiskCount = records.filter(r => r.status === 'Active' && (r.reasonCategory.includes('PEP') || r.reasonCategory.includes('Sanctions'))).length;
+      const fraudCount = records.filter(r => r.status === 'Active' && (r.reasonCategory.includes('Fraud') || r.reasonCategory.includes('Barred'))).length;
+
+      document.getElementById('statActiveExclusions').textContent = activeCount;
+      document.getElementById('statHighRiskExclusions').textContent = highRiskCount;
+      document.getElementById('statFraudExclusions').textContent = fraudCount;
+      document.getElementById('statTotalAuditLogs').textContent = auditLogs.length;
+
+      const searchQuery = (document.getElementById('blacklistSearchInput').value || '').toLowerCase().trim();
+      const reasonFilter = document.getElementById('reasonFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      const filtered = records.filter(r => {
+        if (statusFilter === 'active' && r.status !== 'Active') return false;
+        if (statusFilter === 'removed' && r.status !== 'Removed') return false;
+        if (reasonFilter !== 'all' && r.reasonCategory !== reasonFilter) return false;
+
+        if (searchQuery) {
+          const matchName = (r.patronName || '').toLowerCase().includes(searchQuery);
+          const matchDob = (r.dob || '').toLowerCase().includes(searchQuery);
+          const matchDoc = (r.docNumber || '').toLowerCase().includes(searchQuery);
+          const matchRef = (r.searchRef || '').toLowerCase().includes(searchQuery);
+          const matchNotes = (r.notes || '').toLowerCase().includes(searchQuery);
+          if (!matchName && !matchDob && !matchDoc && !matchRef && !matchNotes) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('resultsCount').textContent = `Showing ${filtered.length} of ${records.length} exclusions`;
+
+      const tbody = document.getElementById('blacklistTbody');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 36px 16px; color: var(--text-mid);">No blacklist records match the selected filters.</td></tr>`;
+      } else {
+        tbody.innerHTML = filtered.map(r => {
+          const reasonClass = getReasonClass(r.reasonCategory);
+          const isAct = r.status === 'Active';
+          const statusBadge = isAct
+            ? `<span class="pill fail" style="font-size:11.5px; padding:2px 8px;">Active Block</span>`
+            : `<span class="pill pass" style="font-size:11.5px; padding:2px 8px;">Lifted</span>`;
+
+          return `
+            <tr onclick="openDetailModal('${r.id}')">
+              <td>
+                <div class="patron-name-title">${r.patronName}</div>
+                <div class="cell-id-info">DOB: ${r.dob}</div>
+              </td>
+              <td>
+                <div style="font-weight:600; color:var(--text-hi); font-size:13px;">${r.docType || 'ID'}: ${r.docNumber}</div>
+                <div class="cell-id-info">Ref: ${r.searchRef || '—'}</div>
+              </td>
+              <td>
+                <span class="reason-pill ${reasonClass}">${r.reasonCategory}</span>
+              </td>
+              <td>
+                ${statusBadge}
+              </td>
+              <td>
+                <div style="font-size:13px; color:var(--text-hi); line-height:1.4; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.notes || ''}">
+                  ${r.notes || '—'}
+                </div>
+              </td>
+              <td>
+                <div style="font-size:13px; font-weight:600; color:var(--text-hi);">${r.addedBy}</div>
+                <div class="cell-id-info">${r.addedAt}</div>
+              </td>
+              <td style="text-align:right;" onclick="event.stopPropagation();">
+                ${isAct ? `
+                  <button type="button" class="btn-table-action danger" onclick="openRemoveBlacklistModal('${r.id}', '${r.patronName}')">Lift Block</button>
+                ` : `
+                  <button type="button" class="btn-table-action" onclick="openDetailModal('${r.id}')">View Log</button>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const auditContainer = document.getElementById('auditLogList');
+      if (!auditLogs.length) {
+        auditContainer.innerHTML = `<div style="color:var(--text-mid); font-size:13px; padding:12px 0;">No audit events recorded for this venue.</div>`;
+      } else {
+        auditContainer.innerHTML = auditLogs.map(log => {
+          const isAdd = log.action === 'ADDED_TO_BLACKLIST';
+          const icon = isAdd
+            ? `<span style="width:24px; height:24px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; font-weight:700;">+</span>`
+            : `<span style="width:24px; height:24px; border-radius:50%; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; font-weight:700;">✓</span>`;
+
+          return `
+            <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:13.5px;">
+              ${icon}
+              <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="color:var(--text-hi);">${isAdd ? 'Exclusion Created' : 'Exclusion Revoked'} — ${log.patronName}</strong>
+                  <span style="font-size:12px; color:var(--text-mid); font-family:var(--font-mono);">${log.timestamp}</span>
+                </div>
+                <div style="font-size:12.5px; color:var(--text-mid); margin-top:2px;">
+                  Actor: <strong style="color:var(--text-hi);">${log.actor}</strong> (${log.role || 'Admin'}) · Ref: <span style="font-family:var(--font-mono);">${log.frankieRef || log.recordId}</span>
+                </div>
+                <div style="font-size:13px; color:var(--text-hi); margin-top:4px; font-style:italic;">
+                  "${log.notes || 'No statement provided'}"
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function openAddBlacklistModal() {
+      document.getElementById('addBlacklistModal').classList.add('active');
+    }
+    function closeAddBlacklistModal() {
+      document.getElementById('addBlacklistModal').classList.remove('active');
+      document.getElementById('addBlacklistForm').reset();
+    }
+
+    function handleAddBlacklist(e) {
+      e.preventDefault();
+      const name = document.getElementById('patronNameInput').value.trim();
+      const dob = document.getElementById('patronDobInput').value.trim();
+      const docType = document.getElementById('docTypeInput').value;
+      const docNum = document.getElementById('docNumberInput').value.trim();
+      const reason = document.getElementById('reasonCategoryInput').value;
+      const ref = document.getElementById('searchRefInput').value.trim() || `Fr-MAN-${Math.floor(1000 + Math.random()*9000)}`;
+      const notes = document.getElementById('notesInput').value.trim();
+
+      VenueBlacklistService.addBlacklistRecord({
+        venueId: 'venue-riverside-rsl',
+        venueName: CURRENT_VENUE_NAME,
+        patronName: name,
+        dob: dob,
+        docType: docType,
+        docNumber: docNum,
+        reasonCategory: reason,
+        searchRef: ref,
+        notes: notes,
+        addedBy: 'J. Chen',
+        addedRole: 'Venue Admin'
+      });
+
+      closeAddBlacklistModal();
+      renderTable();
+    }
+
+    function openRemoveBlacklistModal(id, name) {
+      document.getElementById('removeRecordId').value = id;
+      document.getElementById('removePatronName').textContent = name;
+      document.getElementById('removeBlacklistModal').classList.add('active');
+    }
+    function closeRemoveBlacklistModal() {
+      document.getElementById('removeBlacklistModal').classList.remove('active');
+      document.getElementById('removeBlacklistForm').reset();
+    }
+
+    function handleRemoveBlacklist(e) {
+      e.preventDefault();
+      const id = document.getElementById('removeRecordId').value;
+      const reason = document.getElementById('removalReasonInput').value.trim();
+
+      VenueBlacklistService.removeBlacklistRecord(id, {
+        reason: reason,
+        actor: 'J. Chen',
+        role: 'Venue Admin'
+      });
+
+      closeRemoveBlacklistModal();
+      renderTable();
+    }
+
+    function openDetailModal(id) {
+      const records = VenueBlacklistService.getVenueRecords(CURRENT_VENUE_NAME);
+      const r = records.find(item => item.id === id);
+      if (!r) return;
+
+      document.getElementById('detailSubtitle').textContent = `Record ID: ${r.id} · Scope: ${r.venueName}`;
+      document.getElementById('detailModalBody').innerHTML = `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">PATRON NAME</span>
+            <strong style="color:var(--text-hi); font-size:14.5px;">${r.patronName}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">DATE OF BIRTH</span>
+            <span style="font-family:var(--font-mono); font-weight:600;">${r.dob}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">DOCUMENT ID</span>
+            <span style="font-family:var(--font-mono); font-weight:600;">${r.docType || 'ID'}: ${r.docNumber}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">FRANKIEONE REF</span>
+            <span style="font-family:var(--font-mono); font-weight:600;">${r.searchRef || '—'}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">CATEGORY</span>
+            <span class="reason-pill ${getReasonClass(r.reasonCategory)}">${r.reasonCategory}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12.5px; color:var(--text-mid); font-weight:700;">STATUS</span>
+            ${r.status === 'Active' ? `<span class="pill fail" style="font-size:11.5px;">Active Block</span>` : `<span class="pill pass" style="font-size:11.5px;">Lifted</span>`}
+          </div>
+        </div>
+
+        <div style="margin-top:6px;">
+          <div style="font-size:12.5px; font-weight:700; color:var(--text-mid); text-transform:uppercase; margin-bottom:4px;">Exclusion Statement / Barring Rationale</div>
+          <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; font-size:13.5px; color:var(--text-hi); line-height:1.5;">
+            ${r.notes || '—'}
+          </div>
+        </div>
+
+        <div style="font-size:12.5px; color:var(--text-mid); margin-top:6px;">
+          Added by <strong>${r.addedBy}</strong> (${r.addedRole || 'Admin'}) on <strong>${r.addedAt}</strong>.
+          ${r.removedAt ? `<br>Revoked by <strong>${r.removedBy}</strong> on <strong>${r.removedAt}</strong>: <em>"${r.removalReason || ''}"</em>` : ''}
+        </div>
+      `;
+
+      document.getElementById('detailModal').classList.add('active');
+    }
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function exportBlacklistCsv() {
+      const records = VenueBlacklistService.getVenueRecords(CURRENT_VENUE_NAME);
+      const headers = ['Record ID', 'Patron Name', 'DOB', 'Doc Type', 'Doc Number', 'Search Ref', 'Reason Category', 'Status', 'Added By', 'Added At', 'Notes'];
+      const rows = records.map(r => [
+        `"${r.id}"`,
+        `"${r.patronName}"`,
+        `"${r.dob}"`,
+        `"${r.docType || 'ID'}"`,
+        `"${r.docNumber}"`,
+        `"${r.searchRef || ''}"`,
+        `"${r.reasonCategory}"`,
+        `"${r.status}"`,
+        `"${r.addedBy}"`,
+        `"${r.addedAt}"`,
+        `"${(r.notes || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `venue_blacklist_${CURRENT_VENUE_NAME.toLowerCase().replace(/\s+/g, '_')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.addEventListener('blacklist:changed', renderTable);
+    document.addEventListener('DOMContentLoaded', renderTable);
+    renderTable();
+  </script>
+</body>
+</html>

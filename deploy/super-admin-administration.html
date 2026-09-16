@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration - Super Admin</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <script src="blacklist-data.js"></script>
+  <link rel="stylesheet" href="super-admin-ui.css">
+</head>
+<body class="super-admin-ui">
+  <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge super-admin" id="settings-role-badge">SUPER ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="super-admin-dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venue Blacklist</a>
+          <a href="super-admin-smr.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="dashboard.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <main class="sa-main">
+    <div class="sa-page-head">
+      <div>
+        <h1>Administration</h1>
+        <p>Configure platform defaults, notification behavior, and review Super Admin activity.</p>
+      </div>
+    </div>
+
+    <section class="sa-section">
+      <div class="sa-section-body">
+        <div class="sa-side-layout">
+          <nav class="sa-side-nav" aria-label="Administration sections">
+            <button class="active" data-tab="settings" type="button">Settings</button>
+            <button data-tab="notifications" type="button">Notifications</button>
+            
+            <button data-tab="audit" type="button">Audit log</button>
+          </nav>
+
+          <div>
+            <!-- Tab 1: Settings -->
+            <div class="sa-tab-panel active" id="tab-settings">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Global settings</h2>
+                  <p>Defaults used when a client or venue has no override.</p>
+                </div>
+              </div>
+
+              <form id="settingsForm">
+                <div class="sa-form-grid">
+                  <div class="sa-field">
+                    <label for="defaultDelay">Default payout delay</label>
+                    <select id="defaultDelay">
+                      <option>24 hours</option>
+                      <option>12 hours</option>
+                      <option>48 hours</option>
+                    </select>
+                  </div>
+
+                  <div class="sa-field">
+                    <label for="defaultApprovers">Required approvers</label>
+                    <select id="defaultApprovers">
+                      <option>2 approvers</option>
+                      <option>1 approver</option>
+                    </select>
+                  </div>
+
+                  <div class="sa-field">
+                    <label for="defaultRisk">High-risk review policy</label>
+                    <select id="defaultRisk">
+                      <option>Require manual review</option>
+                      <option>Allow authoriser review</option>
+                    </select>
+                  </div>
+
+                  <div class="sa-field">
+                    <label for="defaultRetention">Audit retention</label>
+                    <select id="defaultRetention">
+                      <option>7 years</option>
+                      <option>5 years</option>
+                      <option>10 years</option>
+                    </select>
+                  </div>
+
+                  <div class="sa-field full">
+                    <label for="settingsNotes">Platform notes</label>
+                    <textarea id="settingsNotes">All mock settings are stored in this browser session for UI demonstration.</textarea>
+                  </div>
+                </div>
+
+                <div class="sa-actions" style="margin-top:18px;">
+                  <button class="sa-btn sa-btn-primary" type="submit">Save settings</button>
+                </div>
+                <div id="settingsMessage" class="sa-inline-message"></div>
+              </form>
+            </div>
+
+            <!-- Tab 2: Notifications -->
+            <div class="sa-tab-panel" id="tab-notifications">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Notification configuration</h2>
+                  <p>Choose which platform events notify client and venue contacts.</p>
+                </div>
+              </div>
+
+              <div class="sa-table-wrap">
+                <table class="sa-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Recipients</th>
+                      <th>Channel</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <div class="sa-primary-text">Failed payment</div>
+                        <div class="sa-secondary-text">Immediate operational alert</div>
+                      </td>
+                      <td>Super Admin, client billing</td>
+                      <td>Email</td>
+                      <td><span class="sa-status active">Enabled</span></td>
+                      <td><button class="sa-btn sa-btn-secondary notification-btn" type="button">Disable</button></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="sa-primary-text">SMR ready for review</div>
+                        <div class="sa-secondary-text">Compliance workflow update</div>
+                      </td>
+                      <td>Super Admin, venue admin</td>
+                      <td>Email</td>
+                      <td><span class="sa-status active">Enabled</span></td>
+                      <td><button class="sa-btn sa-btn-secondary notification-btn" type="button">Disable</button></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div class="sa-primary-text">Machine inactive</div>
+                        <div class="sa-secondary-text">Operational status update</div>
+                      </td>
+                      <td>Venue admin</td>
+                      <td>Email</td>
+                      <td><span class="sa-status pending">Paused</span></td>
+                      <td><button class="sa-btn sa-btn-secondary notification-btn" type="button">Enable</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab 3: Venue Blacklist (Super Admin Multi-Venue View) -->
+            <div class="sa-tab-panel" id="tab-blacklist">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Venue-specific blacklists</h2>
+                  <p>Centralised oversight of patron exclusions, FrankieOne match origins, and AML barring across all venues.</p>
+                </div>
+                <div class="sa-actions">
+                  <button class="sa-btn sa-btn-secondary" id="exportBlacklistBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export CSV
+                  </button>
+                  <button class="sa-btn sa-btn-primary" id="openAddBlacklistModalBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Blacklist Record
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filter Toolbar -->
+              <div class="sa-toolbar" style="margin-bottom: 20px;">
+                <select id="saBlacklistVenueFilter" class="sa-select" style="min-width: 220px;" aria-label="Filter by venue">
+                  <option value="ALL">All Venues</option>
+                  <option value="Riverside RSL Club">Riverside RSL Club</option>
+                  <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+                  <option value="Northside Leagues Club">Northside Leagues Club</option>
+                  <option value="Harbourview Hotel">Harbourview Hotel</option>
+                </select>
+
+                <select id="saBlacklistStatusFilter" class="sa-select" style="min-width: 150px;" aria-label="Filter by status">
+                  <option value="all">All Statuses</option>
+                  <option value="Active">Active Only</option>
+                  <option value="Removed">Removed Only</option>
+                </select>
+
+                <input type="text" id="saBlacklistSearch" class="sa-input" placeholder="Search patron name, DOB, ID number, FrankieOne ref..." aria-label="Search blacklist">
+              </div>
+
+              <div class="sa-table-wrap">
+                <table class="sa-table">
+                  <thead>
+                    <tr>
+                      <th>Record ID</th>
+                      <th>Venue</th>
+                      <th>Patron Details</th>
+                      <th>FrankieOne Ref</th>
+                      <th>Reason Category</th>
+                      <th>Added By &amp; Date</th>
+                      <th>Status</th>
+                      <th style="text-align: right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="saBlacklistRows">
+                    <!-- Populated via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tab 4: Audit Log -->
+            <div class="sa-tab-panel" id="tab-audit">
+              <div class="sa-section-head" style="padding:0 0 18px;border:0;">
+                <div>
+                  <h2>Audit log &amp; Blacklist tracking</h2>
+                  <p>Immutable record of platform changes, blacklist modifications, and payout risk determinations.</p>
+                </div>
+                <div class="sa-actions">
+                  <select id="auditFilterSelect" class="sa-select" style="min-width: 170px;" onchange="renderAudit()">
+                    <option value="all">All Activities</option>
+                    <option value="blacklist">Blacklist Events Only</option>
+                    <option value="system">System Settings</option>
+                  </select>
+                  <button class="sa-btn sa-btn-secondary" id="exportAuditBtn" type="button">Export log</button>
+                </div>
+              </div>
+
+              <div class="sa-table-wrap">
+                <table class="sa-table">
+                  <thead>
+                    <tr>
+                      <th>Actor &amp; Role</th>
+                      <th>Action Type</th>
+                      <th>Entity / Details</th>
+                      <th>Compliance Notes &amp; FrankieOne Ref</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditRows"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Blacklist Modal (Super Admin) -->
+  <div class="modal-backdrop" id="saAddBlacklistModal" tabindex="-1" style="display:none; position:fixed; inset:0; background:rgba(16,42,67,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; border:1px solid var(--sa-border); box-shadow:0 20px 40px rgba(0,0,0,0.18); width:100%; max-width:560px; padding:24px 28px; max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:1px solid var(--sa-border); padding-bottom:14px;">
+        <h2 style="margin:0; font-size:18px; color:var(--sa-ink);">Add Venue Blacklist Entry</h2>
+        <button type="button" onclick="closeSaAddBlacklistModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--sa-muted);">&times;</button>
+      </div>
+      <form id="saAddBlacklistForm" onsubmit="handleSaAddBlacklist(event)">
+        <div class="sa-form-grid" style="grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="sa-field full">
+            <label for="saNewVenueSelect">Target venue *</label>
+            <select id="saNewVenueSelect" required>
+              <option value="Riverside RSL Club">Riverside RSL Club</option>
+              <option value="Riverside Bowling Club">Riverside Bowling Club</option>
+              <option value="Northside Leagues Club">Northside Leagues Club</option>
+              <option value="Harbourview Hotel">Harbourview Hotel</option>
+            </select>
+          </div>
+          <div class="sa-field full">
+            <label for="saNewPatronName">Patron full name *</label>
+            <input type="text" id="saNewPatronName" placeholder="e.g. JOHNATHAN R DOE" required style="text-transform:uppercase;">
+          </div>
+          <div class="sa-field">
+            <label for="saNewDob">Date of birth</label>
+            <input type="text" id="saNewDob" placeholder="DD/MM/YYYY">
+          </div>
+          <div class="sa-field">
+            <label for="saNewDocType">ID document type</label>
+            <select id="saNewDocType">
+              <option value="Passport">Passport</option>
+              <option value="Driver Licence">Driver Licence</option>
+              <option value="Medicare">Medicare</option>
+              <option value="Other ID">Other ID</option>
+            </select>
+          </div>
+          <div class="sa-field">
+            <label for="saNewDocNumber">ID document number</label>
+            <input type="text" id="saNewDocNumber" placeholder="e.g. PA9812401">
+          </div>
+          <div class="sa-field">
+            <label for="saNewReasonCat">Reason category *</label>
+            <select id="saNewReasonCat" required>
+              <option value="FrankieOne PEP Match">FrankieOne PEP Match</option>
+              <option value="FrankieOne Sanctions Match">FrankieOne Sanctions Match</option>
+              <option value="DVS Document Fraud / Fake ID">DVS Document Fraud / Fake ID</option>
+              <option value="Adverse Media Match">Adverse Media Match</option>
+              <option value="Self-Exclusion / Venue Barred">Self-Exclusion / Venue Barred</option>
+              <option value="Patron Misconduct / Barred">Patron Misconduct / Barred</option>
+            </select>
+          </div>
+          <div class="sa-field full">
+            <label for="saNewFrankieRef">FrankieOne Entity / Search Ref</label>
+            <input type="text" id="saNewFrankieRef" placeholder="e.g. Fr57rftufTKUYTF">
+          </div>
+          <div class="sa-field full">
+            <label for="saNewNotes">Exclusion justification &amp; notes *</label>
+            <textarea id="saNewNotes" rows="3" placeholder="Provide detailed rationale and evidence reference..." required></textarea>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--sa-border); padding-top:16px;">
+          <button type="button" class="sa-btn sa-btn-secondary" onclick="closeSaAddBlacklistModal()">Cancel</button>
+          <button type="submit" class="sa-btn sa-btn-primary">Save Blacklist Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Remove Blacklist Modal (Super Admin) -->
+  <div class="modal-backdrop" id="saRemoveBlacklistModal" tabindex="-1" style="display:none; position:fixed; inset:0; background:rgba(16,42,67,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:10px; border:1px solid var(--sa-border); box-shadow:0 20px 40px rgba(0,0,0,0.18); width:100%; max-width:500px; padding:24px 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--sa-border); padding-bottom:12px;">
+        <h2 style="margin:0; font-size:18px; color:var(--sa-red);">Remove from Venue Blacklist</h2>
+        <button type="button" onclick="closeSaRemoveBlacklistModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--sa-muted);">&times;</button>
+      </div>
+      <p style="font-size:13.5px; color:var(--sa-muted); margin-bottom:14px;">
+        You are about to remove <strong id="saRemovePatronName" style="color:var(--sa-ink);">-</strong> from the blacklist at <span id="saRemoveVenueName" style="font-weight:700;">-</span>.
+      </p>
+      <form id="saRemoveBlacklistForm" onsubmit="handleSaRemoveBlacklist(event)">
+        <input type="hidden" id="saRemoveRecordId">
+        <div class="sa-field">
+          <label for="saRemovalReason">Removal rationale &amp; statutory justification *</label>
+          <textarea id="saRemovalReason" rows="3" placeholder="State reasons for lifting the venue barring (e.g. Identity verified via statutory appeal, court discharge, mistaken identity)..." required></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--sa-border); padding-top:14px;">
+          <button type="button" class="sa-btn sa-btn-secondary" onclick="closeSaRemoveBlacklistModal()">Cancel</button>
+          <button type="submit" class="sa-btn sa-btn-danger">Confirm Removal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="super-admin-mock-data.js"></script>
+  <script>
+    const tabs = document.querySelectorAll('[data-tab]');
+    tabs.forEach(button => button.addEventListener('click', () => {
+      tabs.forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.sa-tab-panel').forEach(item => item.classList.remove('active'));
+      button.classList.add('active');
+      document.getElementById(`tab-${button.dataset.tab}`).classList.add('active');
+      history.replaceState(null, '', `#${button.dataset.tab}`);
+      if (button.dataset.tab === 'blacklist') renderSaBlacklist();
+      if (button.dataset.tab === 'audit') renderAudit();
+    }));
+
+    const requestedTab = location.hash.replace('#', '');
+    if (requestedTab && document.querySelector(`[data-tab="${requestedTab}"]`)) {
+      document.querySelector(`[data-tab="${requestedTab}"]`).click();
+    }
+
+    document.getElementById('settingsForm').addEventListener('submit', event => {
+      event.preventDefault();
+      SuperAdminData.audit('Updated global settings', 'Platform defaults');
+      document.getElementById('settingsMessage').textContent = 'Settings saved for this browser session.';
+    });
+
+    document.querySelectorAll('.notification-btn').forEach(button => button.addEventListener('click', () => {
+      button.textContent = button.textContent === 'Enable' ? 'Disable' : 'Enable';
+      const status = button.closest('tr').querySelector('.sa-status');
+      status.textContent = button.textContent === 'Enable' ? 'Paused' : 'Enabled';
+      status.className = `sa-status ${button.textContent === 'Enable' ? 'pending' : 'active'}`;
+      SuperAdminData.audit('Changed notification setting', button.closest('tr').querySelector('.sa-primary-text').textContent);
+    }));
+
+    // --- Blacklist Management Logic ---
+    function renderSaBlacklist() {
+      if (!window.VenueBlacklistService) return;
+      const venueFilter = document.getElementById('saBlacklistVenueFilter').value;
+      const statusFilter = document.getElementById('saBlacklistStatusFilter').value;
+      const search = (document.getElementById('saBlacklistSearch').value || '').toLowerCase().trim();
+
+      const records = VenueBlacklistService.getRecordsByVenue(venueFilter, statusFilter);
+      const filtered = records.filter(r => {
+        if (!search) return true;
+        return (
+          r.patronName.toLowerCase().includes(search) ||
+          r.id.toLowerCase().includes(search) ||
+          (r.docNumber && r.docNumber.toLowerCase().includes(search)) ||
+          (r.searchRef && r.searchRef.toLowerCase().includes(search)) ||
+          (r.reasonCategory && r.reasonCategory.toLowerCase().includes(search))
+        );
+      });
+
+      const tbody = document.getElementById('saBlacklistRows');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="sa-empty">No blacklist records found for the selected venue and filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const isActive = r.status === 'Active';
+        return `
+          <tr>
+            <td class="sa-mono" style="font-weight:700; color:var(--sa-ink);">${r.id}</td>
+            <td>
+              <div class="sa-primary-text">${SuperAdminData.escapeHtml(r.venueName)}</div>
+            </td>
+            <td>
+              <div class="sa-primary-text">${SuperAdminData.escapeHtml(r.patronName)}</div>
+              <div class="sa-secondary-text">DOB: ${r.dob} · ${r.docType || 'ID'}: ${r.docNumber || '-'}</div>
+            </td>
+            <td>
+              <div class="sa-mono" style="font-size:12px; color:var(--sa-ink);">${SuperAdminData.escapeHtml(r.searchRef || r.frankieEntityId || '-')}</div>
+            </td>
+            <td>
+              <span class="sa-status ${isActive ? 'required' : 'pending'}" style="font-size:11px;">
+                ${SuperAdminData.escapeHtml(r.reasonCategory)}
+              </span>
+              <div class="sa-secondary-text" style="max-width:240px; white-space:normal; line-height:1.3; margin-top:4px;">
+                ${SuperAdminData.escapeHtml(r.notes)}
+              </div>
+            </td>
+            <td>
+              <div class="sa-primary-text" style="font-size:12.5px;">${SuperAdminData.escapeHtml(r.addedBy)} <span style="font-size:11px; color:var(--sa-muted);">(${r.addedRole})</span></div>
+              <div class="sa-secondary-text">${r.addedAt}</div>
+            </td>
+            <td>
+              <span class="sa-status ${isActive ? 'required' : 'inactive'}">
+                ${isActive ? 'Active' : 'Removed'}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              ${isActive ? `
+                <button class="sa-btn sa-btn-danger" style="min-height:30px; padding:0 10px; font-size:12px;" onclick="openSaRemoveBlacklistModal('${r.id}')">
+                  Remove
+                </button>
+              ` : `
+                <span class="sa-secondary-text" style="font-size:11px;">Removed on ${r.removedAt || '-'}</span>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('saBlacklistVenueFilter')?.addEventListener('change', renderSaBlacklist);
+    document.getElementById('saBlacklistStatusFilter')?.addEventListener('change', renderSaBlacklist);
+    document.getElementById('saBlacklistSearch')?.addEventListener('input', renderSaBlacklist);
+
+    document.getElementById('openAddBlacklistModalBtn')?.addEventListener('click', () => {
+      document.getElementById('saAddBlacklistModal').style.display = 'flex';
+    });
+
+    function closeSaAddBlacklistModal() {
+      document.getElementById('saAddBlacklistModal').style.display = 'none';
+      document.getElementById('saAddBlacklistForm').reset();
+    }
+
+    function handleSaAddBlacklist(e) {
+      e.preventDefault();
+      const venueName = document.getElementById('saNewVenueSelect').value;
+      const venueMap = {
+        'Riverside RSL Club': 'venue-riverside-rsl',
+        'Riverside Bowling Club': 'venue-riverside-bowling',
+        'Northside Leagues Club': 'venue-northside-leagues',
+        'Harbourview Hotel': 'venue-harbourview-hotel'
+      };
+
+      const record = VenueBlacklistService.addBlacklistRecord({
+        venueId: venueMap[venueName] || 'venue-riverside-rsl',
+        venueName: venueName,
+        patronName: document.getElementById('saNewPatronName').value,
+        dob: document.getElementById('saNewDob').value || '-',
+        docType: document.getElementById('saNewDocType').value,
+        docNumber: document.getElementById('saNewDocNumber').value || '-',
+        reasonCategory: document.getElementById('saNewReasonCat').value,
+        searchRef: document.getElementById('saNewFrankieRef').value || '',
+        notes: document.getElementById('saNewNotes').value,
+        actor: 'J. Chen',
+        role: 'Super Admin'
+      });
+
+      closeSaAddBlacklistModal();
+      renderSaBlacklist();
+      renderAudit();
+      SuperAdminData.toast(`Added ${record.patronName} to ${record.venueName} blacklist.`);
+    }
+
+    function openSaRemoveBlacklistModal(recordId) {
+      const records = VenueBlacklistService.readRecords();
+      const rec = records.find(r => r.id === recordId);
+      if (!rec) return;
+      document.getElementById('saRemoveRecordId').value = rec.id;
+      document.getElementById('saRemovePatronName').textContent = rec.patronName;
+      document.getElementById('saRemoveVenueName').textContent = rec.venueName;
+      document.getElementById('saRemoveBlacklistModal').style.display = 'flex';
+    }
+
+    function closeSaRemoveBlacklistModal() {
+      document.getElementById('saRemoveBlacklistModal').style.display = 'none';
+      document.getElementById('saRemoveBlacklistForm').reset();
+    }
+
+    function handleSaRemoveBlacklist(e) {
+      e.preventDefault();
+      const recordId = document.getElementById('saRemoveRecordId').value;
+      const reason = document.getElementById('saRemovalReason').value;
+
+      const updated = VenueBlacklistService.removeBlacklistRecord(recordId, {
+        reason: reason,
+        actor: 'J. Chen',
+        role: 'Super Admin'
+      });
+
+      closeSaRemoveBlacklistModal();
+      renderSaBlacklist();
+      renderAudit();
+      SuperAdminData.toast(`Removed ${updated.patronName} from blacklist.`);
+    }
+
+    document.getElementById('exportBlacklistBtn')?.addEventListener('click', () => {
+      const venue = document.getElementById('saBlacklistVenueFilter').value;
+      VenueBlacklistService.exportCSV(venue);
+    });
+
+    // --- Unified Audit Log Logic ---
+    function renderAudit() {
+      const filterType = document.getElementById('auditFilterSelect')?.value || 'all';
+      const systemEvents = (JSON.parse(sessionStorage.getItem('superAdminAuditLog') || '[]')).map(item => ({
+        actor: item.actor,
+        role: 'Super Admin',
+        action: item.action,
+        entity: item.entity,
+        notes: 'Platform configuration update',
+        time: item.time,
+        isBlacklist: false
+      }));
+
+      const blacklistLogs = window.VenueBlacklistService ? window.VenueBlacklistService.readAuditLog().map(item => ({
+        actor: item.actor,
+        role: item.role || 'Staff',
+        action: item.action === 'ADDED_TO_BLACKLIST' ? 'Added to Venue Blacklist' : (item.action === 'REMOVED_FROM_BLACKLIST' ? 'Removed from Blacklist' : item.action),
+        entity: `${item.patronName} (${item.venueName})`,
+        notes: item.notes + (item.frankieRef ? ` [FrankieOne: ${item.frankieRef}]` : ''),
+        time: item.timestamp,
+        isBlacklist: true
+      })) : [];
+
+      let combined = [];
+      if (filterType === 'blacklist') {
+        combined = blacklistLogs;
+      } else if (filterType === 'system') {
+        combined = systemEvents;
+      } else {
+        combined = [...blacklistLogs, ...systemEvents];
+      }
+
+      const tbody = document.getElementById('auditRows');
+      if (!combined.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="sa-empty">No audit events recorded.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = combined.map(item => `
+        <tr>
+          <td>
+            <div class="sa-primary-text">${SuperAdminData.escapeHtml(item.actor)}</div>
+            <div class="sa-secondary-text">${SuperAdminData.escapeHtml(item.role)}</div>
+          </td>
+          <td>
+            <span class="sa-status ${item.isBlacklist ? (item.action.includes('Removed') ? 'pending' : 'required') : 'active'}" style="font-size:11px;">
+              ${SuperAdminData.escapeHtml(item.action)}
+            </span>
+          </td>
+          <td>
+            <div class="sa-primary-text" style="font-size:13px;">${SuperAdminData.escapeHtml(item.entity)}</div>
+          </td>
+          <td>
+            <div class="sa-secondary-text" style="max-width:320px; white-space:normal; line-height:1.35; color:var(--sa-ink);">
+              ${SuperAdminData.escapeHtml(item.notes)}
+            </div>
+          </td>
+          <td class="sa-mono" style="font-size:12px; color:var(--sa-muted);">${SuperAdminData.escapeHtml(item.time)}</td>
+        </tr>
+      `).join('');
+    }
+    renderAudit();
+    renderSaBlacklist();
+
+    document.addEventListener('superadmin:toast', event => {
+      const toast = document.createElement('div');
+      toast.className = 'sa-toast';
+      toast.textContent = event.detail.message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2400);
+    });
+
+    document.getElementById('exportAuditBtn').addEventListener('click', () => {
+      SuperAdminData.toast('Audit CSV export prepared.');
+    });
+  </script>
+  <script src="dashboard-app.js"></script>
+</body>
+</html>

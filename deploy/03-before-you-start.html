@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Before you begin</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --field-border:#e2e8f0;
+    --text-primary:#1a202c;
+    --text-secondary:#718096;
+    --brand:#0d9488;
+    --accent:#0d9488;
+    --accent-hover:#0b7a6f;
+    --icon-bg:#f8f9fa;
+    --radius:6px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:36px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+    position:relative;
+  }
+  .close-btn{
+    position:absolute;
+    top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary);
+    padding:6px;
+    border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  /* Stepper */
+  .stepper{ width:220px; flex-shrink:0; padding:4px 0; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:24px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#dcdcdc;
+  }
+  .step.done::before{ background:#a8a8a8; }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #cccccc; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-dot svg{display:none;}
+  .step.active .step-dot{
+    border-width:3px;
+    border-color:var(--text-primary);
+    background:#fff;
+  }
+  .step.done .step-dot{
+    border-color:#6b6b6b;
+    background:#6b6b6b;
+  }
+  .step.done .step-dot svg{display:block; color:#fff;}
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:500; }
+  .step.active .step-label{ color:var(--text-primary); font-weight:700; }
+  .step.clickable{ cursor:pointer; }
+  .step.clickable:hover .step-label{ text-decoration:underline; }
+  .step.clickable:focus-visible{ outline:3.5px solid #333333; outline-offset:2px; border-radius:4px; }
+
+  .stepper-toggle-btn{
+    display:none; align-items:flex-end; justify-content:center;
+    width:36px; height:36px; margin-left:auto; flex-shrink:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-toggle-btn svg{ display:block; }
+  .stepper-toggle-btn:hover{ background:#e2e3ea; }
+  .stepper-close-btn{
+    display:none; align-items:center; justify-content:center;
+    width:32px; height:32px; margin:0 0 16px auto;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary); border-radius:8px;
+  }
+  .stepper-close-btn:hover{ background:#e2e3ea; }
+  .stepper-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(20,20,40,0.35);
+    z-index:150;
+  }
+  .stepper-backdrop.open{ display:block; }
+
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  .title-row{ display:flex; align-items:flex-end; gap:16px; margin:0 0 6px; }
+  h1{ font-size:23px; font-weight: 700; color:var(--text-primary); line-height:1; margin:0; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:var(--radius);
+    padding:24px 26px;
+  }
+  .subhead{ font-size:15.5px; color:var(--text-secondary); margin:0 0 28px; }
+
+  .req-group{ margin-bottom:28px; }
+  .req-group-title{
+    font-size:13.5px; font-weight:700; 
+    letter-spacing:.06em; color:var(--text-secondary);
+    margin:0 0 12px;
+  }
+  .req-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .req-item{ display:flex; align-items:flex-start; gap:12px; }
+  .req-item::before{
+    content:'';
+    width:5px; height:5px; border-radius:50%;
+    background:var(--text-secondary);
+    flex-shrink:0;
+    margin-top:9px;
+  }
+  .req-text{ font-size:16px; color:var(--text-primary); line-height:1.5; }
+
+  .btn-primary-wrap{ display:flex; margin-top:8px; }
+  
+  .btn-primary:hover{ background:var(--accent-hover); }
+  .btn-primary:active{ background:#095e56; }
+  .btn-primary:focus-visible, .close-btn:focus-visible{
+    outline:3.5px solid #333333; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+
+    .stepper-toggle-btn{ display:flex; }
+    .stepper-close-btn{ display:flex; }
+    .stepper{
+      position:fixed; top:0; right:0; height:100%; width:min(300px, 85vw);
+      background:#fff; z-index:200; padding:24px 20px;
+      overflow-y:auto; box-shadow:-8px 0 24px rgba(0,0,0,0.15);
+      transform:translateX(100%); transition:transform .25s ease;
+    }
+    .stepper.open{ transform:translateX(0); }
+  }
+
+  /* Tablet: keep the side stepper, but give it less room and tighten spacing
+     so the form isn't squeezed into a narrow leftover column. */
+  @media (min-width:721px) and (max-width:1024px){
+    .app{max-width:760px; gap:32px; padding:28px 20px 56px;}
+    .stepper{width:170px;}
+  }
+
+  /* Desktop */
+  @media (min-width:1025px){
+    :root{
+      --gap-lg:26px;
+    }
+    .app{max-width:920px;}
+    
+  }
+
+/* STANDARDIZED UI STYLES */
+:root {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --surface: #ffffff;
+  --t1: #0f172a;
+  --t2: #334155;
+  --tm: #475569;
+  --bd: #e2e8f0;
+  --ok: #059669; --ok-bg: #ecfdf5; --ok-b: #a7f3d0;
+  --wn: #b45309; --wn-bg: #fffbeb; --wn-b: #fde68a;
+  --er: #e53e3e; --er-bg: #fff5f5; --er-b: #fed7d7;
+  --in: #3182ce; --in-bg: #ebf8ff; --in-b: #bee3f8;
+}
+
+/* BUTTONS */
+.btn-primary {
+  height: 44px; padding: 0 28px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #0d9488; color: #fff; border: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover:not(:disabled) { background: #0b7a6f; }
+.btn-primary.danger { background: #ef4444; }
+.btn-primary.danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-secondary {
+  height: 44px; padding: 0 26px; border-radius: 6px; font-size: 17px; font-weight: 700;
+  cursor: pointer; background: #fff; border: 1px solid #e2e8f0; color: #1a202c;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover { background: #f4f4f4; border-color: #e2e8f0; }
+.btn-secondary.danger { border-color: #fca5a5; color: #ef4444; }
+.btn-secondary.danger:hover { background: #fef2f2; border-color: #f87171; }
+
+.btn-action-req {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 20px; border-radius: 6px; font-size: 15.5px; font-weight: 700;
+  border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease;
+}
+.btn-action-req.warn { color: var(--wn); background: transparent; border-color: var(--wn); }
+.btn-action-req.warn:hover { background: var(--wn-bg); }
+.btn-action-req.pass { color: var(--ok); background: transparent; border-color: var(--ok); }
+.btn-action-req.pass:hover { background: var(--ok-bg); }
+.btn-action-req.fail { color: var(--er); background: transparent; border-color: var(--er); }
+.btn-action-req.fail:hover { background: var(--er-bg); }
+
+/* PILLS */
+.pill {
+  font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  display: inline-block; white-space: nowrap;
+}
+.pill.pass { color: var(--ok); background: var(--ok-bg); border: 1px solid var(--ok-b); }
+.pill.fail { color: var(--er); background: var(--er-bg); border: 1px solid var(--er-b); }
+.pill.warn { color: var(--wn); background: var(--wn-bg); border: 1px solid var(--wn-b); }
+.pill.neutral { color: var(--t2); background: #f1f5f9; border: 1px solid var(--bd); }
+
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px;
+  border-radius: 20px; font-size: 15.5px; font-weight: 700;
+  background: var(--in-bg); color: var(--in); border: 1.5px solid var(--in-b);
+}
+.status-pill .sdot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--in);
+  animation: pulse 2s infinite;
+}
+
+/* MISMATCH BOX */
+.id-mismatch-box {
+  background: transparent; border: 1.5px solid var(--wn-b);
+  border-radius: 8px; padding: 16px 18px; margin-bottom: 18px;
+}
+/* END STANDARDIZED UI STYLES */
+
+</style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps" id="stepperNav">
+    <button type="button" class="stepper-close-btn" id="stepperCloseBtn" aria-label="Close steps">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New payout details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment breakdown</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Email address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+  </nav>
+  <div class="stepper-backdrop" id="stepperBackdrop"></div>
+
+  <main class="main">
+    <div class="title-row" id="titleRow">
+      <h1>Before you begin</h1>
+      <button type="button" class="stepper-toggle-btn" id="stepperToggleBtn" aria-label="Show steps" aria-expanded="false" aria-controls="stepperNav">
+          <svg width="17" height="17" viewBox="3 5 18 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+    <p class="subhead">This takes about 5 minutes to complete.</p>
+
+    <div class="content-card">
+    <div class="req-group">
+      <p class="req-group-title">What you'll need</p>
+      <ul class="req-list">
+        <li class="req-item">
+          <div class="req-text">A valid email address</div>
+        </li>
+        <li class="req-item">
+          <div class="req-text">Australian Driver licence, or Passport</div>
+        </li>
+        <li class="req-item">
+          <div class="req-text">Your bank account details, for the transfer portion of your payout</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="req-group">
+      <p class="req-group-title">Eligibility</p>
+      <ul class="req-list">
+        <li class="req-item">
+          <div class="req-text">You must be 18 years or older</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="btn-primary-wrap">
+      <button type="button" class="btn-primary">Get started</button>
+    </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  document.querySelector('.btn-primary').addEventListener('click', ()=>{
+    window.location.href = '04-email-address.html';
+  });
+
+  // ---- mobile step drawer ----
+  (function initStepperDrawer(){
+    const stepperNav = document.querySelector('.stepper');
+    const toggleBtn = document.getElementById('stepperToggleBtn');
+    const backdrop = document.getElementById('stepperBackdrop');
+    const closeBtn = document.getElementById('stepperCloseBtn');
+    if(!toggleBtn || !stepperNav || !backdrop) return;
+    function openDrawer(){
+      stepperNav.classList.add('open');
+      backdrop.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer(){
+      stepperNav.classList.remove('open');
+      backdrop.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', ()=>{
+      stepperNav.classList.contains('open') ? closeDrawer() : openDrawer();
+    });
+    backdrop.addEventListener('click', closeDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape') closeDrawer();
+    });
+  })();
+
+  // ---- clickable stepper: revisit any completed step ----
+  (function initClickableSteps(){
+    const stepTargets = {
+      'New payout details': '01-new-payout-details.html',
+      'Payment breakdown': '02-payment-breakdown.html',
+      'Email address': '04-email-address.html',
+      'Primary ID': '05-primary-id-document.html',
+      'Secondary ID (optional)': '10-secondary-id-landing.html',
+      'Bank account': '12-bank-account.html',
+      'Summary': '13-summary.html'
+    };
+    document.querySelectorAll('.stepper > .step.done').forEach(step=>{
+      const labelEl = step.querySelector('.step-label');
+      if(!labelEl) return;
+      const target = stepTargets[labelEl.textContent.trim()];
+      if(!target) return;
+      step.classList.add('clickable');
+      step.setAttribute('role','link');
+      step.setAttribute('tabindex','0');
+      step.addEventListener('click', ()=>{ window.location.href = target; });
+      step.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); window.location.href = target; }
+      });
+    });
+  })();
+</script>
+
+
+<!-- PEP & Sanctions Base Modal CSS -->
+<style>
+.modal-backdrop {
+  background: rgba(18, 19, 43, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop.show .modal-container,
+.modal-backdrop.active .modal-container {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active {
+  opacity: 1;
+  visibility: visible;
+}
+.modal-backdrop#cancelConfirmModal .cancel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.2s ease;
+}
+.modal-backdrop#cancelConfirmModal.active .cancel-card {
+  transform: scale(1) translateY(0);
+}
+.modal-backdrop#cancelConfirmModal .cancel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop#cancelConfirmModal .cancel-close-btn:hover {
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .cancel-body {
+  font-size: 15px;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.modal-backdrop#cancelConfirmModal .cancel-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-keep:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-backdrop#cancelConfirmModal .btn-confirm-cancel:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+</style>
+
+<!-- Cancel Confirmation Modal (theme.minimal) -->
+<div class="modal-backdrop" id="cancelConfirmModal" onclick="if(event.target===this)closeCancelConfirmModal()">
+  <div class="cancel-card">
+    <div class="cancel-header">
+      <div class="cancel-title">Cancel payout</div>
+      <button type="button" class="cancel-close-btn" onclick="closeCancelConfirmModal()" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="cancel-body">
+      Are you sure you want to cancel this payout? Any unsaved changes will be lost.
+    </div>
+    <div class="cancel-footer">
+      <button type="button" class="btn-keep" onclick="closeCancelConfirmModal()">Keep payout</button>
+      <button type="button" class="btn-confirm-cancel" onclick="executeCancel()">Cancel payout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.add('active');
+  }
+  function closeCancelConfirmModal() {
+    var m = document.getElementById('cancelConfirmModal');
+    if (m) m.classList.remove('active');
+  }
+  function executeCancel() {
+    closeCancelConfirmModal();
+    alert('Payout has been cancelled.');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCancelConfirmModal();
+  });
+</script>
+
+</body>
+</html>

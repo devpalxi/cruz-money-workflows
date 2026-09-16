@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin - All Venues</title>
+  <link rel="stylesheet" href="dashboard-style.css">
+  <script src="admin-shell.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .super-admin-main {
+      padding: 32px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 26px;
+      flex-wrap: wrap;
+    }
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+      font-family: var(--font-display, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+    }
+    .page-sub {
+      font-size: 14px;
+      color: var(--t2, #334155);
+      margin: 6px 0 0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .search-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid var(--bd, #e2e8f0);
+      background: var(--panel, #ffffff);
+      max-width: 320px;
+      flex: 1;
+    }
+    .search-field svg { color: var(--tm, #475569); flex-shrink: 0; }
+    .search-field input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--t1, #0f172a);
+      width: 100%;
+    }
+    .content-card {
+      background: var(--panel, #ffffff);
+      border: 1px solid var(--bd, #e2e8f0);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead th {
+      text-align: left;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--tm, #475569);
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--bd, #e2e8f0);
+      background: #fafafa;
+      box-sizing: border-box;
+    }
+    thead th.col-center,
+    tbody td.col-center {
+      text-align: center !important;
+    }
+    tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    tbody tr:hover {
+      background: var(--blue-light, #f0fdfa);
+    }
+    tbody tr + tr td { border-top: 1px solid var(--bd, #e2e8f0); }
+    tbody td { padding: 16px 20px; font-size: 14.5px; vertical-align: middle; }
+    .venue-name { font-weight: 700; color: var(--t1, #0f172a); }
+    .venue-org { color: var(--tm, #475569); font-size: 13px; }
+    .tabular { font-variant-numeric: tabular-nums; }
+    .empty-state { text-align: center; padding: 56px 20px; color: var(--tm, #475569); font-size: 14.5px; display: none; }
+    
+    @media (prefers-reduced-motion: reduce) {
+      tbody tr { transition: none; }
+    }
+    
+    @media (max-width: 768px) {
+      .table-responsive {
+        overflow-x: auto;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      thead { display: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      tbody tr { padding: 14px 16px; position: relative; }
+      tbody tr + tr { border-top: 1px solid var(--bd, #e2e8f0); }
+      tbody td { padding: 2px 0; border: none !important; }
+      .venue-org { margin-bottom: 6px; }
+      .num-col { text-align: left; }
+      /* Hide numeric columns on mobile */
+      .col-hide-mobile { display: none; }
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--r-pill, 6px);
+    }
+    .status-badge.active {
+      background: var(--green-bg, #ecfdf5);
+      color: var(--green-text, #065f46);
+      border: 1px solid var(--green-border, #6ee7b7);
+    }
+    .status-badge.draft {
+      background: var(--amber-bg, #fffbeb);
+      color: var(--amber-text, #78350f);
+      border: 1px solid var(--amber-border, #fcd34d);
+    }
+    .status-badge.inactive {
+      background: var(--red-bg, #fef2f2);
+      color: var(--red-text, #991b1b);
+      border: 1px solid var(--red-border, #fca5a5);
+    }
+  </style>
+  <link rel="stylesheet" href="pill-colors.css">
+</head>
+<body>
+      <div class="header-nav-wrapper">
+    <header class="app-header">
+      <div class="header-container">
+        <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="logo-area">
+          <div class="logo-text">
+            <div class="logo-badge-row">
+              <span class="role-badge super-admin" id="settings-role-badge">SUPER ADMIN</span>
+            </div>
+            <span class="logo-title">RIVERSIDE PAYOUTS</span>
+            <span class="logo-subtitle">COMPLIANCE &amp; AML DATABASE</span>
+          </div>
+        </div>
+
+        <nav class="header-nav" id="settings-admin-nav">
+          <a href="super-admin-dashboard.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Dashboard</a>
+          <a href="super-admin.html" class="nav-link active" onclick="sessionStorage.setItem('userRole','superadmin')">Venues</a>
+          <a href="super-admin-clients.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Clients</a>
+          <a href="admin-machines.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Machines</a>
+          <a href="admin-users.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Users</a>
+          <a href="super-admin-payouts.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Payouts</a>
+          <a href="super-admin-blacklist.html" class="nav-link" onclick="sessionStorage.setItem('userRole','superadmin')">Venue Blacklist</a>
+          <a href="super-admin-smr.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">AUSTRAC / SMRs</a>
+          <a href="billing.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Billing</a>
+          <a href="super-admin-administration.html" class="nav-link " onclick="sessionStorage.setItem('userRole','superadmin')">Administration</a>
+        </nav>
+
+        <div class="user-profile">
+          <a href="dashboard.html" class="switch-role-link" id="settings-switch-link" onclick="sessionStorage.setItem('userRole','admin')">&rarr; Switch to Admin</a>
+          <span class="user-name">J.Chen</span>
+          <div class="avatar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+  
+  <main class="super-admin-main">
+    <div class="page-header">
+      <div>
+        <h1>All Venues</h1>
+        <p class="page-sub">Command centre for all venues across the system.</p>
+      </div>
+      <a class="btn-primary" href="super-admin-venue.html?mode=create" style="text-decoration: none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New venue
+      </a>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-field">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search venues..." />
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="table-responsive">
+        <table>
+          <colgroup>
+            <col style="width: 32%;">
+            <col style="width: 16%;">
+            <col style="width: 16%;">
+            <col style="width: 18%;">
+            <col style="width: 18%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Venue</th>
+              <th class="col-center">Status</th>
+              <th class="col-center">Transactions</th>
+              <th class="col-center">Total volume</th>
+              <th class="col-center">Last activity</th>
+            </tr>
+          </thead>
+          <tbody id="venueRows">
+            <tr data-name="Riverside RSL Club" data-org="Riverside Leagues Ltd" data-status="active" onclick="openVenuePage(event, this, 'view')">
+              <td>
+                <div class="venue-name">Riverside RSL Club</div>
+                <div class="venue-org">Riverside Leagues Ltd</div>
+              </td>
+              <td class="col-center"><span class="status-badge active">Active</span></td>
+              <td class="col-center tabular col-hide-mobile">84</td>
+              <td class="col-center tabular col-hide-mobile">$145,300</td>
+              <td class="col-center col-hide-mobile">13/07/2026</td>
+            </tr>
+            <tr data-name="Northside Leagues Club" data-org="Northside Community Club" data-status="active" onclick="openVenuePage(event, this, 'view')">
+              <td>
+                <div class="venue-name">Northside Leagues Club</div>
+                <div class="venue-org">Northside Community Club</div>
+              </td>
+              <td class="col-center"><span class="status-badge active">Active</span></td>
+              <td class="col-center tabular col-hide-mobile">12</td>
+              <td class="col-center tabular col-hide-mobile">$12,450</td>
+              <td class="col-center col-hide-mobile">30/07/2026</td>
+            </tr>
+            <tr data-name="Harbourview Hotel" data-org="Harbourview Hospitality Group" data-status="active" onclick="openVenuePage(event, this, 'view')">
+              <td>
+                <div class="venue-name">Harbourview Hotel</div>
+                <div class="venue-org">Harbourview Hospitality Group</div>
+              </td>
+              <td class="col-center"><span class="status-badge active">Active</span></td>
+              <td class="col-center tabular col-hide-mobile">45</td>
+              <td class="col-center tabular col-hide-mobile">$67,290</td>
+              <td class="col-center col-hide-mobile">02/08/2026</td>
+            </tr>
+            <tr data-name="Riverside Grand Bistro" data-org="Riverside Dining" data-status="active" onclick="openVenuePage(event, this, 'view')">
+              <td>
+                <div class="venue-name">Riverside Grand Bistro</div>
+                <div class="venue-org">Riverside Dining</div>
+              </td>
+              <td class="col-center"><span class="status-badge active">Active</span></td>
+              <td class="col-center tabular col-hide-mobile">8</td>
+              <td class="col-center tabular col-hide-mobile">$3,200</td>
+              <td class="col-center col-hide-mobile">10/07/2026</td>
+            </tr>
+            <tr data-name="Riverside Lounge & Bar" data-org="Riverside Entertainment" data-status="draft" onclick="openVenuePage(event, this, 'view')">
+              <td>
+                <div class="venue-name">Riverside Lounge & Bar</div>
+                <div class="venue-org">Riverside Entertainment</div>
+              </td>
+              <td class="col-center"><span class="status-badge draft">Draft</span></td>
+              <td class="col-center tabular col-hide-mobile">0</td>
+              <td class="col-center tabular col-hide-mobile">$0</td>
+              <td class="col-center col-hide-mobile">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState">No venues match your search.</div>
+    </div>
+  </main>
+  
+  <script src="dashboard-app.js"></script>
+  <script src="super-admin-mock-data.js"></script>
+  <script>
+    const tbody = document.getElementById('venueRows');
+
+    function renderVenueRows() {
+      if (!window.SuperAdminData) return;
+      const data = SuperAdminData.read();
+      tbody.innerHTML = data.venues.map(venue => `
+        <tr data-name="${SuperAdminData.escapeHtml(venue.name)}" data-org="${SuperAdminData.escapeHtml(SuperAdminData.clientName(venue.clientId, data))}" data-status="${SuperAdminData.statusClass(venue.status)}" onclick="openVenuePage(event, this, 'view')">
+          <td><div class="venue-name">${SuperAdminData.escapeHtml(venue.name)}</div><div class="venue-org">${SuperAdminData.escapeHtml(SuperAdminData.clientName(venue.clientId, data))}</div></td>
+          <td class="col-center"><span class="status-badge ${SuperAdminData.statusClass(venue.status)}">${SuperAdminData.escapeHtml(venue.status)}</span></td>
+          <td class="col-center tabular col-hide-mobile">${SuperAdminData.formatNumber(venue.transactions)}</td>
+          <td class="col-center tabular col-hide-mobile">${SuperAdminData.formatCurrency(venue.volume)}</td>
+          <td class="col-center col-hide-mobile">${SuperAdminData.escapeHtml(venue.lastActivity || '-')}</td>
+        </tr>`).join('');
+    }
+
+    renderVenueRows();
+    const venueSearchInput = document.getElementById('searchInput');
+    const emptyState = document.getElementById('emptyState');
+    venueSearchInput.addEventListener('input', () => {
+      const q = venueSearchInput.value.trim().toLowerCase();
+      let visible = 0;
+      document.querySelectorAll('#venueRows tr').forEach(row => {
+        const match = row.dataset.name.toLowerCase().includes(q) || row.dataset.org.toLowerCase().includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      emptyState.style.display = visible === 0 ? 'block' : 'none';
+    });
+    
+    function openVenuePage(event, row, mode) {
+      if (event) event.stopPropagation();
+      const venueName = row.dataset.name;
+      const orgName = row.dataset.org;
+      const venueKey = venueName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const data = window.SuperAdminData ? SuperAdminData.read() : { venues: [] };
+      const record = data.venues.find(item => item.name === venueName);
+      const context = {
+        venueId: record?.id || 'venue-' + venueKey,
+        venueKey,
+        venueName,
+        orgName,
+        clientId: record?.clientId || ''
+      };
+      sessionStorage.setItem('selectedVenueContext', JSON.stringify(context));
+      sessionStorage.setItem('userRole', 'superadmin');
+      sessionStorage.setItem('venueConfigData', JSON.stringify(context));
+      window.location.href = `super-admin-venue.html?mode=${mode || 'view'}`;
+    }
+
+    // Handle row clicks
+    document.querySelectorAll('#venueRows tr').forEach(row => {
+      row.addEventListener('click', () => {
+        openVenuePage(null, row, 'view');
+      });
+    });
+  </script>
+</body>
+</html>

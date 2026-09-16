@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Before You Start</title>
+<style>
+  :root{
+    --bg:#eef0f3;
+    --panel:#ffffff;
+    --field-border:#dcdfe6;
+    --text-primary:#1f2233;
+    --text-secondary:#6b7080;
+    --brand:#38366e;
+    --accent:#2E2F7A;
+    --accent-hover:#24255f;
+    --icon-bg:#eef0f5;
+    --radius:10px;
+    --gap-xs:6px;
+    --gap-sm:10px;
+    --gap-md:16px;
+    --gap-lg:24px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text-primary);
+  }
+  .app{
+    display:flex;
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 24px 64px;
+    gap:56px;
+    position:relative;
+  }
+  .close-btn{
+    position:absolute;
+    top:0; right:0;
+    background:none; border:none; cursor:pointer;
+    color:var(--text-primary);
+    padding:6px;
+    border-radius:8px;
+  }
+  .close-btn:hover{ background:#e2e3ea; }
+
+  /* Stepper */
+  .stepper{ width:220px; flex-shrink:0; padding-top:6px; }
+  .step{ display:flex; align-items:center; gap:12px; position:relative; padding-bottom:26px; }
+  .step:last-child{padding-bottom:0;}
+  .step::before{
+    content:''; position:absolute; left:9px; top:22px;
+    width:2px; height:calc(100% - 6px); background:#d7d9e2;
+  }
+  .step:last-child::before{display:none;}
+  .step-dot{
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c7c9d6; background:#fff; flex-shrink:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step.done .step-dot{ border-color:var(--brand); background:var(--brand); }
+  .step-dot svg{ display:none; color:#fff; }
+  .step.done .step-dot svg{ display:block; }
+  .step-label{ font-size:14.5px; color:var(--text-secondary); font-weight:600; }
+  .step.done .step-label{ color:var(--brand); }
+
+  .main{ flex:1; min-width:0; max-width:640px; }
+  h1{ font-size:28px; font-weight:800; color:var(--brand); margin:0 0 6px; }
+  .content-card{
+    background:#fff;
+    border:1px solid #e2e3ea;
+    border-radius:14px;
+    padding:24px 26px;
+  }
+  .subhead{ font-size:14.5px; color:var(--text-secondary); margin:0 0 28px; }
+
+  .req-group{ margin-bottom:28px; }
+  .req-group-title{
+    font-size:12.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--text-secondary);
+    margin:0 0 12px;
+  }
+  .req-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .req-item{ display:flex; align-items:flex-start; gap:14px; }
+  .req-icon{
+    width:36px; height:36px; border-radius:9px;
+    background:var(--icon-bg);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    color:var(--accent);
+  }
+  .req-text{ font-size:15px; color:var(--text-primary); line-height:1.5; padding-top:6px; }
+
+  .btn-primary{
+    height:50px;
+    width:100%;
+    border-radius:var(--radius);
+    background:var(--accent);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-primary:hover{ background:var(--accent-hover); }
+  .btn-primary:focus-visible, .close-btn:focus-visible{
+    outline:3px solid #2e6fdb; outline-offset:2px;
+  }
+
+  @media (max-width:720px){
+    .app{ flex-direction:column; gap:24px; padding:20px 16px 48px; }
+    .stepper{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <button class="close-btn" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+
+  <nav class="stepper" aria-label="Payout creation steps">
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">New Payout Details</div></div>
+    <div class="step done"><div class="step-dot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div><div class="step-label">Payment Breakdown</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Email Address</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Primary ID Document</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Secondary ID (Optional)</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Bank Account</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Summary</div></div>
+    <div class="step"><div class="step-dot"></div><div class="step-label">Approval</div></div>
+  </nav>
+
+  <main class="main">
+    <h1>Before You Begin</h1>
+    <p class="subhead">This takes about 5 minutes to complete.</p>
+
+    <div class="content-card">
+    <div class="req-group">
+      <p class="req-group-title">What you'll need</p>
+      <ul class="req-list">
+        <li class="req-item">
+          <div class="req-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/></svg>
+          </div>
+          <div class="req-text">A valid email address</div>
+        </li>
+        <li class="req-item">
+          <div class="req-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6 16c.5-2 2-3 3-3s2.5 1 3 3M14 9h4M14 13h4"/></svg>
+          </div>
+          <div class="req-text">Australian Driver Licence, or Passport</div>
+        </li>
+        <li class="req-item">
+          <div class="req-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6"/><path d="M4 10v9M9 10v9M15 10v9M20 10v9"/><path d="M2 19h20"/></svg>
+          </div>
+          <div class="req-text">Your bank account details, for the transfer portion of your payout</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="req-group">
+      <p class="req-group-title">Eligibility</p>
+      <ul class="req-list">
+        <li class="req-item">
+          <div class="req-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          </div>
+          <div class="req-text">You must be 18 years or older</div>
+        </li>
+      </ul>
+    </div>
+
+    <button type="button" class="btn-primary">Get Started</button>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>
