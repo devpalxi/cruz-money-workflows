@@ -259,7 +259,7 @@ export default function VerifyPage() {
     setFacePhase('checking');
     setTimeout(() => {
       if (simFace === 'pass') {
-        setStep('bank');
+        setFacePhase('passed');
       } else {
         setFacePhase('failed');
       }
@@ -275,6 +275,49 @@ export default function VerifyPage() {
       setBankPhase('result');
     }, 1400);
   };
+
+  // Picking a different result re-arms the check on the current step, so a
+  // branch can be run again without issuing a fresh link. Attempt counters
+  // reset too: switching to 'fail' after a pass would otherwise spend the last
+  // attempt and jump straight to the staff hand-back, skipping the retry screen
+  // that is the thing being tested.
+  const chooseSimId = (value) => {
+    setSimId(value);
+    setIdAttempts(0);
+    if (idPhase === 'passed' || idPhase === 'failed') setIdPhase('captured');
+  };
+
+  const chooseSimFace = (value) => {
+    setSimFace(value);
+    if (facePhase === 'passed' || facePhase === 'failed') setFacePhase('capture');
+  };
+
+  const chooseSimCop = (value) => {
+    setSimCop(value);
+    setCopAttempts(0);
+    if (bankPhase === 'result') setBankPhase('form');
+  };
+
+  // Each step can only simulate its own check, so the switcher shows the
+  // results that are actually reachable from where the patron is standing.
+  const simOptions =
+    step === 'id'
+      ? [
+          { label: 'ID pass', active: simId === 'pass', onSelect: () => chooseSimId('pass') },
+          { label: 'ID fail', active: simId === 'fail', onSelect: () => chooseSimId('fail') },
+        ]
+      : step === 'face'
+      ? [
+          { label: 'Face pass', active: simFace === 'pass', onSelect: () => chooseSimFace('pass') },
+          { label: 'Face fail', active: simFace === 'fail', onSelect: () => chooseSimFace('fail') },
+        ]
+      : step === 'bank'
+      ? [
+          { label: 'CoP match', active: simCop === 'match', onSelect: () => chooseSimCop('match') },
+          { label: 'CoP close', active: simCop === 'closeMatch', onSelect: () => chooseSimCop('closeMatch') },
+          { label: 'CoP no match', active: simCop === 'noMatch', onSelect: () => chooseSimCop('noMatch') },
+        ]
+      : [];
 
   const handleSubmit = () => {
     updateLink(token, {
@@ -611,6 +654,13 @@ export default function VerifyPage() {
 
             {facePhase === 'checking' ? (
               <Checking message="Matching your photo to your ID..." />
+            ) : facePhase === 'passed' ? (
+              <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-200 flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-[#0d9488] stroke-[3] flex-shrink-0" />
+                <span className="text-[14.5px] font-bold text-ink-hi">
+                  Your photo matched your ID.
+                </span>
+              </div>
             ) : (
               <CaptureTile
                 id="faceCapture"
@@ -807,34 +857,28 @@ export default function VerifyPage() {
         )}
 
         {/* Prototype simulation switches. Not part of the patron product UI. */}
-        <div className="mt-8 p-3 rounded-lg border border-dashed border-border bg-surface-page space-y-2 text-xs">
-          <div className="flex items-center gap-1 font-semibold text-ink-mid">
-            <Sparkles className="w-3.5 h-3.5 text-brand" />
-            <span>Prototype preview only, simulate results:</span>
+        {simOptions.length > 0 && (
+          <div className="mt-8 p-3 rounded-lg border border-dashed border-border bg-surface-page space-y-2 text-xs">
+            <div className="flex items-center gap-1 font-semibold text-ink-mid">
+              <Sparkles className="w-3.5 h-3.5 text-brand" />
+              <span>Prototype preview only, simulate results:</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {simOptions.map(({ label, active, onSelect }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={onSelect}
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors ${
+                    active ? 'bg-slate-800 text-white' : 'bg-white border border-border text-ink-mid hover:bg-slate-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              ['ID pass', () => setSimId('pass'), simId === 'pass'],
-              ['ID fail', () => setSimId('fail'), simId === 'fail'],
-              ['Face pass', () => setSimFace('pass'), simFace === 'pass'],
-              ['Face fail', () => setSimFace('fail'), simFace === 'fail'],
-              ['CoP match', () => setSimCop('match'), simCop === 'match'],
-              ['CoP close', () => setSimCop('closeMatch'), simCop === 'closeMatch'],
-              ['CoP no match', () => setSimCop('noMatch'), simCop === 'noMatch'],
-            ].map(([label, onClick, active]) => (
-              <button
-                key={label}
-                type="button"
-                onClick={onClick}
-                className={`px-2.5 py-1 rounded font-semibold transition-colors ${
-                  active ? 'bg-slate-800 text-white' : 'bg-white border border-border text-ink-mid hover:bg-slate-50'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
       </main>
 
       {/* Sticky action bar. On a phone the flow CTA has to stay reachable
@@ -902,7 +946,7 @@ export default function VerifyPage() {
           <Button
             size="lg"
             disabled={!facePreview || facePhase === 'checking'}
-            onClick={handleRunFaceCheck}
+            onClick={facePhase === 'passed' ? () => setStep('bank') : handleRunFaceCheck}
             className="w-full h-12 text-[16px] font-semibold"
           >
             {facePhase === 'failed' ? 'Try again' : 'Continue'}

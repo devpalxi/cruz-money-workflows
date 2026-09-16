@@ -23,6 +23,12 @@ const VERIFY_MODES = [
   { value: 'link', label: 'Send link to patron' },
 ];
 
+// The link record is a snapshot taken at send time, so an empty win amount is
+// frozen into it and the patron's header has nothing to show. Payment
+// breakdown already falls back to 1250 when the amount was never captured -
+// match it here so the two screens cannot disagree.
+const DEFAULT_WIN_AMOUNT = '1,250.00';
+
 // 04xx xxx xxx, or the same number written with a +61 country code.
 function normaliseMobile(value) {
   const digits = value.replace(/[^0-9]/g, '');
@@ -117,7 +123,7 @@ function EmailAddressContent() {
       venue: form.venue || 'Riverside RSL Club',
       payoutType: form.payoutType || 'EGM',
       machine: form.machine || '',
-      winAmount: form.winAmount || '',
+      winAmount: form.winAmount || DEFAULT_WIN_AMOUNT,
       cashAmount: form.cashAmount || '',
       bankAmount: form.bankAmount || '',
       disbursementMethod: form.disbursementMethod || '',
