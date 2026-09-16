@@ -8,10 +8,22 @@ import {
   ChevronDown,
   Pencil,
   AlertTriangle,
+  Smartphone,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { getDisbursementFlags } from '@/lib/payoutFlow';
+import {
+  getLink,
+  resendLink,
+  cancelLink,
+  buildVerifyUrl,
+  formatExpiry,
+  LINK_STATUS,
+  LINK_STATUS_LABELS,
+} from '@/lib/verificationLink';
 
 function SummaryContent() {
   const router = useRouter();
@@ -25,6 +37,31 @@ function SummaryContent() {
 
   // Modal state
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [switchModalOpen, setSwitchModalOpen] = useState(false);
+
+  // Patron self-service verification, when the collector sent a link instead
+  // of collecting ID and bank details at the counter.
+  const [verificationMode, setVerificationMode] = useState('manual');
+  const [verificationToken, setVerificationToken] = useState(null);
+  const [linkRecord, setLinkRecord] = useState(null);
+  const [resendNotice, setResendNotice] = useState(false);
+
+  // This page is prerendered, so a timestamp produced during render would be
+  // baked in at build time and never match the client's clock - React throws a
+  // hydration error and the whole page falls back. Fill it in after mount.
+  const [renderedAt, setRenderedAt] = useState('');
+
+  useEffect(() => {
+    setRenderedAt(
+      new Date().toLocaleDateString('en-AU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }, []);
 
   // Prototype toggle states
   const [idProtoState, setIdProtoState] = useState('realData'); // 'realData' | 'noId' | 'withId' | 'allId'
@@ -98,8 +135,52 @@ function SummaryContent() {
       } else {
         setIdProtoState('noId');
       }
+      if (saved.verificationMode) setVerificationMode(saved.verificationMode);
+      if (saved.verificationToken) setVerificationToken(saved.verificationToken);
     } catch (e) {}
   }, []);
+
+  // The patron is verifying in another tab or on their own phone, so poll the
+  // shared link record rather than waiting for a page reload.
+  useEffect(() => {
+    if (verificationMode !== 'link' || !verificationToken) return undefined;
+    const read = () => setLinkRecord(getLink(verificationToken));
+    read();
+    const interval = setInterval(read, 2000);
+    return () => clearInterval(interval);
+  }, [verificationMode, verificationToken]);
+
+  const isLinkMode = verificationMode === 'link' && Boolean(verificationToken);
+  const patronVerified = linkRecord?.status === LINK_STATUS.COMPLETED;
+  const patronPending = isLinkMode && !patronVerified;
+  const patronResult = linkRecord?.result || null;
+
+  // The patron flow and the prototype toggle name CoP outcomes differently;
+  // normalise to the labels this page already renders.
+  const effectiveCop =
+    patronVerified && patronResult
+      ? { closeMatch: 'close', noMatch: 'fail' }[patronResult.copResult] || 'match'
+      : copProtoState;
+
+  const handleResend = () => {
+    const next = resendLink(verificationToken);
+    setLinkRecord(next);
+    setResendNotice(true);
+    setTimeout(() => setResendNotice(false), 2500);
+  };
+
+  const handleSwitchToManual = () => {
+    cancelLink(verificationToken);
+    try {
+      const current = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
+      sessionStorage.setItem(
+        'payoutFormData',
+        JSON.stringify({ ...current, verificationMode: 'manual', verificationToken: null })
+      );
+    } catch (e) {}
+    setSwitchModalOpen(false);
+    router.push('/collector/primary-id');
+  };
 
   const toggleSection = (key) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -279,16 +360,95 @@ function SummaryContent() {
               </Link>
               <h1 className="text-xl sm:text-2xl font-bold text-ink-hi">Summary</h1>
             </div>
-            <p className="text-[14px] text-ink-mid m-0 whitespace-nowrap">
-              {new Date().toLocaleDateString('en-AU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
+            <p className="text-[14px] text-ink-mid m-0 whitespace-nowrap">{renderedAt}</p>
           </div>
+
+          {/* Patron self-service verification state */}
+          {isLinkMode && linkRecord && (
+            <div className="mb-6">
+              {patronVerified ? (
+                <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-200 shadow-2xs flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-teal-600 stroke-[3] flex-shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-[15px] font-bold text-ink-hi m-0">
+                      Patron verification complete
+                    </p>
+                    <p className="text-[13.5px] text-ink-mid m-0">
+                      {linkRecord.payout?.patronName} verified their identity and bank details on
+                      their phone. This payout is ready to submit for approval.
+                    </p>
+                  </div>
+                </div>
+              ) : linkRecord.status === LINK_STATUS.STAFF_ACTION ? (
+                <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 shadow-2xs space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-[15px] font-bold text-[#991b1b] m-0">
+                        Patron could not be verified electronically
+                      </p>
+                      <p className="text-[13.5px] text-ink-mid m-0">
+                        Their documents failed both electronic checks. You need to verify their ID
+                        in person before this payout can go to approval.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSwitchModalOpen(true)}
+                    className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline cursor-pointer"
+                  >
+                    Verify at the counter instead
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200 shadow-2xs space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <Smartphone className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-[15px] font-bold text-ink-hi m-0">
+                        Waiting on patron verification
+                      </p>
+                      <p className="text-[13.5px] text-ink-mid m-0">
+                        {LINK_STATUS_LABELS[linkRecord.status]}. Sent to{' '}
+                        <span className="font-mono">{linkRecord.payout?.mobile}</span>
+                        {linkRecord.status === LINK_STATUS.EXPIRED
+                          ? '. Send a new link to let them continue.'
+                          : `. The link stops working at ${formatExpiry(linkRecord.expiresAt)}.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline cursor-pointer"
+                    >
+                      Resend link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSwitchModalOpen(true)}
+                      className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline cursor-pointer"
+                    >
+                      Switch to manual verification
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.open(buildVerifyUrl(verificationToken), '_blank')}
+                      className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline cursor-pointer"
+                    >
+                      Open patron view
+                    </button>
+                    {resendNotice && (
+                      <span className="text-[13px] font-semibold text-teal-700">Link resent</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Single Content Card with Hairline Accordion Dividers */}
           <div className="bg-white border border-[#e2e3ea] rounded-[10px] p-6 sm:p-7 shadow-sm">
@@ -380,14 +540,16 @@ function SummaryContent() {
                     Member identification
                   </span>
                   <div className="flex items-center gap-4 flex-shrink-0">
-                    <Link
-                      href={getPrimaryIdEditUrl()}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-ink-mid hover:text-ink-hi underline font-semibold text-[13px] inline-flex items-center gap-1 transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      <span>Edit</span>
-                    </Link>
+                    {!isLinkMode && (
+                      <Link
+                        href={getPrimaryIdEditUrl()}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-ink-mid hover:text-ink-hi underline font-semibold text-[13px] inline-flex items-center gap-1 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </Link>
+                    )}
                     <ChevronDown
                       className={`w-4 h-4 transition-transform duration-150 ${
                         openSections.member ? 'rotate-180 text-ink-hi' : 'text-ink-mid'
@@ -410,10 +572,37 @@ function SummaryContent() {
                       <span className="text-ink-mid font-medium">Full name</span>
                       <span className="font-bold text-ink-hi">{view.fullName || 'test test'}</span>
                     </div>
+                    {patronPending ? (
+                      <div className="py-2">
+                        <span className="text-[14px] text-ink-lo">
+                          The patron is capturing their identity documents on their phone. Their
+                          details will appear here once verification is complete.
+                        </span>
+                      </div>
+                    ) : (
+                      <>
                     <div className="flex justify-between items-center py-1">
                       <span className="text-ink-mid font-medium">Document type</span>
-                      <span className="font-bold text-ink-hi">{view.docTypeLabel}</span>
+                      <span className="font-bold text-ink-hi">
+                        {patronVerified && patronResult ? patronResult.docLabel : view.docTypeLabel}
+                      </span>
                     </div>
+
+                    {patronVerified && (
+                      <>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-ink-mid font-medium">Verification method</span>
+                          <span className="font-bold text-ink-hi flex items-center gap-1.5">
+                            Patron self-service
+                            <Badge variant="pass" size="sm">{patronResult?.idvPath}</Badge>
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-ink-mid font-medium">Face match</span>
+                          <span className="font-bold text-ink-hi">Matched</span>
+                        </div>
+                      </>
+                    )}
 
                     {view.isReusedId && (
                       <div className="flex justify-between items-center py-1">
@@ -544,6 +733,8 @@ function SummaryContent() {
                       <span className="text-ink-mid font-medium">Country of issue</span>
                       <span className="font-bold text-ink-hi">Australia</span>
                     </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -589,7 +780,7 @@ function SummaryContent() {
                         Bank account
                         {!hasBank && <span className="ml-1 font-normal text-ink-lo">(not required)</span>}
                       </p>
-                      {hasBank && (
+                      {hasBank && !isLinkMode && (
                         <Link
                           href="/collector/bank-account?from=summary"
                           className="text-ink-mid hover:text-ink-hi underline font-semibold text-[13px] inline-flex items-center gap-1 transition-colors"
@@ -599,35 +790,48 @@ function SummaryContent() {
                         </Link>
                       )}
                     </div>
-                    {hasBank ? (
+                    {hasBank && patronPending ? (
+                      <div className="py-1">
+                        <span className="text-[14px] text-ink-lo">
+                          The patron is entering their bank details on their phone. They will appear
+                          here once their account has been checked.
+                        </span>
+                      </div>
+                    ) : hasBank ? (
                       <>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account name</span>
-                          <span className="font-bold text-ink-hi">{view.accountName || 'Test Testerson'}</span>
+                          <span className="font-bold text-ink-hi">
+                            {(patronVerified && patronResult?.accountName) || view.accountName || 'Test Testerson'}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">BSB number</span>
-                          <span className="font-bold text-ink-hi tabular-nums font-mono">{view.bsb || '062-000'}</span>
+                          <span className="font-bold text-ink-hi tabular-nums font-mono">
+                            {(patronVerified && patronResult?.bsb) || view.bsb || '062-000'}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account number</span>
-                          <span className="font-bold text-ink-hi tabular-nums font-mono">{view.accountNumber || '12345678'}</span>
+                          <span className="font-bold text-ink-hi tabular-nums font-mono">
+                            {(patronVerified && patronResult?.accountNumber) || view.accountNumber || '12345678'}
+                          </span>
                         </div>
 
                         {/* Inline CoP Validation */}
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">CoP validation</span>
-                          <Badge variant={copProtoState === 'match' ? 'pass' : copProtoState === 'close' ? 'warn' : 'fail'} size="sm">
-                            {copProtoState === 'match'
+                          <Badge variant={effectiveCop === 'match' ? 'pass' : effectiveCop === 'close' ? 'warn' : 'fail'} size="sm">
+                            {effectiveCop === 'match'
                               ? 'Match'
-                              : copProtoState === 'close'
+                              : effectiveCop === 'close'
                               ? 'Close match'
                               : 'No match'}
                           </Badge>
                         </div>
 
                         {/* Close Match Note */}
-                        {copProtoState === 'close' && (
+                        {effectiveCop === 'close' && (
                           <div className="mt-2 p-3.5 rounded-lg bg-amber-50 border border-amber-200 space-y-1">
                             <p className="text-[15px] font-bold text-ink-hi m-0 flex items-center gap-2">
                               <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
@@ -693,11 +897,11 @@ function SummaryContent() {
           <div className="mt-6">
             <Button
               size="lg"
-              disabled={copProtoState === 'fail'}
+              disabled={!isLinkMode && copProtoState === 'fail'}
               onClick={() => setSubmitModalOpen(true)}
               className="w-full h-12 text-[16px] font-semibold"
             >
-              Submit
+              {patronPending ? 'Submit and wait for verification' : 'Submit'}
             </Button>
           </div>
 
@@ -822,10 +1026,12 @@ function SummaryContent() {
             aria-labelledby="submitModalTitle"
           >
             <h2 id="submitModalTitle" className="text-xl font-bold text-ink-hi m-0">
-              Submit for approval?
+              {patronPending ? 'Submit and wait for verification?' : 'Submit for approval?'}
             </h2>
             <p className="text-[15px] text-ink-mid leading-relaxed m-0">
-              Once submitted, this payout moves to Approval and can no longer be viewed or edited.
+              {patronPending
+                ? 'This payout will be recorded as pending verification. It moves to approval automatically once the patron finishes on their phone.'
+                : 'Once submitted, this payout moves to Approval and can no longer be viewed or edited.'}
             </p>
 
             <div className="flex gap-4 pt-2">
@@ -843,6 +1049,49 @@ function SummaryContent() {
                 className="flex-1 text-[16px] font-semibold"
               >
                 Submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Switch to manual verification */}
+      {switchModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSwitchModalOpen(false);
+          }}
+        >
+          <div
+            className="bg-surface-card border border-border rounded-xl shadow-modal max-w-[440px] w-full p-7 space-y-5"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="switchModalTitle"
+          >
+            <h2 id="switchModalTitle" className="text-xl font-bold text-ink-hi m-0">
+              Verify at the counter instead?
+            </h2>
+            <p className="text-[15px] text-ink-mid leading-relaxed m-0">
+              The patron&apos;s link will stop working immediately and anything they entered will be
+              discarded. You will collect their ID and bank details here instead.
+            </p>
+
+            <div className="flex gap-4 pt-2">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => setSwitchModalOpen(false)}
+                className="flex-1 text-[16px] font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="md"
+                onClick={handleSwitchToManual}
+                className="flex-1 text-[16px] font-semibold"
+              >
+                Switch to manual
               </Button>
             </div>
           </div>

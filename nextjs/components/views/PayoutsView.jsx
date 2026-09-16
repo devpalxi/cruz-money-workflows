@@ -102,6 +102,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       { label: 'Draft', value: 'Draft' },
       { label: 'Pending authorisation', value: 'Pending Authorisation' },
       { label: 'Awaiting', value: 'Awaiting Approval' },
+      { label: 'Pending verification', value: 'Pending verification' },
       { label: 'Completed', value: 'Payment Completed' },
       { label: 'Delayed', value: 'Payment Delayed' },
       { label: 'Failed', value: 'Failed' },
@@ -370,6 +371,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       status === 'Payment Delayed' ||
       status === 'Awaiting Approval' ||
       status === 'Pending Authorisation' ||
+      status === 'Pending verification' ||
       status === 'Pending'
     ) {
       return (

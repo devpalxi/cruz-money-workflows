@@ -127,6 +127,15 @@ This rulebook defines every shared UI component and pattern in `nextjs/component
 - **When to use**: Floor Collector payout workflow (`/collector/payout-details`) to look up and prefill patron identity and contact details directly from club membership systems (via Direct API or Transitional Iframe).
 - **When NOT to use**: Do not use for internal staff user search or admin roster filtering (use standard data table search inputs).
 
+### 2.8 Patron Self-Service Verification (`app/verify/[token]`)
+- **What it is**: the mobile page a patron opens from the link a collector sends them, to scan their ID, take a liveness selfie, and enter bank details themselves. See `DESIGN.md` §6 for the full surface rules.
+- **Shell**: `app/verify/[token]/layout.jsx` - single column, `max-w-[480px]`, centred, white on `surface-page`. Carries **no** `AdminShell`, `AppHeader`, role badge or `Stepper`. Do not add staff chrome to this route.
+- **Sticky CTA bar**: `sticky bottom-0 bg-white border-t border-border px-4 pt-3` with bottom padding `calc(0.75rem + env(safe-area-inset-bottom, 0px))`. This route only - the documented exception to the "CTA outside the card" rule.
+- **Capture tile**: dashed panel wrapping a hidden file input (`capture="environment"` for documents, `capture="user"` for the selfie). Never `getUserMedia` - a file input opens the real camera on a phone and degrades to a file picker everywhere else.
+- **Progress**: label plus "Step N of M" as plain text (`text-[13px] font-semibold text-ink-mid`) over a `h-1` teal bar. Never a status pill (see 2.2).
+- **Link state** lives in `lib/verificationLink.js`, keyed by token in `localStorage` so the collector terminal and the patron's page see the same record. Statuses: `sent`, `in_progress`, `completed`, `staff_action`, `expired`, `cancelled`.
+- **When NOT to use**: never for staff-facing verification. Collector, Approver and Authoriser screens keep the standard flow shell.
+
 ---
 
 ## 3. Review Checklist for Agents
@@ -140,3 +149,5 @@ This rulebook defines every shared UI component and pattern in `nextjs/component
 - [ ] Is every user-facing string sentence case, with no `uppercase` / `tracking-wider` caps styling anywhere (labels, `<th>`, tags, badges)?
 - [ ] Is the copy free of em/en dashes (`—` / `–`) and other non-ASCII typographic symbols, including generated text and CSV/exports?
 - [ ] Inside cards, are rows separated by spacing rather than a hairline between every row?
+- [ ] On the patron surface (`app/verify/**`), is the page free of staff chrome, and free of internal acronyms the patron would not know?
+- [ ] Is the sticky bottom CTA confined to `app/verify/**`, with every other flow keeping the CTA below the card?

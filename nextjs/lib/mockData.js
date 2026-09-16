@@ -60,10 +60,16 @@ export const initialBlacklist = [
   { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
 ];
 
-const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Failed', 'Rejected'];
+const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Pending verification', 'Failed', 'Rejected'];
 const venuesList = ['Riverside RSL Club', 'Riverside Grand Bistro', 'Riverside Lounge & Bar', 'Riverside Leisure Center', 'Riverside Bowling Club'];
 
 export const initialPayouts = [
+  // Patron self-service verification in flight: the collector has submitted, the
+  // patron has not finished on their phone yet, so ID, screening and CoP are all
+  // still empty and no approver can action these.
+  { id: '575', created: 'Jul 13, 2026 12:58PM', venue: 'Riverside RSL Club', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 8400, status: 'Pending verification', risk: 'Medium', machineId: 'EGM-006', member: 'MEM-1041', accountName: 'Priya Raman', bsb: '-', accountNumber: '-' },
+  { id: '574', created: 'Jul 13, 2026 12:22PM', venue: 'Riverside RSL Club', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 1250, status: 'Pending verification', risk: 'Low', machineId: 'EGM-011', member: 'MEM-1042', accountName: 'Daniel Okafor', bsb: '-', accountNumber: '-' },
+  { id: '573', created: 'Jul 13, 2026 11:58AM', venue: 'Riverside Grand Bistro', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 15000, status: 'Pending verification', risk: 'High', machineId: 'EGM-007', member: 'MEM-1043', accountName: 'Helena Vasquez', bsb: '-', accountNumber: '-' },
   { id: '572', created: 'Jul 13, 2026 11:47AM', venue: 'Riverside RSL Club', idv: 'None', pep: '—', sanctions: '—', cop: '—', amount: 6000, status: 'Draft', risk: 'High', machineId: 'EGM-001', member: 'MEM-1001', accountName: 'Sarah Jenkins', bsb: '062-000', accountNumber: '12345678' },
   { id: '570', created: 'Jul 13, 2026 06:31AM', venue: 'Riverside RSL Club', idv: 'Fail', pep: 'Clear', sanctions: 'Clear', cop: 'No match', amount: 400, status: 'Payment Delayed', risk: 'High', machineId: 'EGM-003', member: 'MEM-1002', accountName: 'James O\'Sullivan', bsb: '032-001', accountNumber: '87654321' },
   { id: '569', created: 'Jul 10, 2026 11:10AM', venue: 'Riverside RSL Club', idv: 'Pass', pep: 'Clear', sanctions: 'Clear', cop: 'Match', amount: 999, status: 'Payment Completed', risk: 'Low', machineId: 'EGM-002', member: 'MEM-1003', accountName: 'David Zhang', bsb: '012-002', accountNumber: '45678901' },
