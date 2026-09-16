@@ -96,6 +96,27 @@ function withPaymentDue(payout, index) {
   };
 }
 
+// A win is disbursed as cash over the counter, as an EFT to the patron's bank
+// account via PayTo, or as a mix of both - so the register's single `amount` is
+// really the sum of two parts the venue settles through different rails.
+//
+// Cash is capped in practice by what the venue holds in the till, so the spread
+// below is a set of realistic counter amounts rather than a percentage. Where
+// the preferred cash figure exceeds the win, the whole win is paid in cash and
+// the EFT leg is zero; a 0 in the spread gives the EFT-only case.
+const CASH_SPLIT_SPREAD = [0, 500, 1000, 250, 0, 2000, 800, 0, 1500, 300];
+
+function withAmountSplit(payout, index) {
+  const cashAmount = Math.min(CASH_SPLIT_SPREAD[index % CASH_SPLIT_SPREAD.length], payout.amount);
+  return {
+    ...payout,
+    cashAmount,
+    // Rounded to cents so the two legs always add back to `amount` exactly
+    // rather than drifting on records with fractional wins.
+    eftAmount: Math.round((payout.amount - cashAmount) * 100) / 100,
+  };
+}
+
 const basePayouts = [
   // Patron self-service verification in flight: the collector has submitted, the
   // patron has not finished on their phone yet, so ID, screening and CoP are all
@@ -155,7 +176,7 @@ const basePayouts = [
   })
 ];
 
-export const initialPayouts = basePayouts.map(withPaymentDue);
+export const initialPayouts = basePayouts.map(withPaymentDue).map(withAmountSplit);
 
 export const initialWinners = [
   {

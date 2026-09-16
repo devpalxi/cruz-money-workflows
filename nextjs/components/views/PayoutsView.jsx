@@ -148,6 +148,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     pep: false,
     sanctions: false,
     cop: false,
+    eftAmount: false,
+    cashAmount: false,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef(null);
@@ -875,6 +877,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                       { key: 'pep',     label: 'PEP' },
                       { key: 'sanctions', label: 'Sanctions' },
                       { key: 'cop',     label: 'COP status' },
+                      { key: 'eftAmount',  label: 'EFT amount' },
+                      { key: 'cashAmount', label: 'Cash amount' },
                     ].map(({ key, label }) => (
                       <label
                         key={key}
@@ -976,6 +980,16 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[75px]">
                     Amount
                   </th>
+                  {visibleCols.eftAmount && (
+                    <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[85px]">
+                      EFT amount
+                    </th>
+                  )}
+                  {visibleCols.cashAmount && (
+                    <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[90px]">
+                      Cash amount
+                    </th>
+                  )}
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[125px]">
                     Time to payment
                   </th>
@@ -1097,6 +1111,20 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         <td className="px-2.5 py-3 text-right font-mono text-[13px] font-bold text-ink-hi whitespace-nowrap">
                           {formatCurrency(item.amount)}
                         </td>
+
+                        {/* EFT amount — the leg settled to the patron's bank via PayTo */}
+                        {visibleCols.eftAmount && (
+                          <td className="px-2.5 py-3 text-right font-mono text-[13px] text-ink-mid whitespace-nowrap">
+                            {formatCurrency(item.eftAmount)}
+                          </td>
+                        )}
+
+                        {/* Cash amount — the leg paid over the counter at the venue */}
+                        {visibleCols.cashAmount && (
+                          <td className="px-2.5 py-3 text-right font-mono text-[13px] text-ink-mid whitespace-nowrap">
+                            {formatCurrency(item.cashAmount)}
+                          </td>
+                        )}
 
                         {/* Time to payment */}
                         <td className="px-2.5 py-3 whitespace-nowrap text-[12.5px] font-medium">
