@@ -59,6 +59,10 @@ export default function AppHeader({ role = 'ADMIN' }) {
     skipped: isStepSkipped(item.href),
   }));
 
+  const approverNavLinks = [];
+
+  const authoriserNavLinks = [];
+
   const superAdminNavLinks = [
     { label: 'Dashboard', href: '/super-admin/dashboard' },
     { label: 'Venues', href: '/super-admin/venue' },
@@ -77,6 +81,10 @@ export default function AppHeader({ role = 'ADMIN' }) {
       ? superAdminNavLinks
       : role === 'COLLECTOR'
       ? collectorNavLinks
+      : role === 'APPROVER'
+      ? approverNavLinks
+      : role === 'AUTHORISER'
+      ? authoriserNavLinks
       : adminNavLinks;
 
   const isLinkActive = (href) => {

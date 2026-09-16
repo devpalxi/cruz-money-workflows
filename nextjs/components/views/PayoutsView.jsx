@@ -5,7 +5,24 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
+import AppHeader from '@/components/layout/AppHeader';
+import PageShell from '@/components/layout/PageShell';
 import { initialPayouts } from '@/lib/mockData';
+
+// Approver and Authoriser have nothing else to navigate to, so they get the
+// top-nav chrome used elsewhere in the app (Collector, design-system) instead
+// of the left sidebar reserved for Admin/Super Admin's larger nav trees.
+function DashboardShell({ role, children }) {
+  if (role === 'APPROVER' || role === 'AUTHORISER') {
+    return (
+      <>
+        <AppHeader role={role} />
+        <PageShell maxWidth="max-w-[1280px]">{children}</PageShell>
+      </>
+    );
+  }
+  return <AdminShell role={role}>{children}</AdminShell>;
+}
 
 // The Approver and Authoriser review screens read from a hardcoded SCENARIOS
 // object rather than from initialPayouts, so a row cannot open its own record.
@@ -470,7 +487,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   };
 
   return (
-    <AdminShell role={role}>
+    <DashboardShell role={role}>
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-6">
         <div>
@@ -1124,6 +1141,6 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           )}
         </div>
       </section>
-    </AdminShell>
+    </DashboardShell>
   );
 }
