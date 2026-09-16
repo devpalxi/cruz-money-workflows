@@ -66,14 +66,34 @@ const venuesList = ['Riverside RSL Club', 'Riverside Grand Bistro', 'Riverside L
 // When the money is expected to move. Only statuses that have actually cleared
 // approval have an ETA - anything still in review, rejected, or waiting on the
 // patron has nothing to estimate yet.
-const PAYMENT_ETA_BY_STATUS = {
-  'Payment Delayed': 'Next business day',
-  'Pending Authorisation': 'On authorisation',
-  'Payment Completed': 'Settled',
-};
+// Minutes until the payout may be dispatched via PayTo. This stands in for
+// `delayUntil - now` on a real jackpot: the live system reads delayUntil when
+// the payout is in payment_delayed, and otherwise derives the moment from the
+// EGM win event timestamp plus the venue's Minimum Wait Time (Strapi, per
+// venue). Negative means the send window has already passed.
+//
+// Terminal and not-yet-scheduled states have no pending dispatch at all, so
+// they carry null rather than a number - there is nothing to count down to.
+const NO_PAYMENT_DUE = new Set([
+  'Payment Completed',
+  'Failed',
+  'Rejected',
+  'Draft',
+  'Pending verification',
+]);
 
-function withPaymentEta(payout) {
-  return { ...payout, paymentEta: PAYMENT_ETA_BY_STATUS[payout.status] || '-' };
+// Fixed spread so the column exercises sub-hour, same-day, next-day and overdue
+// cases instead of one uniform value. Indexed by row so it stays stable between
+// renders rather than reshuffling on every read.
+const DUE_MINUTES_SPREAD = [30, 120, 1200, 2160, 45, -90, 480, 90, 1440, -20];
+
+function withPaymentDue(payout, index) {
+  return {
+    ...payout,
+    paymentDueInMinutes: NO_PAYMENT_DUE.has(payout.status)
+      ? null
+      : DUE_MINUTES_SPREAD[index % DUE_MINUTES_SPREAD.length],
+  };
 }
 
 const basePayouts = [
@@ -135,7 +155,7 @@ const basePayouts = [
   })
 ];
 
-export const initialPayouts = basePayouts.map(withPaymentEta);
+export const initialPayouts = basePayouts.map(withPaymentDue);
 
 export const initialWinners = [
   {

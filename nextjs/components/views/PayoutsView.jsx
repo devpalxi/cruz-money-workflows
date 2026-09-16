@@ -76,6 +76,15 @@ function scenarioForPayout(payout, available) {
   return candidates.find((key) => available.has(key)) || 'dual-hit';
 }
 
+// "30min" under an hour, "2hrs" above it, matching how the countdown reads in
+// the reference dashboard. Anything at or past zero has missed its send window.
+function formatTimeToPayment(minutes) {
+  if (minutes <= 0) return 'Overdue';
+  if (minutes < 60) return `${Math.round(minutes)}min`;
+  const hrs = Math.round(minutes / 60);
+  return `${hrs}hr${hrs === 1 ? '' : 's'}`;
+}
+
 function formatCurrency(amount) {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   return new Intl.NumberFormat('en-US', {
@@ -106,6 +115,20 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const [selectedVenue, setSelectedVenue] = useState('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // The countdown seeds are "minutes remaining as at page load", so the first
+  // paint can render them as-is. Reading the clock during render instead would
+  // bake a build-time value into these prerendered pages that the client can
+  // never reproduce (React hydration error #418). Refresh re-reads the clock
+  // and the column subtracts however long the page has actually been open.
+  const [clock, setClock] = useState(null);
+
+  useEffect(() => {
+    const now = Date.now();
+    setClock({ mountedAt: now, readAt: now });
+  }, []);
+
+  const elapsedMinutes = clock ? (clock.readAt - clock.mountedAt) / 60000 : 0;
 
   // 6 filter categories
   const [selectedStatus, setSelectedStatus] = useState([]);
@@ -327,16 +350,40 @@ export default function PayoutsView({ role = 'ADMIN' }) {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    setClock((c) => (c ? { ...c, readAt: Date.now() } : c));
     setTimeout(() => {
       setIsRefreshing(false);
     }, 600);
   };
 
+  // Null means nothing is scheduled to send: either it already settled, or the
+  // payout never reached a state where a dispatch window exists.
+  const timeToPaymentLabel = (item) => {
+    if (item.paymentDueInMinutes == null) {
+      return item.status === 'Payment Completed' ? 'Settled' : '-';
+    }
+    return formatTimeToPayment(item.paymentDueInMinutes - elapsedMinutes);
+  };
+
+  const renderTimeToPayment = (item) => {
+    const label = timeToPaymentLabel(item);
+    if (label === '-') return <span className="text-ink-lo">&mdash;</span>;
+    if (label === 'Settled') return <span className="text-ink-mid">Settled</span>;
+    if (label === 'Overdue') {
+      return (
+        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
+          Overdue
+        </span>
+      );
+    }
+    return <span className="font-mono tabular-nums font-bold text-ink-hi">{label}</span>;
+  };
+
   const exportCSV = () => {
     if (filteredPayouts.length === 0) return;
 
-    // The export mirrors the columns the role can see, so Payment ETA is
-    // included only where it is shown.
+    // The export mirrors the columns the role can see. Time to payment is on
+    // every dashboard, so it is always included.
     const headers = [
       'PAYOUT ID',
       'CREATED',
@@ -347,7 +394,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       'COP STATUS',
       'RISK RATING',
       'AMOUNT',
-      ...(isReviewRole ? ['PAYMENT ETA'] : []),
+      'TIME TO PAYMENT',
       'STATUS',
     ];
 
@@ -361,7 +408,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       `"${p.cop}"`,
       `"${p.risk}"`,
       parseFloat(p.amount),
-      ...(isReviewRole ? [`"${p.paymentEta}"`] : []),
+      `"${timeToPaymentLabel(p)}"`,
       `"${p.status}"`,
     ]);
 
@@ -891,7 +938,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
 
           {/* 10-Column Compliance Table */}
           <div className="overflow-x-auto">
-            <table className={`w-full border-collapse ${isReviewRole ? 'min-w-[1160px]' : 'min-w-[950px]'}`}>
+            <table className={`w-full border-collapse ${isReviewRole ? 'min-w-[1160px]' : 'min-w-[1075px]'}`}>
               <thead>
                 <tr className="border-b border-border bg-surface-th">
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[55px]">
@@ -929,11 +976,9 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[75px]">
                     Amount
                   </th>
-                  {isReviewRole && (
-                    <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[125px]">
-                      Payment ETA
-                    </th>
-                  )}
+                  <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[125px]">
+                    Time to payment
+                  </th>
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[130px]">
                     Status
                   </th>
@@ -984,11 +1029,9 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                       <td className="px-2.5 py-3 text-right whitespace-nowrap">
                         <div className="h-4 bg-slate-200 rounded w-14 ml-auto" />
                       </td>
-                      {isReviewRole && (
-                        <td className="px-2.5 py-3 whitespace-nowrap">
-                          <div className="h-4 bg-slate-200 rounded w-20" />
-                        </td>
-                      )}
+                      <td className="px-2.5 py-3 whitespace-nowrap">
+                        <div className="h-4 bg-slate-200 rounded w-20" />
+                      </td>
                       <td className="px-2.5 py-3 whitespace-nowrap">
                         <div className="h-5 bg-slate-200 rounded-full w-20" />
                       </td>
@@ -1055,16 +1098,10 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                           {formatCurrency(item.amount)}
                         </td>
 
-                        {/* Payment ETA */}
-                        {isReviewRole && (
-                          <td className="px-2.5 py-3 whitespace-nowrap text-[12.5px] font-medium text-ink-mid">
-                            {item.paymentEta === '-' ? (
-                              <span className="text-ink-lo">-</span>
-                            ) : (
-                              item.paymentEta
-                            )}
-                          </td>
-                        )}
+                        {/* Time to payment */}
+                        <td className="px-2.5 py-3 whitespace-nowrap text-[12.5px] font-medium">
+                          {renderTimeToPayment(item)}
+                        </td>
 
                         {/* Status */}
                         <td className="px-2.5 py-3 whitespace-nowrap">{renderStatusPill(item.status)}</td>
@@ -1091,12 +1128,12 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <tr>
                     <td
                       colSpan={
-                        6 +
+                        7 +
                         (visibleCols.idMatch ? 1 : 0) +
                         (visibleCols.pep ? 1 : 0) +
                         (visibleCols.sanctions ? 1 : 0) +
                         (visibleCols.cop ? 1 : 0) +
-                        (isReviewRole ? 2 : 0)
+                        (isReviewRole ? 1 : 0)
                       }
                       className="text-center py-12 text-ink-mid text-[13px] font-medium whitespace-nowrap"
                     >
