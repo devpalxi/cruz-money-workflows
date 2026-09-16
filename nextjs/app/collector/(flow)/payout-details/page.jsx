@@ -536,7 +536,6 @@ export default function PayoutDetailsPage() {
                     onClick={() => {
                       setPayoutTypeOpen(!payoutTypeOpen);
                       setVenueOpen(false);
-                      setDisbursementMethodOpen(false);
                       setMachineOpen(false);
                     }}
                     className="h-12 px-4 bg-white border border-border rounded-md text-base text-ink-hi flex items-center justify-between text-left focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none"
@@ -577,7 +576,6 @@ export default function PayoutDetailsPage() {
                     onClick={() => {
                       setVenueOpen(!venueOpen);
                       setPayoutTypeOpen(false);
-                      setDisbursementMethodOpen(false);
                       setMachineOpen(false);
                     }}
                     className="h-12 px-4 bg-white border border-border rounded-md text-base text-ink-hi flex items-center justify-between text-left focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none"
@@ -670,7 +668,8 @@ export default function PayoutDetailsPage() {
                     placeholder="Click to browse, or type to search"
                     onClick={() => {
                       setMachineOpen(true);
-                      setDisbursementMethodOpen(false);
+                      setPayoutTypeOpen(false);
+                      setVenueOpen(false);
                     }}
                     onChange={(e) => {
                       setMachine(e.target.value);

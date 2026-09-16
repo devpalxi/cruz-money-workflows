@@ -1,10 +1,89 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
+import AppHeader from '@/components/layout/AppHeader';
+import PageShell from '@/components/layout/PageShell';
 import { initialPayouts } from '@/lib/mockData';
+
+// Approver and Authoriser have nothing else to navigate to, so they get the
+// top-nav chrome used elsewhere in the app (Collector, design-system) instead
+// of the left sidebar reserved for Admin/Super Admin's larger nav trees.
+function DashboardShell({ role, children }) {
+  if (role === 'APPROVER' || role === 'AUTHORISER') {
+    return (
+      <>
+        <AppHeader role={role} />
+        <PageShell maxWidth="max-w-[1280px]">{children}</PageShell>
+      </>
+    );
+  }
+  return <AdminShell role={role}>{children}</AdminShell>;
+}
+
+// The Approver and Authoriser review screens read from a hardcoded SCENARIOS
+// object rather than from initialPayouts, so a row cannot open its own record.
+// Pick the scenario whose compliance signature most resembles the row, so the
+// review screen at least reflects the kind of case the row represents. Until
+// those pages are wired to the real dataset, the detail shown is the
+// scenario's, not this payout's.
+//
+// The two roles do not offer the same scenarios - the Authoriser has no
+// single-hit, name-mismatch or all-clear - so candidates are listed best-first
+// and the first one that role actually has wins. Without this, every clean
+// payout on the Authoriser dashboard would open a dual sanctions and PEP hit.
+// These lists mirror the SCENARIOS keys in the two [scenario]/page.jsx files;
+// adding a scenario there means adding it here.
+const APPROVER_SCENARIOS = new Set([
+  'dual-hit',
+  'single-hit',
+  'name-mismatch',
+  'all-clear',
+  'manual-kyc',
+  'no-id',
+  'multi-id-pass',
+  'multi-id-mixed',
+  'blacklist-match',
+  'high-value',
+]);
+
+const AUTHORISER_SCENARIOS = new Set([
+  'dual-hit',
+  'manual-kyc',
+  'no-id',
+  'multi-id-pass',
+  'multi-id-mixed',
+  'blacklist-match',
+  'high-value',
+]);
+
+function scenarioForPayout(payout, available) {
+  const pepHit = payout.pep === 'Hit';
+  const sanctionsHit = payout.sanctions === 'Hit';
+  const candidates = [];
+
+  if (pepHit && sanctionsHit) candidates.push('dual-hit');
+  if (pepHit || sanctionsHit) candidates.push('single-hit', 'dual-hit');
+  if (payout.idv === 'Fail') candidates.push('no-id');
+  if (payout.cop === 'No match' || payout.cop === 'Close match') candidates.push('name-mismatch');
+  if (payout.idv === 'Manual verification') candidates.push('manual-kyc');
+  if (payout.amount >= 10000) candidates.push('high-value');
+  candidates.push('all-clear', 'multi-id-pass');
+
+  return candidates.find((key) => available.has(key)) || 'dual-hit';
+}
+
+// "30min" under an hour, "2hrs" above it, matching how the countdown reads in
+// the reference dashboard. Anything at or past zero has missed its send window.
+function formatTimeToPayment(minutes) {
+  if (minutes <= 0) return 'Overdue';
+  if (minutes < 60) return `${Math.round(minutes)}min`;
+  const hrs = Math.round(minutes / 60);
+  return `${hrs}hr${hrs === 1 ? '' : 's'}`;
+}
 
 function formatCurrency(amount) {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -19,6 +98,16 @@ function formatCurrency(amount) {
 export default function PayoutsView({ role = 'ADMIN' }) {
   const router = useRouter();
   const isSuperAdmin = role === 'SUPER ADMIN';
+  // Approver and Authoriser share this table but get two extra columns and a
+  // way through to their review screen.
+  const isApprover = role === 'APPROVER';
+  const isAuthoriser = role === 'AUTHORISER';
+  const isReviewRole = isApprover || isAuthoriser;
+  const reviewBasePath = isAuthoriser ? '/authoriser' : '/approver';
+  const reviewScenarios = isAuthoriser ? AUTHORISER_SCENARIOS : APPROVER_SCENARIOS;
+  // A payout still waiting on the patron has no verification results yet, so
+  // there is nothing to review. Every other status opens the review screen.
+  const isReviewable = (payout) => payout.status !== 'Pending verification';
 
 
   // Filters state
@@ -26,6 +115,20 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const [selectedVenue, setSelectedVenue] = useState('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // The countdown seeds are "minutes remaining as at page load", so the first
+  // paint can render them as-is. Reading the clock during render instead would
+  // bake a build-time value into these prerendered pages that the client can
+  // never reproduce (React hydration error #418). Refresh re-reads the clock
+  // and the column subtracts however long the page has actually been open.
+  const [clock, setClock] = useState(null);
+
+  useEffect(() => {
+    const now = Date.now();
+    setClock({ mountedAt: now, readAt: now });
+  }, []);
+
+  const elapsedMinutes = clock ? (clock.readAt - clock.mountedAt) / 60000 : 0;
 
   // 6 filter categories
   const [selectedStatus, setSelectedStatus] = useState([]);
@@ -45,6 +148,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     pep: false,
     sanctions: false,
     cop: false,
+    eftAmount: false,
+    cashAmount: false,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef(null);
@@ -102,6 +207,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       { label: 'Draft', value: 'Draft' },
       { label: 'Pending authorisation', value: 'Pending Authorisation' },
       { label: 'Awaiting', value: 'Awaiting Approval' },
+      { label: 'Pending verification', value: 'Pending verification' },
       { label: 'Completed', value: 'Payment Completed' },
       { label: 'Delayed', value: 'Payment Delayed' },
       { label: 'Failed', value: 'Failed' },
@@ -246,14 +352,40 @@ export default function PayoutsView({ role = 'ADMIN' }) {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    setClock((c) => (c ? { ...c, readAt: Date.now() } : c));
     setTimeout(() => {
       setIsRefreshing(false);
     }, 600);
   };
 
+  // Null means nothing is scheduled to send: either it already settled, or the
+  // payout never reached a state where a dispatch window exists.
+  const timeToPaymentLabel = (item) => {
+    if (item.paymentDueInMinutes == null) {
+      return item.status === 'Payment Completed' ? 'Settled' : '-';
+    }
+    return formatTimeToPayment(item.paymentDueInMinutes - elapsedMinutes);
+  };
+
+  const renderTimeToPayment = (item) => {
+    const label = timeToPaymentLabel(item);
+    if (label === '-') return <span className="text-ink-lo">&mdash;</span>;
+    if (label === 'Settled') return <span className="text-ink-mid">Settled</span>;
+    if (label === 'Overdue') {
+      return (
+        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
+          Overdue
+        </span>
+      );
+    }
+    return <span className="font-mono tabular-nums font-bold text-ink-hi">{label}</span>;
+  };
+
   const exportCSV = () => {
     if (filteredPayouts.length === 0) return;
 
+    // The export mirrors the columns the role can see. Time to payment is on
+    // every dashboard, so it is always included.
     const headers = [
       'PAYOUT ID',
       'CREATED',
@@ -264,6 +396,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       'COP STATUS',
       'RISK RATING',
       'AMOUNT',
+      'TIME TO PAYMENT',
       'STATUS',
     ];
 
@@ -277,6 +410,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       `"${p.cop}"`,
       `"${p.risk}"`,
       parseFloat(p.amount),
+      `"${timeToPaymentLabel(p)}"`,
       `"${p.status}"`,
     ]);
 
@@ -370,6 +504,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       status === 'Payment Delayed' ||
       status === 'Awaiting Approval' ||
       status === 'Pending Authorisation' ||
+      status === 'Pending verification' ||
       status === 'Pending'
     ) {
       return (
@@ -404,7 +539,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   };
 
   return (
-    <AdminShell role={role}>
+    <DashboardShell role={role}>
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-6">
         <div>
@@ -414,6 +549,10 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           <p className="text-[14.5px] text-ink-mid mt-2 mb-0 max-w-[70ch] leading-relaxed">
             {isSuperAdmin
               ? 'Review and coordinate transaction disbursements, risk signals, and compliance checks across all venues.'
+              : isApprover
+              ? 'Review identity, compliance results, and risk ratings, then make the approval decision.'
+              : isAuthoriser
+              ? 'Review approved payouts and authorise the release of funds.'
               : 'Manage, audit, and coordinate transaction disbursements across venue terminals.'}
           </p>
         </div>
@@ -738,6 +877,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                       { key: 'pep',     label: 'PEP' },
                       { key: 'sanctions', label: 'Sanctions' },
                       { key: 'cop',     label: 'COP status' },
+                      { key: 'eftAmount',  label: 'EFT amount' },
+                      { key: 'cashAmount', label: 'Cash amount' },
                     ].map(({ key, label }) => (
                       <label
                         key={key}
@@ -801,7 +942,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
 
           {/* 10-Column Compliance Table */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[950px] border-collapse">
+            <table className={`w-full border-collapse ${isReviewRole ? 'min-w-[1160px]' : 'min-w-[1075px]'}`}>
               <thead>
                 <tr className="border-b border-border bg-surface-th">
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[55px]">
@@ -839,9 +980,27 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[75px]">
                     Amount
                   </th>
+                  {visibleCols.eftAmount && (
+                    <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[85px]">
+                      EFT amount
+                    </th>
+                  )}
+                  {visibleCols.cashAmount && (
+                    <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[90px]">
+                      Cash amount
+                    </th>
+                  )}
+                  <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[125px]">
+                    Time to payment
+                  </th>
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[130px]">
                     Status
                   </th>
+                  {isReviewRole && (
+                    <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[80px]">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -885,8 +1044,16 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         <div className="h-4 bg-slate-200 rounded w-14 ml-auto" />
                       </td>
                       <td className="px-2.5 py-3 whitespace-nowrap">
+                        <div className="h-4 bg-slate-200 rounded w-20" />
+                      </td>
+                      <td className="px-2.5 py-3 whitespace-nowrap">
                         <div className="h-5 bg-slate-200 rounded-full w-20" />
                       </td>
+                      {isReviewRole && (
+                        <td className="px-2.5 py-3 whitespace-nowrap">
+                          <div className="h-4 bg-slate-200 rounded w-12" />
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : paginatedPayouts.length > 0 ? (
@@ -945,8 +1112,43 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                           {formatCurrency(item.amount)}
                         </td>
 
+                        {/* EFT amount — the leg settled to the patron's bank via PayTo */}
+                        {visibleCols.eftAmount && (
+                          <td className="px-2.5 py-3 text-right font-mono text-[13px] text-ink-mid whitespace-nowrap">
+                            {formatCurrency(item.eftAmount)}
+                          </td>
+                        )}
+
+                        {/* Cash amount — the leg paid over the counter at the venue */}
+                        {visibleCols.cashAmount && (
+                          <td className="px-2.5 py-3 text-right font-mono text-[13px] text-ink-mid whitespace-nowrap">
+                            {formatCurrency(item.cashAmount)}
+                          </td>
+                        )}
+
+                        {/* Time to payment */}
+                        <td className="px-2.5 py-3 whitespace-nowrap text-[12.5px] font-medium">
+                          {renderTimeToPayment(item)}
+                        </td>
+
                         {/* Status */}
                         <td className="px-2.5 py-3 whitespace-nowrap">{renderStatusPill(item.status)}</td>
+
+                        {/* Actions */}
+                        {isReviewRole && (
+                          <td className="px-2.5 py-3 whitespace-nowrap">
+                            {isReviewable(item) ? (
+                              <Link
+                                href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
+                                className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
+                              >
+                                Review
+                              </Link>
+                            ) : (
+                              <span className="text-[13px] text-ink-lo">&mdash;</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -954,11 +1156,12 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <tr>
                     <td
                       colSpan={
-                        6 +
+                        7 +
                         (visibleCols.idMatch ? 1 : 0) +
                         (visibleCols.pep ? 1 : 0) +
                         (visibleCols.sanctions ? 1 : 0) +
-                        (visibleCols.cop ? 1 : 0)
+                        (visibleCols.cop ? 1 : 0) +
+                        (isReviewRole ? 1 : 0)
                       }
                       className="text-center py-12 text-ink-mid text-[13px] font-medium whitespace-nowrap"
                     >
@@ -1010,6 +1213,6 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           )}
         </div>
       </section>
-    </AdminShell>
+    </DashboardShell>
   );
 }

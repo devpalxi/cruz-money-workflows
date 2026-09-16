@@ -60,10 +60,70 @@ export const initialBlacklist = [
   { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
 ];
 
-const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Failed', 'Rejected'];
+const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Pending verification', 'Failed', 'Rejected'];
 const venuesList = ['Riverside RSL Club', 'Riverside Grand Bistro', 'Riverside Lounge & Bar', 'Riverside Leisure Center', 'Riverside Bowling Club'];
 
-export const initialPayouts = [
+// When the money is expected to move. Only statuses that have actually cleared
+// approval have an ETA - anything still in review, rejected, or waiting on the
+// patron has nothing to estimate yet.
+// Minutes until the payout may be dispatched via PayTo. This stands in for
+// `delayUntil - now` on a real jackpot: the live system reads delayUntil when
+// the payout is in payment_delayed, and otherwise derives the moment from the
+// EGM win event timestamp plus the venue's Minimum Wait Time (Strapi, per
+// venue). Negative means the send window has already passed.
+//
+// Terminal and not-yet-scheduled states have no pending dispatch at all, so
+// they carry null rather than a number - there is nothing to count down to.
+const NO_PAYMENT_DUE = new Set([
+  'Payment Completed',
+  'Failed',
+  'Rejected',
+  'Draft',
+  'Pending verification',
+]);
+
+// Fixed spread so the column exercises sub-hour, same-day, next-day and overdue
+// cases instead of one uniform value. Indexed by row so it stays stable between
+// renders rather than reshuffling on every read.
+const DUE_MINUTES_SPREAD = [30, 120, 1200, 2160, 45, -90, 480, 90, 1440, -20];
+
+function withPaymentDue(payout, index) {
+  return {
+    ...payout,
+    paymentDueInMinutes: NO_PAYMENT_DUE.has(payout.status)
+      ? null
+      : DUE_MINUTES_SPREAD[index % DUE_MINUTES_SPREAD.length],
+  };
+}
+
+// A win is disbursed as cash over the counter, as an EFT to the patron's bank
+// account via PayTo, or as a mix of both - so the register's single `amount` is
+// really the sum of two parts the venue settles through different rails.
+//
+// Cash is capped in practice by what the venue holds in the till, so the spread
+// below is a set of realistic counter amounts rather than a percentage. Where
+// the preferred cash figure exceeds the win, the whole win is paid in cash and
+// the EFT leg is zero; a 0 in the spread gives the EFT-only case.
+const CASH_SPLIT_SPREAD = [0, 500, 1000, 250, 0, 2000, 800, 0, 1500, 300];
+
+function withAmountSplit(payout, index) {
+  const cashAmount = Math.min(CASH_SPLIT_SPREAD[index % CASH_SPLIT_SPREAD.length], payout.amount);
+  return {
+    ...payout,
+    cashAmount,
+    // Rounded to cents so the two legs always add back to `amount` exactly
+    // rather than drifting on records with fractional wins.
+    eftAmount: Math.round((payout.amount - cashAmount) * 100) / 100,
+  };
+}
+
+const basePayouts = [
+  // Patron self-service verification in flight: the collector has submitted, the
+  // patron has not finished on their phone yet, so ID, screening and CoP are all
+  // still empty and no approver can action these.
+  { id: '575', created: 'Jul 13, 2026 12:58PM', venue: 'Riverside RSL Club', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 8400, status: 'Pending verification', risk: 'Medium', machineId: 'EGM-006', member: 'MEM-1041', accountName: 'Priya Raman', bsb: '-', accountNumber: '-' },
+  { id: '574', created: 'Jul 13, 2026 12:22PM', venue: 'Riverside RSL Club', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 1250, status: 'Pending verification', risk: 'Low', machineId: 'EGM-011', member: 'MEM-1042', accountName: 'Daniel Okafor', bsb: '-', accountNumber: '-' },
+  { id: '573', created: 'Jul 13, 2026 11:58AM', venue: 'Riverside Grand Bistro', idv: 'None', pep: '-', sanctions: '-', cop: '-', amount: 15000, status: 'Pending verification', risk: 'High', machineId: 'EGM-007', member: 'MEM-1043', accountName: 'Helena Vasquez', bsb: '-', accountNumber: '-' },
   { id: '572', created: 'Jul 13, 2026 11:47AM', venue: 'Riverside RSL Club', idv: 'None', pep: '—', sanctions: '—', cop: '—', amount: 6000, status: 'Draft', risk: 'High', machineId: 'EGM-001', member: 'MEM-1001', accountName: 'Sarah Jenkins', bsb: '062-000', accountNumber: '12345678' },
   { id: '570', created: 'Jul 13, 2026 06:31AM', venue: 'Riverside RSL Club', idv: 'Fail', pep: 'Clear', sanctions: 'Clear', cop: 'No match', amount: 400, status: 'Payment Delayed', risk: 'High', machineId: 'EGM-003', member: 'MEM-1002', accountName: 'James O\'Sullivan', bsb: '032-001', accountNumber: '87654321' },
   { id: '569', created: 'Jul 10, 2026 11:10AM', venue: 'Riverside RSL Club', idv: 'Pass', pep: 'Clear', sanctions: 'Clear', cop: 'Match', amount: 999, status: 'Payment Completed', risk: 'Low', machineId: 'EGM-002', member: 'MEM-1003', accountName: 'David Zhang', bsb: '012-002', accountNumber: '45678901' },
@@ -115,6 +175,8 @@ export const initialPayouts = [
     };
   })
 ];
+
+export const initialPayouts = basePayouts.map(withPaymentDue).map(withAmountSplit);
 
 export const initialWinners = [
   {

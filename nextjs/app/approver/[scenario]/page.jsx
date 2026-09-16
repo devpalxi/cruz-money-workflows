@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
+import { initialPayouts } from '@/lib/mockData';
 
 /* ─── Scenario Data matching deploy/approver_v3.html ─── */
 const SCENARIOS = {
@@ -1989,8 +1990,18 @@ function CancelModal({ open, onClose, onConfirm }) {
 /* ─── Main Approver Page Component ─── */
 export default function ApproverScenarioPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const scenarioKey = (params?.scenario || 'dual-hit');
   const scenario = SCENARIOS[scenarioKey] || SCENARIOS['dual-hit'];
+
+  // The scenario body is still canned data, but when a dashboard row sent us
+  // here its status is the one thing we can report truthfully. Without this the
+  // pill prints the scenario's hardcoded 'Awaiting approval' for every record.
+  const payoutId = searchParams.get('payout');
+  const payoutRecord = payoutId
+    ? initialPayouts.find((p) => p.id === payoutId)
+    : null;
+  const statusPill = payoutRecord?.status || scenario.statusPill;
 
   const computedRisk = useMemo(() => computeRisk(scenario.riskSignals || {}), [scenario]);
   const [risk, setRisk] = useState(computedRisk.rating);
@@ -2187,7 +2198,7 @@ export default function ApproverScenarioPage() {
               </h1>
               <p className="text-[15.5px] text-[#334155] font-medium m-0">{scenario.dateTime}</p>
             </div>
-            <StatusPill>{scenario.statusPill}</StatusPill>
+            <StatusPill>{statusPill}</StatusPill>
           </header>
 
           {/* Toolbar */}

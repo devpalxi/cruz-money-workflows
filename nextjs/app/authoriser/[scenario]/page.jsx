@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { computeRisk } from '@/lib/riskEngine';
+import { initialPayouts } from '@/lib/mockData';
 
 /* ─── Authoriser Scenario Data matching deploy/authoriser_v3.html ─── */
 const SCENARIOS = {
@@ -1538,8 +1539,18 @@ function CancelModal({ open, onClose, onConfirm }) {
 /* ─── Main Authoriser Page Component ─── */
 export default function AuthoriserScenarioPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const scenarioKey = (params?.scenario || 'dual-hit');
   const scenario = SCENARIOS[scenarioKey] || SCENARIOS['dual-hit'];
+
+  // The scenario body is still canned data, but when a dashboard row sent us
+  // here its status is the one thing we can report truthfully. Without this the
+  // pill prints the scenario's hardcoded 'Awaiting authorisation' for every record.
+  const payoutId = searchParams.get('payout');
+  const payoutRecord = payoutId
+    ? initialPayouts.find((p) => p.id === payoutId)
+    : null;
+  const statusPill = payoutRecord?.status || scenario.statusPill;
 
   const computedRisk = useMemo(() => computeRisk(scenario.riskSignals || {}), [scenario]);
   const isOverridden = Boolean(scenario.approverResolution?.risk && scenario.approverResolution.risk !== computedRisk.rating);
@@ -1700,7 +1711,7 @@ export default function AuthoriserScenarioPage() {
               </h1>
               <p className="text-[15.5px] text-[#334155] font-medium m-0">{scenario.dateTime}</p>
             </div>
-            <StatusPill>{scenario.statusPill}</StatusPill>
+            <StatusPill>{statusPill}</StatusPill>
           </header>
 
           {/* Toolbar */}

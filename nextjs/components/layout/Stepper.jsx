@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { getDisbursementFlags } from '@/lib/payoutFlow';
 
@@ -22,20 +23,39 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
   // itself, so both are always visible and marked "not required" when they
   // don't apply. `null` means the disbursement method hasn't been read yet.
   const [disbursementMethod, setDisbursementMethod] = useState(null);
+  const [verificationMode, setVerificationMode] = useState('manual');
+
+  // Re-read on every route change: this component lives in the flow layout,
+  // which persists across client-side navigation, so a mount-only read would
+  // keep showing choices the collector has since changed.
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
+      setVerificationMode(saved.verificationMode || 'manual');
     } catch (e) {
       setDisbursementMethod('');
     }
-  }, []);
+  }, [pathname]);
 
   const { hasBank, hasCheque } = getDisbursementFlags(disbursementMethod);
 
+  // Steps the patron is completing on their own phone. Cheque details stay
+  // with staff either way - a cheque is handed over at the counter.
+  const PATRON_STEPS = [
+    '/collector/primary-id',
+    '/collector/secondary-id',
+    '/collector/bank-account',
+  ];
+
+  const isWithPatron = (path) =>
+    verificationMode === 'link' && PATRON_STEPS.includes(path);
+
   const isStepSkipped = (path) => {
     if (disbursementMethod === null) return false;
+    if (isWithPatron(path)) return true;
     if (path === '/collector/bank-account') return !hasBank;
     if (path === '/collector/cheque-details') return !hasCheque;
     return false;
@@ -101,7 +121,11 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
                   }`}
                 >
                   {item.title}
-                  {skipped && <span className="ml-1 text-[12.5px]">(not required)</span>}
+                  {skipped && (
+                    <span className="ml-1 text-[12.5px]">
+                      {isWithPatron(item.path) ? '(with patron)' : '(not required)'}
+                    </span>
+                  )}
                 </span>
               )}
             </li>

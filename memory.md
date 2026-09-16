@@ -1,45 +1,65 @@
-# Memory — Approver/Authoriser Payout Details & Post-Approval Split Edit
+# Memory — Patron self-service verification & Approver/Authoriser dashboards
 
 Last updated: 2026-09-16
 
 ## What was built
 
-- **Total amount on Approver/Authoriser payout details** ([`nextjs/app/approver/[scenario]/page.jsx`](file:///d:/DN-75/Edu/DN/Palxi/Project%203/nextjs/app/approver/%5Bscenario%5D/page.jsx), [`nextjs/app/authoriser/[scenario]/page.jsx`](file:///d:/DN-75/Edu/DN/Palxi/Project%203/nextjs/app/authoriser/%5Bscenario%5D/page.jsx)):
-  - Added a `formatTotalAmount(cashAmount, transferAmount)` helper (parses the `"AUD X,XXX.XX"` mock strings, sums, reformats) and a new "Total amount" grid cell inserted right after "Transfer amount" in the Payout details panel, on both pages.
-  - Moved "Payout type" from a full-width row (`col-span-2`) into the right column so it sits beside "Disbursement policy".
-  - Stripped the "Venue policy: " prefix from every `disbursementPolicy` value in both files (10 entries in approver, 8 in authoriser) — now shows just "Cash + Bank transfer" / "Bank transfer only".
+### 1. Patron self-service verification (committed as `a1621ae`)
 
-- **Post-approval cash/EFT split edit + audit log** ([`nextjs/components/views/WinnerDetailView.jsx`](file:///d:/DN-75/Edu/DN/Palxi/Project%203/nextjs/components/views/WinnerDetailView.jsx), used by `/admin/winners/[id]` and `/super-admin/winners/[id]`):
-  - Added an "Edit split" text-link next to "Total payout prize", visible only when `payoutStatus` is `Awaiting Approval`, `Pending Authorisation`, or `Payment Delayed` (hidden once `Payment Completed`/`Failed`/`Rejected`).
-  - Modal lets an Admin redistribute `cashDisbursed`/`eftDisbursed`; the two must still sum to the fixed `winAmount` (live-validated, Save disabled otherwise); a reason is required.
-  - Added a "Disbursement audit history" block (flat, hairline-divided list, no nested card) showing every edit: admin, timestamp, old split → new split, reason. Empty state: "No changes recorded."
-  - Verified end-to-end in-browser: edited WIN-89201 ($500/$1000 → $200/$1300), confirmed audit entry recorded and edit link correctly hidden on a `Payment Completed` record (WIN-89204).
+A branch in the Collector flow that hands identity and bank verification to the patron's own phone instead of the counter.
+
+- **`nextjs/lib/verificationLink.js`** (new) — the mock "backend". Token issue, status machine (`sent` / `in_progress` / `completed` / `staff_action` / `expired` / `cancelled`), 30-minute expiry, resend, cancel. Records live in `localStorage` keyed by token, **not** sessionStorage, because the collector terminal and the patron's page are different tabs and must read the same record.
+- **`nextjs/app/verify/[token]/layout.jsx` + `page.jsx`** (new) — the patron mobile surface. Single client page with an internal step machine (welcome → consent → ID → face → bank → review → submit) rather than sub-routes, so a deep link cannot land someone in a half-finished state. Terminal screens: done, return to counter, expired, closed, invalid.
+- **`nextjs/app/collector/(flow)/email-address/page.jsx`** — added phone/first/last name fields, the "Verify at the counter" vs "Send link to patron" segmented rail, and the link-sent confirmation (URL + copy + open patron view).
+- **`nextjs/app/collector/(flow)/summary/page.jsx`** — three verification banners (waiting / complete / needs staff), ID and bank sections rendered as "waiting on patron", Resend link / Switch to manual verification / Open patron view actions, switch-to-manual confirm modal, 2s poll of the link record.
+- **`nextjs/components/layout/Stepper.jsx`** — "(with patron)" state for steps 4-6; now re-reads sessionStorage on `pathname` change.
+- **`nextjs/lib/mockData.js` + `PayoutsView.jsx`** — new `Pending verification` status (amber tier), filter option, 3 seeded records.
+- **`DESIGN.md` §6 + `ui-rules.md` §2.8** — documented the patron surface and the sticky-CTA exception, per `agent.md` §4.
+
+### 2. Approver / Authoriser dashboards (uncommitted at time of writing)
+
+- **`nextjs/app/approver/dashboard/page.jsx`**, **`nextjs/app/authoriser/dashboard/page.jsx`** (new) — thin wrappers rendering `PayoutsView` with `role="APPROVER"` / `"AUTHORISER"`.
+- **`nextjs/components/views/PayoutsView.jsx`** — two new roles; `Payment ETA` column (between Amount and Status) and `Actions` column (Review link, after Status), both gated to review roles only so admin/super-admin are untouched; role-aware `scenarioForPayout()`; CSV export mirrors visible columns.
+- **`nextjs/components/layout/AdminSidebar.jsx`** — `APPROVER`/`AUTHORISER` roles with a single Dashboard link each; footer role-switcher converted from a ternary to a lookup map.
+- **`nextjs/lib/mockData.js`** — `paymentEta` derived from status via `PAYMENT_ETA_BY_STATUS` and applied with `basePayouts.map(withPaymentEta)`, rather than hand-editing 96 records.
+- **`nextjs/components/layout/AppHeader.jsx`** — defined the missing `superAdminNavLinks`, which was a dormant `ReferenceError` for any `role="SUPER ADMIN"` render.
 
 ## Decisions made
 
-- **Data model disconnect discovered**: the Approver/Authoriser scenario pages read from a hardcoded `SCENARIOS` const local to each file — not connected to `WinnersContext`/`initialWinners` (the Admin Winners dataset). They represent the pre-approval stage. Any post-approval editing feature belongs on the Winners detail page (`WinnerDetailView.jsx`), which is the only place with a real, mutable, shared payout record.
-- **Split edit is redistribute-only**: cash/EFT can be rebalanced but must still sum to the original `winAmount` — changing the total prize amount itself is out of scope (it was already risk-assessed at approval).
-- **Status-gated editability**: once `payoutStatus` reaches `Payment Completed`, `Failed`, or `Rejected`, the split is locked — editing after funds have moved was judged a reconciliation/compliance risk, not a correction.
-- **Reused existing UI patterns** rather than inventing new chrome for the audit log: same modal shell as the Blacklist modal, same mandatory-justification pattern, flat hairline-divided rows per the "No Card-in-Card" rule (per `agent.md` §4's New UI Pattern Permission Gate).
-- **"House ID" proposal dropped**: doesn't exist anywhere in the system (mock data, Machine registry, Strapi schema, glossary) — user confirmed not to integrate it.
-- Two other proposals discussed but explicitly NOT implemented (exploratory only, flagged for others to investigate): a patron self-service SMS/mobile KYC intake flow, and pre-submit-only editing being extended (superseded by the split-edit feature above, which covers the post-submit gap).
+- **Patron record is created when the collector submits at Summary**, as `Pending verification`. The win already happened, so the audit trail starts then and an abandoned link leaves a record to chase.
+- **Two electronic ID attempts, then hand back to staff.** IDV3 and the no-ID path stay staff-only because `v1-glossary.md` requires a Collector to attest to physically viewing the document — a patron cannot attest about their own.
+- **The patron never gets a staff override.** The CoP bypass-with-justification that exists on `bank-account/page.jsx` is deliberately absent; CoP no-match follows the glossary rule (retry limit, then escalate to the Approver).
+- **Consent moved to the patron** (`consent.general` / `consent.docs` / `consent.creditheader`) — stronger compliance than staff attesting on their behalf.
+- **Capture uses `<input type="file" capture=...>`, not `getUserMedia`** — opens the real camera on a phone, degrades to a file picker, needs no HTTPS, and matches the repo's existing convention.
+- **Approver/authoriser dashboards reuse `PayoutsView`, not a fork** — user specified `/admin/dashboard` as the visual reference.
+- **Those dashboards show the full register, no default filter**, and their sidebar is Dashboard only (both explicitly chosen by the user over the alternatives).
+- **Risk rating column kept** on the review dashboards even though the reference screenshots omit it — it is what an approver is actually assessing.
+- **Screenshots supply fields, not styling.** The user's reference images use blue `Awaiting Approval` pills, ALL-CAPS headers and a `✓` in the CoP pill — all three violate `DESIGN.md`. Rendered per the design system instead.
 
 ## Problems solved
 
-- Confirmed via code read that the "street number blocks alpha characters" bug report does not reproduce anywhere in this repo (all `streetNumber` inputs are plain `type="text"`, no regex/numeric restriction, in both `nextjs/` and `deploy/`) — likely a backend/Strapi-only issue, not a frontend one.
-- Clarified the difference between `/admin/dashboard` (`PayoutsView.jsx`, reads `initialPayouts`, operational/compliance triage table, all statuses) vs `/admin/winners` (`WinnersView.jsx`/`WinnerDetailView.jsx`, reads `initialWinners` via `WinnersContext`, patron-centric register with real per-record drill-down and disbursement/bank detail).
+- **Authoriser has only 7 scenarios, approver has 10.** Missing: `single-hit`, `name-mismatch`, `all-clear`. A naive row-to-scenario mapping silently fell back to `dual-hit`, so a clean low-risk payout would have opened a dual sanctions-and-PEP review. `scenarioForPayout(payout, available)` now lists candidates best-first and picks the first the role actually has. Verified offline: 99/99 rows resolve to valid targets for both roles.
+- **Never run `npm run build` while the user's `next dev` is running** — both write to the same `.next` and it corrupts the dev server (symptoms: stale bundles, `usePathname is not defined` from a Fast Refresh artifact). Next 16 also refuses a second `next dev` on the same directory. Use `npm run start -p 3100` against a fresh build for a parallel server instead.
+- **`/collector/summary` renders on the first load in a tab and gets stuck on its Suspense fallback on every reload after that**, with React error #418 (hydration). Reproduces identically on the pre-change `HEAD` version, so it is **pre-existing, not caused by this work**. Does not affect real use — a collector reaches Summary by walking the flow (client-side navigation), which works fine.
+- Fixed one genuine hydration cause in that file: it rendered `new Date()` during render on a prerendered page, so the build-time timestamp could never match the client's. Now filled in after mount via `renderedAt`.
+- `Stepper` lives in the flow layout, which persists across client-side navigation — a mount-only sessionStorage read showed stale choices. Now keyed on `pathname`.
 
 ## Current state
 
-- All 40 Next.js routes compile cleanly with 0 errors (`npm run build` exits 0).
-- `WinnerDetailView.jsx` changed on disk after my last edit (via Fast Refresh/dev tooling, not authored this session) — it now also imports `ArrowUpRight`/`AlertCircle` and has a more robust `winner` lookup (matches by id, payoutId, machineId, machineName, or fullName, with `decodeURIComponent`/trim handling). This looked like an unrelated improvement already present when re-read; not verified against a specific prior session, worth a quick sanity check next time this file is touched.
-- `.claude/launch.json` was created temporarily for in-browser verification and then deleted — it does not exist in the repo currently. A dev server was already running on port 3000 outside this session's control.
-- Fully compliant with `agent.md`, `DESIGN.md`, and `ui-rules.md`.
+- `npm run build` is clean: **48/48 routes, 0 errors, 0 warnings**.
+- Patron verification is **verified end to end in a browser**: collector branch, link send, stepper "(with patron)", all three summary banners, the full patron flow, ID-fail-twice hand-back (records `staff_action` / IDV3), switch-to-manual (cancels link, reverts mode, returns to Primary ID), and all terminal screens.
+- Approver/authoriser dashboards are **built and compiling but NOT visually verified** — the user explicitly asked not to open a browser. Statically checked: 12 `<th>` vs 12 `<td>` across data/skeleton/empty rows, `colSpan` math, and the scenario mapping run offline over all 99 records.
+- Uncommitted: the dashboard work (`AdminSidebar.jsx`, `AppHeader.jsx`, `PayoutsView.jsx`, `mockData.js`, plus the two new dashboard route folders).
+- `.claude/launch.json` at the project root defines `riverside-prod` (`npm --prefix nextjs run start -- -p 3100`).
 
 ## Next session starts with
 
-- No pending build task. If asked to continue, check whether the user wants the two exploratory proposals (patron self-service mobile KYC, and any further payout-register/house-ID exploration) turned into real specs, or wants something new.
+Open `/approver/dashboard` and `/authoriser/dashboard` in a browser and compare against `/admin/dashboard` — that is the one piece of this session's work with no visual confirmation. Check pill colours, sentence-case headers, the two new columns, and that Review lands on a sensible review screen.
 
 ## Open questions
 
-- None blocking. Two proposals remain explicitly exploratory/unscoped: (1) patron self-service SMS+mobile ID/bank capture flow, (2) whether "House ID" should ever be introduced as a new field if a future requirement surfaces it from the real backend.
+- **`paymentEta` is invented.** Derived from payout status (`Next business day` / `On authorisation` / `Settled` / `-`) based on the lifecycle in `v1-glossary.md`. If the field has a real backend definition, replace the seed values rather than building on them.
+- **The Review link lands on canned scenario data, not the row's own payout.** The `[scenario]` pages read a hardcoded `SCENARIOS` object and are not wired to `initialPayouts`. Connecting them is the obvious next structural fix.
+- **Does patron self-service change the risk rating?** Currently it does not — IDV2 still means Medium. Remote unsupervised verification is arguably riskier than a staff-witnessed one. Flagged for compliance, not implemented.
+- The nav role badge in `AdminSidebar`/`AppHeader` still uses `uppercase tracking-wider`, which `DESIGN.md` §3 explicitly supersedes. Pre-existing; left alone because changing it would alter admin and super-admin visuals too.
+- Two older proposals remain exploratory and unscoped: patron self-service SMS/mobile KYC beyond what was built, and whether "House ID" should ever exist as a field.

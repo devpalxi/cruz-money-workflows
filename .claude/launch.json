@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "riverside-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "nextjs", "run", "start", "--", "-p", "3100"],
+      "port": 3100
+    }
+  ]
+}
