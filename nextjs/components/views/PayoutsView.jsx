@@ -1,10 +1,63 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import { initialPayouts } from '@/lib/mockData';
+
+// The Approver and Authoriser review screens read from a hardcoded SCENARIOS
+// object rather than from initialPayouts, so a row cannot open its own record.
+// Pick the scenario whose compliance signature most resembles the row, so the
+// review screen at least reflects the kind of case the row represents. Until
+// those pages are wired to the real dataset, the detail shown is the
+// scenario's, not this payout's.
+//
+// The two roles do not offer the same scenarios - the Authoriser has no
+// single-hit, name-mismatch or all-clear - so candidates are listed best-first
+// and the first one that role actually has wins. Without this, every clean
+// payout on the Authoriser dashboard would open a dual sanctions and PEP hit.
+// These lists mirror the SCENARIOS keys in the two [scenario]/page.jsx files;
+// adding a scenario there means adding it here.
+const APPROVER_SCENARIOS = new Set([
+  'dual-hit',
+  'single-hit',
+  'name-mismatch',
+  'all-clear',
+  'manual-kyc',
+  'no-id',
+  'multi-id-pass',
+  'multi-id-mixed',
+  'blacklist-match',
+  'high-value',
+]);
+
+const AUTHORISER_SCENARIOS = new Set([
+  'dual-hit',
+  'manual-kyc',
+  'no-id',
+  'multi-id-pass',
+  'multi-id-mixed',
+  'blacklist-match',
+  'high-value',
+]);
+
+function scenarioForPayout(payout, available) {
+  const pepHit = payout.pep === 'Hit';
+  const sanctionsHit = payout.sanctions === 'Hit';
+  const candidates = [];
+
+  if (pepHit && sanctionsHit) candidates.push('dual-hit');
+  if (pepHit || sanctionsHit) candidates.push('single-hit', 'dual-hit');
+  if (payout.idv === 'Fail') candidates.push('no-id');
+  if (payout.cop === 'No match' || payout.cop === 'Close match') candidates.push('name-mismatch');
+  if (payout.idv === 'Manual verification') candidates.push('manual-kyc');
+  if (payout.amount >= 10000) candidates.push('high-value');
+  candidates.push('all-clear', 'multi-id-pass');
+
+  return candidates.find((key) => available.has(key)) || 'dual-hit';
+}
 
 function formatCurrency(amount) {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -19,6 +72,13 @@ function formatCurrency(amount) {
 export default function PayoutsView({ role = 'ADMIN' }) {
   const router = useRouter();
   const isSuperAdmin = role === 'SUPER ADMIN';
+  // Approver and Authoriser share this table but get two extra columns and a
+  // way through to their review screen.
+  const isApprover = role === 'APPROVER';
+  const isAuthoriser = role === 'AUTHORISER';
+  const isReviewRole = isApprover || isAuthoriser;
+  const reviewBasePath = isAuthoriser ? '/authoriser' : '/approver';
+  const reviewScenarios = isAuthoriser ? AUTHORISER_SCENARIOS : APPROVER_SCENARIOS;
 
 
   // Filters state
@@ -255,6 +315,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const exportCSV = () => {
     if (filteredPayouts.length === 0) return;
 
+    // The export mirrors the columns the role can see, so Payment ETA is
+    // included only where it is shown.
     const headers = [
       'PAYOUT ID',
       'CREATED',
@@ -265,6 +327,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       'COP STATUS',
       'RISK RATING',
       'AMOUNT',
+      ...(isReviewRole ? ['PAYMENT ETA'] : []),
       'STATUS',
     ];
 
@@ -278,6 +341,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
       `"${p.cop}"`,
       `"${p.risk}"`,
       parseFloat(p.amount),
+      ...(isReviewRole ? [`"${p.paymentEta}"`] : []),
       `"${p.status}"`,
     ]);
 
@@ -416,6 +480,10 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           <p className="text-[14.5px] text-ink-mid mt-2 mb-0 max-w-[70ch] leading-relaxed">
             {isSuperAdmin
               ? 'Review and coordinate transaction disbursements, risk signals, and compliance checks across all venues.'
+              : isApprover
+              ? 'Review identity, compliance results, and risk ratings, then make the approval decision.'
+              : isAuthoriser
+              ? 'Review approved payouts and authorise the release of funds.'
               : 'Manage, audit, and coordinate transaction disbursements across venue terminals.'}
           </p>
         </div>
@@ -803,7 +871,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
 
           {/* 10-Column Compliance Table */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[950px] border-collapse">
+            <table className={`w-full border-collapse ${isReviewRole ? 'min-w-[1160px]' : 'min-w-[950px]'}`}>
               <thead>
                 <tr className="border-b border-border bg-surface-th">
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[55px]">
@@ -841,9 +909,19 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                   <th className="text-right px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[75px]">
                     Amount
                   </th>
+                  {isReviewRole && (
+                    <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[125px]">
+                      Payment ETA
+                    </th>
+                  )}
                   <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[130px]">
                     Status
                   </th>
+                  {isReviewRole && (
+                    <th className="text-left px-2.5 py-3 text-ink-mid text-[11.5px] font-semibold tracking-tight whitespace-nowrap w-[80px]">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -886,9 +964,19 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                       <td className="px-2.5 py-3 text-right whitespace-nowrap">
                         <div className="h-4 bg-slate-200 rounded w-14 ml-auto" />
                       </td>
+                      {isReviewRole && (
+                        <td className="px-2.5 py-3 whitespace-nowrap">
+                          <div className="h-4 bg-slate-200 rounded w-20" />
+                        </td>
+                      )}
                       <td className="px-2.5 py-3 whitespace-nowrap">
                         <div className="h-5 bg-slate-200 rounded-full w-20" />
                       </td>
+                      {isReviewRole && (
+                        <td className="px-2.5 py-3 whitespace-nowrap">
+                          <div className="h-4 bg-slate-200 rounded w-12" />
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : paginatedPayouts.length > 0 ? (
@@ -947,8 +1035,31 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                           {formatCurrency(item.amount)}
                         </td>
 
+                        {/* Payment ETA */}
+                        {isReviewRole && (
+                          <td className="px-2.5 py-3 whitespace-nowrap text-[12.5px] font-medium text-ink-mid">
+                            {item.paymentEta === '-' ? (
+                              <span className="text-ink-lo">-</span>
+                            ) : (
+                              item.paymentEta
+                            )}
+                          </td>
+                        )}
+
                         {/* Status */}
                         <td className="px-2.5 py-3 whitespace-nowrap">{renderStatusPill(item.status)}</td>
+
+                        {/* Actions */}
+                        {isReviewRole && (
+                          <td className="px-2.5 py-3 whitespace-nowrap">
+                            <Link
+                              href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}`}
+                              className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
+                            >
+                              Review
+                            </Link>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -960,7 +1071,8 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         (visibleCols.idMatch ? 1 : 0) +
                         (visibleCols.pep ? 1 : 0) +
                         (visibleCols.sanctions ? 1 : 0) +
-                        (visibleCols.cop ? 1 : 0)
+                        (visibleCols.cop ? 1 : 0) +
+                        (isReviewRole ? 2 : 0)
                       }
                       className="text-center py-12 text-ink-mid text-[13px] font-medium whitespace-nowrap"
                     >

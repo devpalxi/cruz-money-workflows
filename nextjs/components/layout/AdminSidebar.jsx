@@ -51,10 +51,42 @@ export default function AdminSidebar({ role = 'SUPER ADMIN' }) {
     { label: 'Venue settings', href: '/admin/venue-settings', icon: Settings },
   ];
 
-  const links = role === 'SUPER ADMIN' ? superAdminLinks : adminLinks;
+  // Approver and Authoriser review payouts and do nothing else in this system,
+  // so their nav is a single item rather than a trimmed copy of the admin nav.
+  const approverLinks = [
+    { label: 'Dashboard', href: '/approver/dashboard', icon: LayoutDashboard },
+  ];
+
+  const authoriserLinks = [
+    { label: 'Dashboard', href: '/authoriser/dashboard', icon: LayoutDashboard },
+  ];
+
+  const linksByRole = {
+    'SUPER ADMIN': superAdminLinks,
+    ADMIN: adminLinks,
+    APPROVER: approverLinks,
+    AUTHORISER: authoriserLinks,
+  };
+
+  const links = linksByRole[role] || adminLinks;
+
+  // Prototype role switcher in the footer: each role points at the next one.
+  const roleSwitch = {
+    'SUPER ADMIN': { label: 'Switch to Admin', href: '/admin/dashboard' },
+    ADMIN: { label: 'Switch to Super Admin', href: '/super-admin/dashboard' },
+    APPROVER: { label: 'Switch to Authoriser', href: '/authoriser/dashboard' },
+    AUTHORISER: { label: 'Switch to Approver', href: '/approver/dashboard' },
+  }[role] || { label: 'Switch to Super Admin', href: '/super-admin/dashboard' };
+
+  const DASHBOARD_ROOTS = [
+    '/super-admin/dashboard',
+    '/admin/dashboard',
+    '/approver/dashboard',
+    '/authoriser/dashboard',
+  ];
 
   const isLinkActive = (href) => {
-    if (href === '/super-admin/dashboard' || href === '/admin/dashboard') {
+    if (DASHBOARD_ROOTS.includes(href)) {
       return pathname === href;
     }
     return pathname.startsWith(href);
@@ -154,21 +186,12 @@ export default function AdminSidebar({ role = 'SUPER ADMIN' }) {
         {/* Footer & User Profile */}
         <div className="px-3.5 py-3 border-t border-[#d9e2ec] flex flex-col gap-2.5 bg-white flex-shrink-0">
           <div>
-            {role === 'SUPER ADMIN' ? (
-              <Link
-                href="/admin/dashboard"
-                className="text-[12px] font-bold text-[#0d9488] hover:text-[#0b7a6f] hover:underline block"
-              >
-                &rarr; Switch to Admin
-              </Link>
-            ) : (
-              <Link
-                href="/super-admin/dashboard"
-                className="text-[12px] font-bold text-[#0d9488] hover:text-[#0b7a6f] hover:underline block"
-              >
-                &rarr; Switch to Super Admin
-              </Link>
-            )}
+            <Link
+              href={roleSwitch.href}
+              className="text-[12px] font-bold text-[#0d9488] hover:text-[#0b7a6f] hover:underline block"
+            >
+              &rarr; {roleSwitch.label}
+            </Link>
           </div>
 
           <div className="flex items-center justify-between pt-0.5">

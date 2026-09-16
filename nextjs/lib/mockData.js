@@ -63,7 +63,20 @@ export const initialBlacklist = [
 const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Pending verification', 'Failed', 'Rejected'];
 const venuesList = ['Riverside RSL Club', 'Riverside Grand Bistro', 'Riverside Lounge & Bar', 'Riverside Leisure Center', 'Riverside Bowling Club'];
 
-export const initialPayouts = [
+// When the money is expected to move. Only statuses that have actually cleared
+// approval have an ETA - anything still in review, rejected, or waiting on the
+// patron has nothing to estimate yet.
+const PAYMENT_ETA_BY_STATUS = {
+  'Payment Delayed': 'Next business day',
+  'Pending Authorisation': 'On authorisation',
+  'Payment Completed': 'Settled',
+};
+
+function withPaymentEta(payout) {
+  return { ...payout, paymentEta: PAYMENT_ETA_BY_STATUS[payout.status] || '-' };
+}
+
+const basePayouts = [
   // Patron self-service verification in flight: the collector has submitted, the
   // patron has not finished on their phone yet, so ID, screening and CoP are all
   // still empty and no approver can action these.
@@ -121,6 +134,8 @@ export const initialPayouts = [
     };
   })
 ];
+
+export const initialPayouts = basePayouts.map(withPaymentEta);
 
 export const initialWinners = [
   {

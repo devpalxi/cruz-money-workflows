@@ -59,6 +59,19 @@ export default function AppHeader({ role = 'ADMIN' }) {
     skipped: isStepSkipped(item.href),
   }));
 
+  const superAdminNavLinks = [
+    { label: 'Dashboard', href: '/super-admin/dashboard' },
+    { label: 'Venues', href: '/super-admin/venue' },
+    { label: 'Clients', href: '/super-admin/clients' },
+    { label: 'Machines', href: '/super-admin/machines' },
+    { label: 'Users', href: '/super-admin/users' },
+    { label: 'Payouts', href: '/super-admin/payouts' },
+    { label: 'Venue Blacklist', href: '/super-admin/blacklist' },
+    { label: 'AUSTRAC / SMRs', href: '/super-admin/smr' },
+    { label: 'Billing', href: '/super-admin/billing' },
+    { label: 'Administration', href: '/super-admin/administration' },
+  ];
+
   const links =
     role === 'SUPER ADMIN'
       ? superAdminNavLinks
