@@ -596,6 +596,15 @@ function SummaryContent() {
                       </div>
                     ) : (
                       <>
+                    {(view.occupation || patronResult?.occupation) && (
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-ink-mid font-medium">Occupation</span>
+                        <span className="font-bold text-ink-hi">
+                          {patronResult?.occupation || view.occupation}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center py-1">
                       <span className="text-ink-mid font-medium">Document type</span>
                       <span className="font-bold text-ink-hi">

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
+import { formatOccupation } from '@/lib/venueCompliance';
 import { initialPayouts } from '@/lib/mockData';
 
 /* ─── Scenario Data matching deploy/approver_v3.html ─── */
@@ -28,6 +29,7 @@ const SCENARIOS = {
       email: 'stacy@gmail.com',
       fullName: 'STACY TESTTWENTY',
       documentType: 'Passport',
+      occupation: 'Electrician',
       source: 'max-gaming',
       isPrefilled: true,
       writeBackStatus: null,
@@ -109,6 +111,7 @@ const SCENARIOS = {
       email: 'alex.r@gmail.com',
       fullName: 'ALEXANDER ROSS',
       documentType: 'Driver Licence',
+      occupation: 'Registered nurse',
       source: 'max-gaming',
       isPrefilled: true,
       writeBackStatus: null,
@@ -188,6 +191,7 @@ const SCENARIOS = {
       email: 'stacy@gmail.com',
       fullName: 'STACY TESTTWENTY',
       documentType: 'Passport',
+      occupation: 'Hospitality manager',
       source: 'manual',
       isPrefilled: false,
       writeBackStatus: 'updated',
@@ -267,6 +271,7 @@ const SCENARIOS = {
       email: 'sarah.m@gmail.com',
       fullName: 'SARAH MILLER',
       documentType: 'Driver Licence',
+      occupation: 'Retired',
       source: 'max-gaming',
       isPrefilled: true,
       writeBackStatus: null,
@@ -344,6 +349,7 @@ const SCENARIOS = {
       email: 'chloe@gmail.com',
       fullName: 'CHLOE GALLAGHER',
       documentType: 'Birth Certificate (Manual KYC)',
+      occupation: 'Self-employed builder',
       source: 'none',
       isPrefilled: false,
       writeBackStatus: null,
@@ -491,6 +497,7 @@ const SCENARIOS = {
       email: 'james@gmail.com',
       fullName: "JAMES O'SULLIVAN",
       documentType: 'Driver Licence + Medicare',
+      occupation: 'Truck driver',
       source: 'max-gaming',
       isPrefilled: true,
       writeBackStatus: null,
@@ -569,6 +576,7 @@ const SCENARIOS = {
       email: 'elena@gmail.com',
       fullName: 'ELENA ROSTOVA',
       documentType: 'Driver Licence + Medicare (partial)',
+      occupation: 'Accountant',
       source: 'manual',
       isPrefilled: false,
       writeBackStatus: 'updated',
@@ -724,6 +732,7 @@ const SCENARIOS = {
       email: 'liam.thornton@email.com',
       fullName: 'LIAM THORNTON',
       documentType: 'Passport',
+      occupation: 'Cash-intensive business owner',
       source: 'none',
       isPrefilled: false,
       writeBackStatus: null,
@@ -2300,6 +2309,20 @@ export default function ApproverScenarioPage() {
                   <div className="p-[11px_14px] flex flex-col gap-[3px]">
                     <span className="text-[14.5px] font-bold text-[#475569]">Document type</span>
                     <span className="text-[16px] font-medium text-[#0f172a]">{scenario.member.documentType}</span>
+                  </div>
+                  {/* Self-reported at ID capture. Shown on every payout rather
+                      than gated on a High rating: risk is chosen at the bottom
+                      of this page, so a row that appeared afterwards would sit
+                      above where the approver is working and never be read. */}
+                  <div className="p-[11px_14px] flex flex-col gap-[3px]">
+                    <span className="text-[14.5px] font-bold text-[#475569]">Occupation</span>
+                    <span
+                      className={`text-[16px] font-medium ${
+                        scenario.member.occupation ? 'text-[#0f172a]' : 'text-[#94a3b8] italic'
+                      }`}
+                    >
+                      {formatOccupation(scenario.member.occupation)}
+                    </span>
                   </div>
                 </div>
 

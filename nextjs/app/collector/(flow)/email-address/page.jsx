@@ -16,6 +16,7 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { findReturningPlayer } from '@/lib/mockReturningPlayers';
+import { initialVenues } from '@/lib/mockData';
 import {
   createLink,
   buildVerifyUrl,
@@ -162,6 +163,11 @@ function EmailAddressContent() {
 
     const record = createLink({
       venue: form.venue || 'Riverside RSL Club',
+      // Carried so the patron's phone can read that venue's own CDD settings.
+      venueId:
+        form.venueId ||
+        initialVenues.find((v) => v.name === (form.venue || 'Riverside RSL Club'))?.id ||
+        'venue-riverside-rsl',
       payoutType: form.payoutType || 'EGM',
       machine: form.machine || '',
       winAmount: form.winAmount || DEFAULT_WIN_AMOUNT,

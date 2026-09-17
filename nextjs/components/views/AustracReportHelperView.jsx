@@ -190,7 +190,9 @@ Escalation Record:
     { key: 'd_addr', label: 'Address', value: selectedTx.address },
     { key: 'd_mem', label: 'Membership number', value: selectedTx.membership || 'MB-001', mono: true },
     { key: 'd_email', label: 'Email', value: selectedTx.email || 'Not provided', manual: !selectedTx.email },
-    { label: 'Occupation (self-reported)', value: 'Manual lookup required', manual: true },
+    selectedTx.occupation
+      ? { key: 'd_occupation', label: 'Occupation (self-reported)', value: selectedTx.occupation }
+      : { label: 'Occupation (self-reported)', value: 'Not collected, manual lookup required', manual: true },
     { key: 'd_acc', label: 'Bank account name', value: toTitleCase(selectedTx.accountName) },
     { key: 'd_bsb', label: 'BSB number', value: selectedTx.bsb, mono: true },
     { key: 'd_accno', label: 'Account number', value: selectedTx.accountNo, mono: true }

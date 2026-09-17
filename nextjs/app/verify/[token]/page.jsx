@@ -24,6 +24,7 @@ import {
   MAX_ID_ATTEMPTS,
   MAX_COP_ATTEMPTS,
 } from '@/lib/verificationLink';
+import { isOccupationCaptureEnabled } from '@/lib/venueCompliance';
 
 const ALL_STAGES = [
   { key: 'consent', label: 'Consent' },
@@ -197,6 +198,11 @@ export default function VerifyPage() {
   const [idPreview, setIdPreview] = useState(null);
   const [idAttempts, setIdAttempts] = useState(0);
 
+  const [occupation, setOccupation] = useState('');
+  // Venue-level setting. The link carries the venue, so the patron is only
+  // asked when that venue has opted in.
+  const [occupationEnabled, setOccupationEnabled] = useState(false);
+
   const [facePhase, setFacePhase] = useState('capture');
   const [facePreview, setFacePreview] = useState(null);
 
@@ -225,6 +231,7 @@ export default function VerifyPage() {
     else if (found.status === LINK_STATUS.EXPIRED) setStep('expired');
     else if (found.status === LINK_STATUS.CANCELLED) setStep('cancelled');
     if (found.payout?.patronName) setAccountName(found.payout.patronName);
+    setOccupationEnabled(isOccupationCaptureEnabled(found.payout?.venueId));
   }, [token]);
 
   const patronName = record?.payout?.patronName || '';
@@ -388,6 +395,8 @@ export default function VerifyPage() {
         docLabel: DOC_LABELS[docType],
         livenessPassed: true,
         linkType: linkType.value,
+        occupation: occupation.trim(),
+        occupationAsked: occupationEnabled,
         ...(linkType.includesSecondary && {
           secondaryDoc: 'medicare',
           secondaryDocLabel: DOC_LABELS.medicare,
@@ -706,6 +715,26 @@ export default function VerifyPage() {
                 </span>
               </div>
             )}
+
+            {idPhase === 'passed' && occupationEnabled && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="occupation" className="text-[14px] font-semibold text-ink-hi">
+                  What is your occupation?{' '}
+                  <span className="text-[13px] font-normal text-ink-lo">(optional)</span>
+                </label>
+                <input
+                  id="occupation"
+                  type="text"
+                  value={occupation}
+                  placeholder="For example, electrician"
+                  onChange={(e) => setOccupation(e.target.value)}
+                  className="h-12 w-full px-4 bg-white border border-border rounded-md text-base text-ink-hi placeholder:text-ink-lo focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none transition-all"
+                />
+                <p className="text-[13.5px] text-ink-mid m-0">
+                  The venue asks this for its anti-money-laundering records. You can leave it blank.
+                </p>
+              </div>
+            )}
           </>
         )}
 
@@ -960,6 +989,9 @@ export default function VerifyPage() {
                   <DetailRow key={row.label} label={row.label} value={row.value} mono={row.mono} />
                 ))}
                 <DetailRow label="Face photo" value="Matched" />
+                {occupationEnabled && (
+                  <DetailRow label="Occupation" value={occupation.trim() || 'Not provided'} />
+                )}
               </div>
             </div>
 

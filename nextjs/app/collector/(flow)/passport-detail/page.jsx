@@ -19,6 +19,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Checkbox from '@/components/ui/Checkbox';
+import { isOccupationCaptureEnabled } from '@/lib/venueCompliance';
 
 function PassportDetailContent() {
   const router = useRouter();
@@ -36,6 +37,10 @@ function PassportDetailContent() {
   const [middleName, setMiddleName] = useState('Jane');
   const [lastName, setLastName] = useState('Jenkins');
   const [dob, setDob] = useState('14/08/1988');
+  const [occupation, setOccupation] = useState('');
+  // Venue-level setting, so the field only appears for venues that have adopted
+  // the initial CDD rules. Read after mount because it lives in localStorage.
+  const [occupationEnabled, setOccupationEnabled] = useState(false);
 
   // Subpage 2: Address
   const [addressSearch, setAddressSearch] = useState('');
@@ -79,6 +84,8 @@ function PassportDetailContent() {
       if (saved.middleName) setMiddleName(saved.middleName);
       if (saved.lastName) setLastName(saved.lastName);
       if (saved.dob) setDob(saved.dob);
+      if (saved.occupation) setOccupation(saved.occupation);
+      setOccupationEnabled(isOccupationCaptureEnabled(saved.venueId));
       if (saved.addressSearch && saved.addressSearch.trim()) {
         setAddressSearch(saved.addressSearch);
         if (saved.unitNumber !== undefined) setUnitNumber(saved.unitNumber);
@@ -131,7 +138,7 @@ function PassportDetailContent() {
       persist({ passNumber, passExpiry });
       setSubPage(1);
     } else if (subPage === 1 && isPage1Valid) {
-      persist({ firstName, middleName, lastName, dob });
+      persist({ firstName, middleName, lastName, dob, occupation: occupation.trim() });
       setSubPage(2);
     } else if (subPage === 2 && isPage2Valid) {
       persist({ unitNumber, streetNumber, streetName, suburb, addrState, postcode });
@@ -344,6 +351,24 @@ function PassportDetailContent() {
                       <Calendar className="w-5 h-5 text-ink-lo absolute right-4 pointer-events-none" />
                     </div>
                   </div>
+
+                  {occupationEnabled && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[14px] font-semibold text-ink-hi flex items-center gap-1">
+                        Occupation <span className="text-[13px] font-normal text-ink-lo">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={occupation}
+                        placeholder="What does the patron do for work?"
+                        onChange={(e) => setOccupation(e.target.value)}
+                        className="h-12 px-4 bg-white border border-border rounded-md text-base text-ink-hi focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none"
+                      />
+                      <p className="text-[13px] text-ink-mid m-0">
+                        Self-reported. Kept on file in case enhanced due diligence is needed later.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
