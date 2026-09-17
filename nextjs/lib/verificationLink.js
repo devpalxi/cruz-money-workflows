@@ -33,6 +33,50 @@ export const LINK_STATUS_LABELS = {
   [LINK_STATUS.CANCELLED]: 'Switched to manual verification',
 };
 
+// What the collector asks the patron to complete on their phone. ID always
+// includes the face photo, so it is one unit here. Whatever a type leaves out,
+// the collector picks up at the counter once the link completes.
+export const LINK_TYPES = [
+  { value: 'id', label: 'ID only', includesSecondary: false, includesBank: false },
+  { value: 'id_secondary', label: 'ID + secondary ID', includesSecondary: true, includesBank: false },
+  { value: 'id_secondary_bank', label: 'ID + secondary ID + bank', includesSecondary: true, includesBank: true },
+  { value: 'id_bank', label: 'ID + bank', includesSecondary: false, includesBank: true },
+];
+
+export const DEFAULT_LINK_TYPE = 'id_secondary_bank';
+
+// Links issued before link types existed covered everything, so an unknown or
+// missing value falls back to the full set rather than silently dropping bank.
+export function getLinkType(value) {
+  return LINK_TYPES.find((t) => t.value === value) || LINK_TYPES.find((t) => t.value === DEFAULT_LINK_TYPE);
+}
+
+// Where the collector continues once the patron is done. Only a completed link
+// or a staff hand-back unlocks Continue; anything else returns null and the
+// button stays disabled.
+//
+// A staff hand-back means the electronic ID check failed, so the collector
+// verifies in person from Primary ID onwards regardless of the link type.
+export function getCollectorResumePath(linkType, status) {
+  if (status === LINK_STATUS.STAFF_ACTION) return '/collector/primary-id';
+  if (status !== LINK_STATUS.COMPLETED) return null;
+  const type = getLinkType(linkType);
+  if (!type.includesSecondary) return '/collector/secondary-id';
+  if (!type.includesBank) return '/collector/bank-account';
+  return '/collector/cheque-details';
+}
+
+// Read from the collector's sessionStorage form, which carries the link type
+// alongside the token. Pages after Email address use it to skip what the
+// patron already covered.
+export function getPatronCoverage(form) {
+  if (!form || form.verificationMode !== 'link' || !form.verificationToken) {
+    return { id: false, secondary: false, bank: false };
+  }
+  const type = getLinkType(form.linkType);
+  return { id: true, secondary: type.includesSecondary, bank: type.includesBank };
+}
+
 function readStore() {
   if (typeof window === 'undefined') return {};
   try {

@@ -1,16 +1,24 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import { getStepAfterSecondary, getStepBeforeSecondary } from '@/lib/payoutFlow';
 
 function SecondaryIdContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromSummary = searchParams.get('from') === 'summary';
+
+  // Resolved after mount: the target depends on sessionStorage, which the
+  // server render cannot see.
+  const [backHref, setBackHref] = useState('/collector/primary-id');
+  useEffect(() => {
+    setBackHref(getStepBeforeSecondary());
+  }, []);
 
   const persist = (patch) => {
     try {
@@ -29,7 +37,7 @@ function SecondaryIdContent() {
     persist({ secondaryDoc: 'none', secondarySkipped: true });
     // Bank account is always the next step - it shows its own "not
     // required" message when Bank transfer wasn't selected.
-    router.push(fromSummary ? '/collector/summary' : '/collector/bank-account');
+    router.push(fromSummary ? '/collector/summary' : getStepAfterSecondary());
   };
 
   return (
@@ -38,7 +46,7 @@ function SecondaryIdContent() {
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-6">
               <Link
-                href="/collector/primary-id"
+                href={backHref}
                 className="inline-flex items-center gap-1.5 text-[15px] font-bold text-ink-hi hover:text-black transition-colors underline cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4 text-brand" />

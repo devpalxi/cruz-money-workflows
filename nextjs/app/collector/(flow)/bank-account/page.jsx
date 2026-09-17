@@ -68,7 +68,7 @@ function BankAccountContent() {
   const [bypassNotes, setBypassNotes] = useState('');
 
   const [disbursementMethod, setDisbursementMethod] = useState('');
-  const [secondaryDoc, setSecondaryDoc] = useState('none');
+  const [bankBackHref, setBankBackHref] = useState('/collector/secondary-id');
 
   useEffect(() => {
     try {
@@ -82,7 +82,7 @@ function BankAccountContent() {
       }
       if (saved.bsb) setBsb(saved.bsb);
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
-      if (saved.secondaryDoc) setSecondaryDoc(saved.secondaryDoc);
+      setBankBackHref(getStepBeforeBank(saved.secondaryDoc, saved));
       if (saved.disbursementMethod) setDisbursementMethod(saved.disbursementMethod);
     } catch (e) {}
   }, []);
@@ -167,7 +167,7 @@ function BankAccountContent() {
       {/* Header Row */}
           <div className="flex items-center gap-6 mb-6">
             <Link
-              href={fromSummary ? '/collector/summary' : getStepBeforeBank(secondaryDoc)}
+              href={fromSummary ? '/collector/summary' : bankBackHref}
               className="inline-flex items-center gap-1.5 text-[15px] font-bold text-ink-hi hover:text-black transition-colors underline cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-brand" />

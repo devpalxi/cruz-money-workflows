@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getPatronCoverage } from '@/lib/verificationLink';
 
 export const COLLECTOR_STEPS = [
   { step: 1, title: 'New payout details', path: '/collector/payout-details' },
@@ -23,7 +24,7 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
   // itself, so both are always visible and marked "not required" when they
   // don't apply. `null` means the disbursement method hasn't been read yet.
   const [disbursementMethod, setDisbursementMethod] = useState(null);
-  const [verificationMode, setVerificationMode] = useState('manual');
+  const [patronCoverage, setPatronCoverage] = useState({ id: false, secondary: false, bank: false });
 
   // Re-read on every route change: this component lives in the flow layout,
   // which persists across client-side navigation, so a mount-only read would
@@ -34,7 +35,7 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
-      setVerificationMode(saved.verificationMode || 'manual');
+      setPatronCoverage(getPatronCoverage(saved));
     } catch (e) {
       setDisbursementMethod('');
     }
@@ -42,16 +43,16 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
 
   const { hasBank, hasCheque } = getDisbursementFlags(disbursementMethod);
 
-  // Steps the patron is completing on their own phone. Cheque details stay
-  // with staff either way - a cheque is handed over at the counter.
-  const PATRON_STEPS = [
-    '/collector/primary-id',
-    '/collector/secondary-id',
-    '/collector/bank-account',
-  ];
+  // Steps the patron is completing on their own phone, depending on the link
+  // type the collector chose. Cheque details stay with staff either way - a
+  // cheque is handed over at the counter.
+  const PATRON_STEP_COVERAGE = {
+    '/collector/primary-id': 'id',
+    '/collector/secondary-id': 'secondary',
+    '/collector/bank-account': 'bank',
+  };
 
-  const isWithPatron = (path) =>
-    verificationMode === 'link' && PATRON_STEPS.includes(path);
+  const isWithPatron = (path) => Boolean(patronCoverage[PATRON_STEP_COVERAGE[path]]);
 
   const isStepSkipped = (path) => {
     if (disbursementMethod === null) return false;

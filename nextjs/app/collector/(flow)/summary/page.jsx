@@ -21,6 +21,7 @@ import {
   cancelLink,
   buildVerifyUrl,
   formatExpiry,
+  getLinkType,
   LINK_STATUS,
   LINK_STATUS_LABELS,
 } from '@/lib/verificationLink';
@@ -155,10 +156,24 @@ function SummaryContent() {
   const patronPending = isLinkMode && !patronVerified;
   const patronResult = linkRecord?.result || null;
 
+  // Only what the link type covered comes from the patron's phone. Everything
+  // else the collector captured at the counter, so it reads from the form.
+  const linkType = getLinkType(linkRecord?.payout?.linkType);
+  const patronCoversBank = isLinkMode && linkType.includesBank;
+  const patronCoversSecondary = isLinkMode && linkType.includesSecondary;
+  const patronCoveredLabel = [
+    'identity',
+    patronCoversSecondary && 'secondary ID',
+    patronCoversBank && 'bank details',
+  ]
+    .filter(Boolean)
+    .join(', ')
+    .replace(/, ([^,]*)$/, ' and $1');
+
   // The patron flow and the prototype toggle name CoP outcomes differently;
   // normalise to the labels this page already renders.
   const effectiveCop =
-    patronVerified && patronResult
+    patronVerified && patronResult && patronCoversBank
       ? { closeMatch: 'close', noMatch: 'fail' }[patronResult.copResult] || 'match'
       : copProtoState;
 
@@ -374,7 +389,7 @@ function SummaryContent() {
                       Patron verification complete
                     </p>
                     <p className="text-[13.5px] text-ink-mid m-0">
-                      {linkRecord.payout?.patronName} verified their identity and bank details on
+                      {linkRecord.payout?.patronName} verified their {patronCoveredLabel} on
                       their phone. This payout is ready to submit for approval.
                     </p>
                   </div>
@@ -584,7 +599,9 @@ function SummaryContent() {
                     <div className="flex justify-between items-center py-1">
                       <span className="text-ink-mid font-medium">Document type</span>
                       <span className="font-bold text-ink-hi">
-                        {patronVerified && patronResult ? patronResult.docLabel : view.docTypeLabel}
+                        {patronVerified && patronResult
+                          ? [patronResult.docLabel, patronResult.secondaryDocLabel].filter(Boolean).join(', ')
+                          : view.docTypeLabel}
                       </span>
                     </div>
 
@@ -780,7 +797,7 @@ function SummaryContent() {
                         Bank account
                         {!hasBank && <span className="ml-1 font-normal text-ink-lo">(not required)</span>}
                       </p>
-                      {hasBank && !isLinkMode && (
+                      {hasBank && !patronCoversBank && (
                         <Link
                           href="/collector/bank-account?from=summary"
                           className="text-ink-mid hover:text-ink-hi underline font-semibold text-[13px] inline-flex items-center gap-1 transition-colors"
@@ -790,7 +807,7 @@ function SummaryContent() {
                         </Link>
                       )}
                     </div>
-                    {hasBank && patronPending ? (
+                    {hasBank && patronPending && patronCoversBank ? (
                       <div className="py-1">
                         <span className="text-[14px] text-ink-lo">
                           The patron is entering their bank details on their phone. They will appear
@@ -802,19 +819,19 @@ function SummaryContent() {
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account name</span>
                           <span className="font-bold text-ink-hi">
-                            {(patronVerified && patronResult?.accountName) || view.accountName || 'Test Testerson'}
+                            {(patronVerified && patronCoversBank && patronResult?.accountName) || view.accountName || 'Test Testerson'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">BSB number</span>
                           <span className="font-bold text-ink-hi tabular-nums font-mono">
-                            {(patronVerified && patronResult?.bsb) || view.bsb || '062-000'}
+                            {(patronVerified && patronCoversBank && patronResult?.bsb) || view.bsb || '062-000'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account number</span>
                           <span className="font-bold text-ink-hi tabular-nums font-mono">
-                            {(patronVerified && patronResult?.accountNumber) || view.accountNumber || '12345678'}
+                            {(patronVerified && patronCoversBank && patronResult?.accountNumber) || view.accountNumber || '12345678'}
                           </span>
                         </div>
 

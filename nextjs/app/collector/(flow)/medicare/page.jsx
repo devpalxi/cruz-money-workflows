@@ -17,6 +17,7 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
+import { getStepAfterSecondary } from '@/lib/payoutFlow';
 
 function MedicareDetailContent() {
   const router = useRouter();
@@ -566,7 +567,7 @@ function MedicareDetailContent() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => router.push(fromSummary ? '/collector/summary' : '/collector/bank-account')}
+                        onClick={() => router.push(fromSummary ? '/collector/summary' : getStepAfterSecondary())}
                         className="block font-bold text-ink-hi hover:text-black underline text-left"
                       >
                         Skip secondary ID and continue
@@ -628,7 +629,7 @@ function MedicareDetailContent() {
                     cardColor,
                     cardExpiry,
                   });
-                  router.push(fromSummary ? '/collector/summary' : '/collector/bank-account');
+                  router.push(fromSummary ? '/collector/summary' : getStepAfterSecondary());
                 }}
                 className="w-full h-12 text-[16px] font-semibold"
               >

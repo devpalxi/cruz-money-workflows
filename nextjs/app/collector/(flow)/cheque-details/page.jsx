@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, getStepBeforeCheque } from '@/lib/payoutFlow';
 
 function ChequeDetailsContent() {
   const router = useRouter();
@@ -18,6 +18,7 @@ function ChequeDetailsContent() {
   const [payeeTouched, setPayeeTouched] = useState(false);
   const [chequeTouched, setChequeTouched] = useState(false);
   const [hasCheque, setHasCheque] = useState(true);
+  const [backHref, setBackHref] = useState('/collector/bank-account');
 
   useEffect(() => {
     try {
@@ -27,6 +28,7 @@ function ChequeDetailsContent() {
 
       const flags = getDisbursementFlags(saved.disbursementMethod);
       setHasCheque(flags.hasCheque);
+      setBackHref(getStepBeforeCheque(saved));
     } catch (e) {}
   }, []);
 
@@ -59,7 +61,7 @@ function ChequeDetailsContent() {
       {/* Header Row */}
           <div className="flex items-center gap-6 mb-6">
             <Link
-              href={fromSummary ? '/collector/summary' : '/collector/bank-account'}
+              href={fromSummary ? '/collector/summary' : backHref}
               className="inline-flex items-center gap-1.5 text-[15px] font-bold text-ink-hi hover:text-black transition-colors underline cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-brand" />
