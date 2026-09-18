@@ -24,6 +24,22 @@ import { getVenueIntegrationSettings, MOCK_CLUB_MEMBERS } from '@/lib/mockMember
 import ExclusionAlert from '@/components/shared/ExclusionAlert';
 import { screenPatron } from '@/lib/exclusionRegister';
 
+
+// Prototype preview switch for the exclusion register. Screening normally keys
+// off the patron's own name, which means a tester has to know which seeded
+// patron to type. These presets pick a register entry directly so all three
+// outcomes are one click away.
+const EXCLUSION_PROTO_OPTIONS = [
+  { value: 'none', label: 'Exclusion: None' },
+  { value: 'self', label: 'Exclusion: Self-exclusion' },
+  { value: 'venueBan', label: 'Exclusion: Venue ban' },
+];
+
+const EXCLUSION_PROTO_NAMES = {
+  self: 'Marcus Vance',
+  venueBan: 'Chloe Gallagher',
+};
+
 export default function PayoutDetailsPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -67,15 +83,21 @@ export default function PayoutDetailsPage() {
   // Prototype toggle options
   const [amountOption, setAmountOption] = useState('A'); // A: simple, B: preview
   const [docketOption, setDocketOption] = useState('A'); // A: manual, B: simulated
+  const [exclusionProtoState, setExclusionProtoState] = useState('none');
 
   // A prefilled member is the earliest point the collector knows who they are
   // dealing with, so that is where the register is checked.
-  const exclusionScreening = prefilledMember
-    ? screenPatron(
-        { name: prefilledMember.fullName, dob: prefilledMember.dob },
-        initialBlacklist
-      )
-    : null;
+  // "None" screens whoever was actually prefilled; the other two force a known
+  // register entry so the warning can be seen without a member lookup.
+  const exclusionScreening =
+    exclusionProtoState !== 'none'
+      ? screenPatron({ name: EXCLUSION_PROTO_NAMES[exclusionProtoState] }, initialBlacklist)
+      : prefilledMember
+      ? screenPatron(
+          { name: prefilledMember.fullName, dob: prefilledMember.dob },
+          initialBlacklist
+        )
+      : null;
 
   const machines = [
     'EGM-001',
@@ -833,6 +855,27 @@ export default function PayoutDetailsPage() {
 
           {/* Prototype Options Toolbar */}
           <div className="mt-8 space-y-3">
+            {/* Exclusion register scenario */}
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
+              <span className="font-semibold text-ink-mid">
+                Prototype preview only:
+              </span>
+              {EXCLUSION_PROTO_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setExclusionProtoState(option.value)}
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer ${
+                    exclusionProtoState === option.value
+                      ? 'bg-slate-800 text-white'
+                      : 'bg-slate-100 text-ink-mid hover:bg-slate-200'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
             {/* Membership Integration Scenario Toolbar */}
             <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
               <div className="flex items-center gap-2.5 flex-wrap">

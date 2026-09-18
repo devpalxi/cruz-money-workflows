@@ -560,12 +560,6 @@ const SCENARIOS = {
   },
   'multi-id-mixed': {
     label: '8. Multi-ID mixed',
-    exclusion: {
-      type: EXCLUSION_TYPES.VENUE_BAN,
-      reason: 'Club barring order 12-months',
-      source: 'Venue list',
-      expiresAt: null,
-    },
     payoutNum: '#585',
     dateTime: '14 July 2026 · 1:15 pm · Riverside RSL Club',
     statusPill: 'Awaiting approval',
@@ -645,12 +639,6 @@ const SCENARIOS = {
   },
   'blacklist-match': {
     label: '9. Blacklist match',
-    exclusion: {
-      type: EXCLUSION_TYPES.SELF,
-      reason: 'Self-exclusion order #8841',
-      source: 'State register',
-      expiresAt: '12 Jan 2027',
-    },
     payoutNum: '#586',
     dateTime: '14 July 2026 · 2:00 pm · Riverside RSL Club',
     statusPill: 'Awaiting approval',
@@ -805,6 +793,49 @@ const SCENARIOS = {
     },
   },
 };
+
+// Exclusion register presets. Kept separate from the blacklist-match preset so
+// each one tests a single thing: the self-exclusion preset proves an Approver
+// cannot release the funds, the venue-ban preset proves they can proceed once
+// they have written down why.
+SCENARIOS['self-exclusion'] = {
+  ...SCENARIOS['blacklist-match'],
+  label: '11. Self-exclusion hold',
+  payoutNum: '#590',
+  dateTime: '14 July 2026 · 3:20 pm · Riverside RSL Club',
+  statusPill: 'Exclusion hold',
+  member: {
+    ...SCENARIOS['blacklist-match'].member,
+    fullName: 'MARCUS VANCE',
+    email: 'm.vance@email.com',
+  },
+  exclusion: {
+    type: EXCLUSION_TYPES.SELF,
+    reason: 'Self-exclusion order #8841',
+    source: 'State register',
+    expiresAt: '12 Jan 2027',
+  },
+};
+
+SCENARIOS['venue-ban'] = {
+  ...SCENARIOS['blacklist-match'],
+  label: '12. Venue ban',
+  payoutNum: '#591',
+  dateTime: '14 July 2026 · 3:45 pm · Riverside RSL Club',
+  statusPill: 'Awaiting approval',
+  member: {
+    ...SCENARIOS['blacklist-match'].member,
+    fullName: 'CHLOE GALLAGHER',
+    email: 'c.gallagher@email.com',
+  },
+  exclusion: {
+    type: EXCLUSION_TYPES.VENUE_BAN,
+    reason: 'Club barring order 12-months',
+    source: 'Venue list',
+    expiresAt: null,
+  },
+};
+
 
 /* ─── Payout total helper ─── */
 function formatTotalAmount(cashAmount, transferAmount) {
@@ -2143,6 +2174,11 @@ export default function ApproverScenarioPage() {
     setBlacklistModalOpen(false);
   };
 
+  const handleRefer = () => {
+    setApprovalStatus('referred');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleApprove = () => {
     if (!confirmed) return;
     setApprovalStatus('approved');
@@ -2207,6 +2243,15 @@ export default function ApproverScenarioPage() {
             <div className="mb-6 bg-[#ecfdf5] border border-[#6ee7b7] rounded-lg p-4 text-[#065f46] font-bold flex items-center justify-between">
               <span>✓ Payout {scenario.payoutNum} successfully approved. Forwarded to Authoriser queue.</span>
               <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#065f46] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
+            </div>
+          )}
+          {approvalStatus === 'referred' && (
+            <div className="mb-6 bg-[#fffbeb] border border-[#fcd34d] rounded-lg p-4 text-[#0f172a] font-bold flex items-center justify-between">
+              <span>
+                Payout {scenario.payoutNum} referred to the Authoriser queue. The funds stay held
+                until the self-exclusion ends unless an Authoriser releases them.
+              </span>
+              <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#0f172a] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
             </div>
           )}
           {approvalStatus === 'cancelled' && (
@@ -2767,6 +2812,15 @@ export default function ApproverScenarioPage() {
                   >
                     Cancel
                   </button>
+                  {isSelfExclusionBlock && (
+                    <button
+                      type="button"
+                      onClick={handleRefer}
+                      className="h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white cursor-pointer"
+                    >
+                      Refer to Authoriser
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={

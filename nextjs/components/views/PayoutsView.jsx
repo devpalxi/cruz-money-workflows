@@ -49,6 +49,8 @@ const APPROVER_SCENARIOS = new Set([
   'multi-id-mixed',
   'blacklist-match',
   'high-value',
+  'self-exclusion',
+  'venue-ban',
 ]);
 
 const AUTHORISER_SCENARIOS = new Set([
@@ -59,9 +61,14 @@ const AUTHORISER_SCENARIOS = new Set([
   'multi-id-mixed',
   'blacklist-match',
   'high-value',
+  'self-exclusion',
 ]);
 
 function scenarioForPayout(payout, available) {
+  // A held row has one obvious case to open, so it never falls through to the
+  // generic signature matching below.
+  if (payout.status === EXCLUSION_HOLD_STATUS) return 'self-exclusion';
+
   const pepHit = payout.pep === 'Hit';
   const sanctionsHit = payout.sanctions === 'Hit';
   const candidates = [];

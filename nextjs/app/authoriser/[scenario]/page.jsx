@@ -425,12 +425,6 @@ const SCENARIOS = {
   },
   'blacklist-match': {
     label: '9. Blacklist match',
-    exclusion: {
-      type: EXCLUSION_TYPES.SELF,
-      reason: 'Self-exclusion order #8841',
-      source: 'State register',
-      expiresAt: '12 Jan 2027',
-    },
     payoutNum: '#586',
     dateTime: '14 July 2026 · 2:00 pm · Riverside RSL Club',
     statusPill: 'Awaiting authorisation',
@@ -589,6 +583,23 @@ const SCENARIOS = {
     },
   },
 };
+
+// Its own preset so the override panel can be exercised without also dealing
+// with the blacklist-match case that preset already covers.
+SCENARIOS['self-exclusion'] = {
+  ...SCENARIOS['blacklist-match'],
+  label: '11. Self-exclusion hold',
+  payoutNum: '#590',
+  dateTime: '14 July 2026 · 3:20 pm · Riverside RSL Club',
+  statusPill: 'Exclusion hold',
+  exclusion: {
+    type: EXCLUSION_TYPES.SELF,
+    reason: 'Self-exclusion order #8841',
+    source: 'State register',
+    expiresAt: '12 Jan 2027',
+  },
+};
+
 
 /* ─── Payout total helper ─── */
 function formatTotalAmount(cashAmount, transferAmount) {

@@ -22,6 +22,25 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Checkbox from '@/components/ui/Checkbox';
 import { isOccupationCaptureEnabled } from '@/lib/venueCompliance';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+import { initialBlacklist } from '@/lib/mockData';
+
+// Prototype preview switch for the exclusion register. The real check below
+// screens the name and date of birth actually entered, which is the strongest
+// match the register supports - these presets just make each outcome reachable
+// without having to remember which seeded patron to type.
+const EXCLUSION_PROTO_OPTIONS = [
+  { value: 'none', label: 'Exclusion: None' },
+  { value: 'self', label: 'Exclusion: Self-exclusion' },
+  { value: 'venueBan', label: 'Exclusion: Venue ban' },
+];
+
+const EXCLUSION_PROTO_NAMES = {
+  self: 'Marcus Vance',
+  venueBan: 'Chloe Gallagher',
+};
+
 
 function LicenceDetailContent() {
   const router = useRouter();
@@ -46,6 +65,7 @@ function LicenceDetailContent() {
   // Venue-level setting, so the field only appears for venues that have adopted
   // the initial CDD rules. Read after mount because it lives in localStorage.
   const [occupationEnabled, setOccupationEnabled] = useState(false);
+  const [exclusionProtoState, setExclusionProtoState] = useState('none');
 
   // Subpage 2: Address
   const [addressSearch, setAddressSearch] = useState('');
@@ -139,6 +159,16 @@ function LicenceDetailContent() {
 
   // Subpage validation
   const isPage0Valid = state && licNumber.trim() !== '' && cardNumber.trim() !== '';
+  // This is the first point in the flow where both halves of a register match
+  // exist, so it is the strongest check the collector flow can make.
+  const exclusionScreening =
+    exclusionProtoState !== 'none'
+      ? screenPatron({ name: EXCLUSION_PROTO_NAMES[exclusionProtoState] }, initialBlacklist)
+      : screenPatron(
+          { name: [firstName, lastName].filter(Boolean).join(' '), dob },
+          initialBlacklist
+        );
+
   const isPage1Valid = firstName.trim() !== '' && lastName.trim() !== '' && dob.trim() !== '';
   const isPage2Valid = showAddressFields && streetNumber.trim() !== '' && streetName.trim() !== '' && suburb.trim() !== '' && postcode.trim() !== '';
 
@@ -337,6 +367,9 @@ function LicenceDetailContent() {
                 <h3 className="text-[13px] font-semibold text-ink-mid">
                   Personal details
                 </h3>
+
+                <ExclusionAlert screening={exclusionScreening} />
+
 
                 <div className="space-y-5">
                   <div className="flex flex-col gap-1.5">
@@ -863,6 +896,28 @@ function LicenceDetailContent() {
               </Button>
             </div>
           )}
+
+          {/* Exclusion register scenario */}
+          <div className="mt-3 flex items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
+            <span className="font-semibold text-ink-mid flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-brand" />
+              Prototype preview only:
+            </span>
+            {EXCLUSION_PROTO_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setExclusionProtoState(option.value)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                  exclusionProtoState === option.value
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-slate-100 text-ink-mid hover:bg-slate-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
 
           {/* Prototype Simulation Toggle */}
           <div className="mt-8 flex items-center gap-3 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
