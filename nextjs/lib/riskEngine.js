@@ -24,7 +24,15 @@ export const DEFAULT_VENUE_RISK_CONFIG = {
     blacklist: true,
     cashRatio: true,
     documentCountry: true,
-  }
+    foreignPayment: true,
+  },
+  // Conditions that require a second approver whatever the risk rating works
+  // out to. Kept separate from the rating on purpose: a foreign payment wants
+  // a second pair of eyes, but calling it "High risk" would misdescribe an
+  // otherwise clean payout everywhere the rating is shown.
+  secondApproverConditions: {
+    foreignPayment: true,
+  },
 };
 
 /**
@@ -32,7 +40,7 @@ export const DEFAULT_VENUE_RISK_CONFIG = {
  * 
  * @param {Object} signals - Input signals from FrankieOne, payout details, and venue
  * @param {Object} [customConfig] - Venue-level threshold & routing settings
- * @returns {Object} { rating: 'Low'|'Medium'|'High', score: number, triggers: Array, recommendedApprovers: number, routingReason: string }
+ * @returns {Object} { rating: 'Low'|'Medium'|'High', score: number, triggers: Array, recommendedApprovers: number, requiresSecondApprover: boolean, routingReason: string }
  */
 export function computeRisk(signals = {}, customConfig = {}) {
   const config = {
@@ -41,6 +49,10 @@ export function computeRisk(signals = {}, customConfig = {}) {
     enabledSignals: {
       ...DEFAULT_VENUE_RISK_CONFIG.enabledSignals,
       ...(customConfig.enabledSignals || {})
+    },
+    secondApproverConditions: {
+      ...DEFAULT_VENUE_RISK_CONFIG.secondApproverConditions,
+      ...(customConfig.secondApproverConditions || {})
     }
   };
 
@@ -64,6 +76,7 @@ export function computeRisk(signals = {}, customConfig = {}) {
     transactionValue = 0,
     cashRatio = 0,              // 0.0 to 1.0 (cashAmount / totalAmount)
     blacklistMatch = false,
+    foreignPayment = false,
     manualKycType = null,
     sessionTime = null,
     isPDocketImage = true,
@@ -269,6 +282,18 @@ export function computeRisk(signals = {}, customConfig = {}) {
     });
   }
 
+  // 9. Foreign Payment
+  if (config.enabledSignals.foreignPayment && foreignPayment) {
+    score += 30;
+    triggers.push({
+      id: 'foreign-payment',
+      label: 'Foreign payment',
+      severity: 'medium',
+      category: 'Jurisdiction',
+      detail: 'Payout is directed outside Australia and carries cross-border AML exposure.'
+    });
+  }
+
   // Derive Rating from score and high-severity triggers
   let rating = 'Low';
   const hasHighTrigger = triggers.some((t) => t.severity === 'high');
@@ -303,11 +328,34 @@ export function computeRisk(signals = {}, customConfig = {}) {
     }
   }
 
+  // Conditions that demand a second approver regardless of what the rating
+  // came out as. These are applied after the rating-based count so a clean
+  // payout keeps its honest rating and still gets the extra sign-off.
+  // A condition only counts while its signal is switched on: with the signal
+  // off nothing about it appears in the trigger list, so forcing an extra
+  // sign-off would leave the approver with a reason they cannot see evidence
+  // for anywhere on the page.
+  const forcedConditions = [];
+  if (config.enabledSignals.foreignPayment && config.secondApproverConditions.foreignPayment && foreignPayment) {
+    forcedConditions.push('foreign payment');
+  }
+
+  if (forcedConditions.length > 0) {
+    const conditionText = forcedConditions.join(', ');
+    if (recommendedApprovers < 2) {
+      recommendedApprovers = 2;
+      routingReason = 'Second approver required: ' + conditionText;
+    } else {
+      routingReason += ' (also flagged: ' + conditionText + ')';
+    }
+  }
+
   return {
     rating,
     score,
     triggers,
     recommendedApprovers,
+    requiresSecondApprover: recommendedApprovers >= 2,
     routingReason,
   };
 }

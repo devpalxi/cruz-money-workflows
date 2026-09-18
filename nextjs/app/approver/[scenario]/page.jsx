@@ -792,6 +792,173 @@ const SCENARIOS = {
       blacklistMatch: false,
     },
   },
+  'foreign-payment': {
+    label: '11. Foreign payment (1st approver)',
+    payoutNum: '#588',
+    dateTime: '14 July 2026 · 4:10 pm · Riverside RSL Club',
+    statusPill: 'Awaiting approval',
+    payout: {
+      cashAmount: 'AUD 0.00',
+      transferAmount: 'AUD 3,200.00',
+      txnId: '223',
+      machineId: 'EGM-011',
+      venue: 'Riverside RSL Club',
+      disbursementPolicy: 'Bank transfer only',
+      payoutType: 'EGM',
+    },
+    member: {
+      membershipNumber: '8p21k',
+      email: 'sofia.almeida@email.com',
+      fullName: 'SOFIA ALMEIDA',
+      documentType: 'Passport',
+      occupation: 'Software engineer',
+      source: 'none',
+      isPrefilled: false,
+      writeBackStatus: null,
+    },
+    bank: {
+      accountName: 'SOFIA ALMEIDA',
+      bsb: '062-444',
+      accountNumber: '221-334-556',
+    },
+    nameVerification: {
+      isMatch: true,
+      idName: 'SOFIA ALMEIDA',
+      bankName: 'SOFIA ALMEIDA',
+    },
+    idvRows: [
+      { label: 'Government ID', status: 'pass', text: 'Pass' },
+      { label: 'ID validation', status: 'pass', text: 'Pass' },
+      { label: 'Name match', status: 'pass', text: 'Pass' },
+      { label: 'DOB match', status: 'pass', text: 'Pass' },
+      { label: 'Venue Blacklist', status: 'pass', text: 'No match' },
+    ],
+    amlRows: [
+      { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+      { id: 'pep', label: 'PEP - Clear', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+      { id: 'sanctions', label: 'Sanctions - Clear', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+    ],
+    idvHistory: [
+      { doc: 'Portugal Passport IDV', dateTime: '14 July 2026, 04:10 pm', result: 'pass' },
+    ],
+    collector: {
+      initials: 'MS',
+      name: 'M.Santos',
+      timestamp: '14/07/2026 04:10pm',
+    },
+    execSummary: [
+      { label: 'Identity verification', value: 'Fully verified', color: 'ok' },
+      { label: 'Name match', value: 'Exact match', color: 'ok' },
+      { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+      { label: 'Payment destination', value: 'Foreign payment', color: 'warn' },
+    ],
+    amlAuditRows: [
+      { id: 'blacklist', label: 'Venue blacklist status', sub: 'Automated exclusion check evaluated against venue database.', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+      { id: 'pep', label: 'PEP match status', sub: 'No PEP matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+      { id: 'sanctions', label: 'Sanctions match status', sub: 'No sanctions matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+    ],
+    riskSignals: {
+      idvPath: 'IDV1',
+      documentCountry: 'PT',
+      driverLicenceResult: null,
+      passportResult: 'pass',
+      isPEP: false,
+      isSanction: false,
+      adverseMediaHits: 0,
+      transactionValue: 3200.00,
+      cashRatio: 0.0,
+      blacklistMatch: false,
+      foreignPayment: true,
+    },
+  },
+  'second-approval': {
+    label: '12. Foreign payment (2nd approver)',
+    payoutNum: '#588',
+    dateTime: '14 July 2026 · 4:10 pm · Riverside RSL Club',
+    statusPill: 'Awaiting 2nd approval',
+    // The first sign-off is already on the record, so this screen renders as
+    // the second approver's view of the same payout as 'foreign-payment'.
+    firstApproval: {
+      name: 'D.Walsh',
+      role: 'Approver',
+      timestamp: '14/07/2026 04:22pm',
+      determination: 'Medium risk',
+      notes: 'Passport verified against DVS and CoP matched exactly. Foreign destination is the only flag; patron is a visiting contractor with a local membership since 2024.',
+    },
+    payout: {
+      cashAmount: 'AUD 0.00',
+      transferAmount: 'AUD 3,200.00',
+      txnId: '223',
+      machineId: 'EGM-011',
+      venue: 'Riverside RSL Club',
+      disbursementPolicy: 'Bank transfer only',
+      payoutType: 'EGM',
+    },
+    member: {
+      membershipNumber: '8p21k',
+      email: 'sofia.almeida@email.com',
+      fullName: 'SOFIA ALMEIDA',
+      documentType: 'Passport',
+      occupation: 'Software engineer',
+      source: 'none',
+      isPrefilled: false,
+      writeBackStatus: null,
+    },
+    bank: {
+      accountName: 'SOFIA ALMEIDA',
+      bsb: '062-444',
+      accountNumber: '221-334-556',
+    },
+    nameVerification: {
+      isMatch: true,
+      idName: 'SOFIA ALMEIDA',
+      bankName: 'SOFIA ALMEIDA',
+    },
+    idvRows: [
+      { label: 'Government ID', status: 'pass', text: 'Pass' },
+      { label: 'ID validation', status: 'pass', text: 'Pass' },
+      { label: 'Name match', status: 'pass', text: 'Pass' },
+      { label: 'DOB match', status: 'pass', text: 'Pass' },
+      { label: 'Venue Blacklist', status: 'pass', text: 'No match' },
+    ],
+    amlRows: [
+      { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+      { id: 'pep', label: 'PEP - Clear', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+      { id: 'sanctions', label: 'Sanctions - Clear', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+    ],
+    idvHistory: [
+      { doc: 'Portugal Passport IDV', dateTime: '14 July 2026, 04:10 pm', result: 'pass' },
+    ],
+    collector: {
+      initials: 'MS',
+      name: 'M.Santos',
+      timestamp: '14/07/2026 04:10pm',
+    },
+    execSummary: [
+      { label: 'Identity verification', value: 'Fully verified', color: 'ok' },
+      { label: 'Name match', value: 'Exact match', color: 'ok' },
+      { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+      { label: 'Payment destination', value: 'Foreign payment', color: 'warn' },
+    ],
+    amlAuditRows: [
+      { id: 'blacklist', label: 'Venue blacklist status', sub: 'Automated exclusion check evaluated against venue database.', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+      { id: 'pep', label: 'PEP match status', sub: 'No PEP matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+      { id: 'sanctions', label: 'Sanctions match status', sub: 'No sanctions matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
+    ],
+    riskSignals: {
+      idvPath: 'IDV1',
+      documentCountry: 'PT',
+      driverLicenceResult: null,
+      passportResult: 'pass',
+      isPEP: false,
+      isSanction: false,
+      adverseMediaHits: 0,
+      transactionValue: 3200.00,
+      cashRatio: 0.0,
+      blacklistMatch: false,
+      foreignPayment: true,
+    },
+  },
 };
 
 // Exclusion register presets. Kept separate from the blacklist-match preset so
@@ -2056,7 +2223,17 @@ export default function ApproverScenarioPage() {
     : null;
   const statusPill = payoutRecord?.status || scenario.statusPill;
 
-  const computedRisk = useMemo(() => computeRisk(scenario.riskSignals || {}), [scenario]);
+  // The scenario may carry its own venue policy so a preset can demonstrate
+  // Fixed vs Auto routing; without one the engine's defaults apply.
+  const computedRisk = useMemo(
+    () => computeRisk(scenario.riskSignals || {}, scenario.riskConfig || {}),
+    [scenario]
+  );
+
+  // A scenario carrying a firstApproval is being viewed by the second
+  // approver: the first sign-off is already on the record.
+  const firstApproval = scenario.firstApproval || null;
+  const isSecondApprover = Boolean(firstApproval);
   const [risk, setRisk] = useState(computedRisk.rating);
   const [notes, setNotes] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -2184,6 +2361,15 @@ export default function ApproverScenarioPage() {
     setApprovalStatus('approved');
   };
 
+  // Only the second approver can reject: they are the one weighing up a call
+  // that has already been made, and a written reason is required because the
+  // rejection overturns another approver's decision.
+  const handleReject = () => {
+    if (!notes.trim()) return;
+    setApprovalStatus('rejected');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
       <PepModal open={pepModalOpen} onClose={() => setPepModalOpen(false)} onSave={handleSavePep} savedData={pepData} showAddBlacklist={scenarioKey !== 'blacklist-match'} onOpenAddBlacklist={handleOpenAddBlacklist} />
@@ -2241,8 +2427,21 @@ export default function ApproverScenarioPage() {
           {/* Toast / Status banner */}
           {approvalStatus === 'approved' && (
             <div className="mb-6 bg-[#ecfdf5] border border-[#6ee7b7] rounded-lg p-4 text-[#065f46] font-bold flex items-center justify-between">
-              <span>✓ Payout {scenario.payoutNum} successfully approved. Forwarded to Authoriser queue.</span>
+              <span>
+                {computedRisk.requiresSecondApprover && !isSecondApprover
+                  ? `✓ Payout ${scenario.payoutNum} approved — 1 of 2 sign-offs recorded. Waiting on a second approver before it reaches the Authoriser.`
+                  : `✓ Payout ${scenario.payoutNum} successfully approved. Forwarded to Authoriser queue.`}
+              </span>
               <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#065f46] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
+            </div>
+          )}
+          {approvalStatus === 'rejected' && (
+            <div className="mb-6 bg-[#fef2f2] border border-[#fca5a5] rounded-lg p-4 text-[#991b1b] font-bold flex items-center justify-between">
+              <span>
+                ✕ Payout {scenario.payoutNum} rejected at second approval. The first approval by{' '}
+                {firstApproval?.name} is overturned and the payout will not reach the Authoriser.
+              </span>
+              <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#991b1b] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
             </div>
           )}
           {approvalStatus === 'referred' && (
@@ -2274,6 +2473,54 @@ export default function ApproverScenarioPage() {
             </div>
             <StatusPill>{statusPill}</StatusPill>
           </header>
+
+          {/* Approval routing - only shown when this payout needs more than
+              one approver, so the reason is never left to guesswork */}
+          {computedRisk.requiresSecondApprover && (
+            <div className="mb-5 bg-white border-l-[3px] border-l-[#1d4ed8] border border-[#e2e8f0] rounded-[8px] px-4 py-3.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-[13px] font-bold text-[#0f172a]">
+                  {computedRisk.recommendedApprovers} approver sign-offs required
+                </span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
+                  {isSecondApprover ? 'You are approver 2 of 2' : 'You are approver 1 of 2'}
+                </span>
+              </div>
+              <p className="text-[13px] text-[#475569] m-0 mt-1">{computedRisk.routingReason}</p>
+            </div>
+          )}
+
+          {/* First approval - the second approver reviews the payout and the
+              call already made on it, so both are on the page */}
+          {isSecondApprover && (
+            <div className="mb-5 bg-white border border-[#e2e8f0] rounded-[8px] px-4 py-3.5">
+              <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-[#0d9488] m-0 mb-2.5">
+                First approval
+              </h2>
+              <div className="divide-y divide-[#eceef2]">
+                <div className="flex items-baseline justify-between gap-4 py-2">
+                  <span className="text-[13.5px] text-[#475569]">Approved by</span>
+                  <span className="text-[13.5px] font-bold text-[#0f172a]">
+                    {firstApproval.name} · {firstApproval.role}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 py-2">
+                  <span className="text-[13.5px] text-[#475569]">Approved at</span>
+                  <span className="text-[13.5px] font-mono text-[#0f172a]">{firstApproval.timestamp}</span>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 py-2">
+                  <span className="text-[13.5px] text-[#475569]">Risk determination</span>
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-[#fffbeb] text-[#78350f] border border-[#fde68a]">
+                    {firstApproval.determination}
+                  </span>
+                </div>
+                <div className="py-2">
+                  <span className="text-[13.5px] text-[#475569] block mb-1">Notes</span>
+                  <p className="text-[13.5px] text-[#0f172a] m-0">{firstApproval.notes}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Toolbar */}
           <div className="flex justify-end mb-3.5">
@@ -2819,6 +3066,19 @@ export default function ApproverScenarioPage() {
                       className="h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white cursor-pointer"
                     >
                       Refer to Authoriser
+                    </button>
+                  )}
+                  {isSecondApprover && (
+                    <button
+                      type="button"
+                      onClick={handleReject}
+                      disabled={!notes.trim()}
+                      title={!notes.trim() ? 'A written reason is required to overturn the first approval' : undefined}
+                      className={`h-11 px-7 rounded-[6px] text-[17px] font-bold transition-all font-sans flex items-center justify-center gap-2.5 bg-white border border-[#fca5a5] text-[#ef4444] ${
+                        notes.trim() ? 'hover:bg-[#fef2f2] hover:border-[#f87171] cursor-pointer' : 'opacity-40 cursor-not-allowed'
+                      }`}
+                    >
+                      Reject payout
                     </button>
                   )}
                   <button

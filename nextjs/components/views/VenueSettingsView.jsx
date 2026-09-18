@@ -1925,6 +1925,7 @@ export default function VenueSettingsView({
                       { key: 'blacklist', label: 'Venue Blacklist Exclusion', shortDesc: 'Immediate match against active exclusion lists (High)' },
                       { key: 'cashRatio', label: 'Cash Disbursement Ratio', shortDesc: 'Cash ratio > 80% on payouts over $1,000' },
                       { key: 'documentCountry', label: 'Foreign Document Jurisdiction', shortDesc: 'Non-Australian passport / overseas identity (Medium)' },
+                      { key: 'foreignPayment', label: 'Foreign Payment', shortDesc: 'Payout directed outside Australia — always requires a second approver' },
                     ].map((signal) => {
                       const isEnabled = isEditing
                         ? formData.riskConfig?.enabledSignals?.[signal.key] !== false
