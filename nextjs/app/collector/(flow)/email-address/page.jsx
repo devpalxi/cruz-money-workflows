@@ -29,7 +29,7 @@ import {
   LINK_STATUS,
   LINK_STATUS_LABELS,
 } from '@/lib/verificationLink';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
 
 const VERIFY_MODES = [
   { value: 'manual', label: 'Verify at the counter' },
@@ -245,7 +245,7 @@ function EmailAddressContent() {
   if (sentLink) {
     const verifyUrl = buildVerifyUrl(sentLink.token);
     const sentType = getLinkType(sentLink.payout.linkType);
-    const resumePath = getCollectorResumePath(sentType.value, linkStatus);
+    const resumePath = getCollectorResumePath(sentType.value, linkStatus, needsBankStep());
     const isStaffAction = linkStatus === LINK_STATUS.STAFF_ACTION;
 
     const handleContinue = () => {

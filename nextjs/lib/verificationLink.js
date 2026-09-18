@@ -57,12 +57,15 @@ export function getLinkType(value) {
 //
 // A staff hand-back means the electronic ID check failed, so the collector
 // verifies in person from Primary ID onwards regardless of the link type.
-export function getCollectorResumePath(linkType, status) {
+//
+// needsBank is passed in rather than read here: payoutFlow imports this module
+// for getPatronCoverage, so importing needsBankStep back would be a cycle.
+export function getCollectorResumePath(linkType, status, needsBank = true) {
   if (status === LINK_STATUS.STAFF_ACTION) return '/collector/primary-id';
   if (status !== LINK_STATUS.COMPLETED) return null;
   const type = getLinkType(linkType);
   if (!type.includesSecondary) return '/collector/secondary-id';
-  if (!type.includesBank) return '/collector/bank-account';
+  if (!type.includesBank && needsBank) return '/collector/bank-account';
   return '/collector/cheque-details';
 }
 

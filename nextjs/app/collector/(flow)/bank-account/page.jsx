@@ -13,7 +13,7 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
-import { getDisbursementFlags, getStepBeforeBank } from '@/lib/payoutFlow';
+import { getDisbursementFlags, getStepBeforeBank, needsBankStep } from '@/lib/payoutFlow';
 
 const SCENARIOS = {
   match: {
@@ -84,8 +84,11 @@ function BankAccountContent() {
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
       setBankBackHref(getStepBeforeBank(saved.secondaryDoc, saved));
       if (saved.disbursementMethod) setDisbursementMethod(saved.disbursementMethod);
+      // This payout has no bank step - reached by a stale link or a typed URL,
+      // so carry on to the step that follows instead of showing a dead page.
+      if (!needsBankStep(saved)) router.replace('/collector/cheque-details');
     } catch (e) {}
-  }, []);
+  }, [router]);
 
   const persist = (patch) => {
     try {

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
 import {
   getLink,
   resendLink,
@@ -381,6 +381,11 @@ function SummaryContent() {
     initialBlacklist
   );
   const { hasBank, hasCheque } = getDisbursementFlags(view.disbursementMethod);
+  // A small cash-only payout never had a bank step, so the section is left out
+  // rather than printed as "not required". Read from the stored form, not the
+  // preview-adjusted view: `view.state` is the patron's address state, not the
+  // venue's.
+  const showsBankSection = needsBankStep(formData);
 
   // Determine Primary ID Edit destination
   const getPrimaryIdEditUrl = () => {
@@ -834,6 +839,8 @@ function SummaryContent() {
                     </div>
 
                     {/* Bank account subsection */}
+                    {showsBankSection && (
+                      <>
                     <div className="flex items-center justify-between pt-4 pb-1">
                       <p className="text-[13px] font-semibold text-ink-mid m-0">
                         Bank account
@@ -910,6 +917,8 @@ function SummaryContent() {
                           Bank transfer wasn&apos;t selected as a payment method for this payout.
                         </span>
                       </div>
+                    )}
+                      </>
                     )}
 
                     {/* Cheque subsection */}
