@@ -107,11 +107,11 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
     <div>
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <div>
-          <h2 className="text-[17px] font-bold text-[#102a43] m-0">Exclusion register</h2>
+          <h2 className="text-[17px] font-bold text-[#102a43] m-0">Blacklist</h2>
           <p className="text-[13px] text-[#627d98] mt-1 mb-0 max-w-[64ch]">
             {isSuperAdmin
-              ? 'Global self-exclusion, venue ban and regulatory listings across every venue. A patron can be added here before they ever win a payout.'
-              : 'Self-exclusion, venue ban and regulatory listings for this venue. Add a patron here before they win a payout, or from their own winner record.'}
+              ? 'Global self-exclusion and venue ban listings across every venue. A patron can be added here before they ever win a payout.'
+              : 'Self-exclusion and venue ban listings for this venue. Add a patron here before they win a payout, or from their own winner record.'}
           </p>
         </div>
         <button
@@ -119,7 +119,7 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
           onClick={handleOpenAdd}
           className="inline-flex items-center justify-center min-h-[40px] px-4 rounded-md text-[13px] font-bold text-white bg-[#0d9488] hover:bg-[#0b7a6f] transition-colors cursor-pointer flex-shrink-0"
         >
-          + Add to register
+          + Add to blacklist
         </button>
       </div>
 
@@ -202,9 +202,9 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
                 <td className="px-4 py-3.5 border-b border-[#edf1f4] text-[13px] text-[#102a43]">
                   {item.reason}
                 </td>
-                <td className="px-4 py-3.5 border-b border-[#edf1f4]">
+                <td className="px-4 py-3.5 border-b border-[#edf1f4] whitespace-nowrap">
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold border ${
+                    className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold border ${
                       item.exclusionType === EXCLUSION_TYPES.SELF
                         ? 'bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]'
                         : 'bg-[#f1f5f9] text-[#334155] border-[#cbd5e1]'
@@ -245,7 +245,7 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
 
       {filteredBlacklist.length === 0 && (
         <div className="py-10 text-center text-[#627d98] text-[13.5px]">
-          No register records found.
+          No blacklist records found.
         </div>
       )}
 
@@ -255,7 +255,7 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
           <div className="bg-white rounded-[14px] border border-[#d9e2ec] max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#edf1f4]">
               <h3 className="text-[17px] font-bold text-[#102a43]">
-                {editingItem ? 'Edit register entry' : 'Add to exclusion register'}
+                {editingItem ? 'Edit blacklist entry' : 'Add to blacklist'}
               </h3>
               <button
                 type="button"

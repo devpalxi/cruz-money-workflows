@@ -1,17 +1,15 @@
 /**
  * Gambling exclusion screening.
  *
- * The register holds three different kinds of entry and they are not
+ * The register holds two different kinds of entry and they are not
  * interchangeable:
  *
  *  - self       A patron-imposed gambling ban. Funds cannot be released until
  *               it expires. Only an Authoriser may override that, and only with
  *               a written reason.
- *  - venue_ban  Barred from the premises for behaviour. Nothing to do with
- *               gambling harm, so an Approver may proceed with a note.
- *  - regulatory An AML or sanctions driven listing. Same handling as a venue
- *               ban at the payout stage; the AML workflow deals with it
- *               separately.
+ *  - venue_ban  Barred from the premises for behaviour, or an AML/sanctions
+ *               driven listing. Nothing that blocks the payout itself, so an
+ *               Approver may proceed with a note.
  *
  * Before this existed the kind of ban lived only in the free-text `reason`, so
  * nothing could tell a self-exclusion apart from a barring order. Everything
@@ -27,13 +25,11 @@
 export const EXCLUSION_TYPES = {
   SELF: 'self',
   VENUE_BAN: 'venue_ban',
-  REGULATORY: 'regulatory',
 };
 
 export const EXCLUSION_TYPE_LABELS = {
   [EXCLUSION_TYPES.SELF]: 'Self-exclusion',
   [EXCLUSION_TYPES.VENUE_BAN]: 'Venue ban',
-  [EXCLUSION_TYPES.REGULATORY]: 'Regulatory listing',
 };
 
 export const EXCLUSION_SOURCES = {

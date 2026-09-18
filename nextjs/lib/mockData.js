@@ -65,15 +65,15 @@ export const initialMachines = [
 
 // exclusionType is what decides how a payout is handled, so it is stored
 // rather than inferred from the free-text reason: 'self' holds the money until
-// expiresAt, 'venue_ban' and 'regulatory' only warn. Self-exclusions are the
-// only kind that expire - a barring order or a sanctions listing runs until it
-// is lifted, so there is nothing to count down to.
+// expiresAt, 'venue_ban' only warns. Self-exclusions are the only kind that
+// expire - a barring order or a sanctions listing runs until it is lifted, so
+// there is nothing to count down to.
 export const initialBlacklist = [
   { id: 'bl-001', name: 'Marcus Vance', alias: 'Mark Vance', dob: '14/05/1982', reason: 'Self-exclusion order #8841', exclusionType: 'self', source: 'State register', expiresAt: '12 Jan 2027', state: 'NSW', addedDate: '12 Jan 2026', severity: 'High', status: 'Active' },
-  { id: 'bl-002', name: 'Elena Rostova', alias: 'Helen Ross', dob: '22/09/1979', reason: 'Anti-money laundering SMR inquiry', exclusionType: 'regulatory', source: 'Venue list', expiresAt: null, state: 'VIC', addedDate: '04 Mar 2026', severity: 'High', status: 'Active' },
-  { id: 'bl-003', name: 'David K. Lawson', alias: 'Dave Lawson', dob: '30/11/1990', reason: 'Repeated suspicious transaction structuring', exclusionType: 'regulatory', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '19 Apr 2026', severity: 'Medium', status: 'Active' },
+  { id: 'bl-002', name: 'Elena Rostova', alias: 'Helen Ross', dob: '22/09/1979', reason: 'Anti-money laundering SMR inquiry', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'VIC', addedDate: '04 Mar 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-003', name: 'David K. Lawson', alias: 'Dave Lawson', dob: '30/11/1990', reason: 'Repeated suspicious transaction structuring', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '19 Apr 2026', severity: 'Medium', status: 'Active' },
   { id: 'bl-004', name: 'Chloe Gallagher', alias: 'C. Gallagher', dob: '08/02/1985', reason: 'Club barring order 12-months', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'QLD', addedDate: '01 Jun 2026', severity: 'Low', status: 'Active' },
-  { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', exclusionType: 'regulatory', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
   { id: 'bl-006', name: 'Priya Raman', alias: 'P. Raman', dob: '03/03/1991', reason: 'Self-exclusion order #9127', exclusionType: 'self', source: 'State register', expiresAt: '20 Mar 2027', state: 'NSW', addedDate: '20 Mar 2026', severity: 'High', status: 'Active' },
   { id: 'bl-008', name: 'Sarah Jane Jenkins', alias: 'Sarah Jenkins', dob: '09/06/1984', reason: 'Self-exclusion order #9302', exclusionType: 'self', source: 'State register', expiresAt: '03 Oct 2026', state: 'NSW', addedDate: '03 Oct 2025', severity: 'High', status: 'Active' },
   { id: 'bl-007', name: 'Grace Wilson', alias: 'G. Wilson', dob: '11/11/1988', reason: 'Self-exclusion order #7734, lapsed', exclusionType: 'self', source: 'State register', expiresAt: '02 Feb 2026', state: 'NSW', addedDate: '02 Feb 2025', severity: 'Medium', status: 'Active' },

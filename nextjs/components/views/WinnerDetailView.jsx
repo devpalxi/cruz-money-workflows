@@ -68,7 +68,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
   const [blacklistSeverity, setBlacklistSeverity] = useState('High');
   const [blacklistAlias, setBlacklistAlias] = useState('');
   const [blacklistState, setBlacklistState] = useState('NSW');
-  const [blacklistExclusionType, setBlacklistExclusionType] = useState(EXCLUSION_TYPES.REGULATORY);
+  const [blacklistExclusionType, setBlacklistExclusionType] = useState(EXCLUSION_TYPES.VENUE_BAN);
   const [blacklistExpiresAt, setBlacklistExpiresAt] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -91,7 +91,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
     setCustomReason('');
     setBlacklistSeverity('High');
     setBlacklistState('NSW');
-    setBlacklistExclusionType(EXCLUSION_TYPES.REGULATORY);
+    setBlacklistExclusionType(EXCLUSION_TYPES.VENUE_BAN);
     setBlacklistExpiresAt('');
     setIsBlacklistModalOpen(true);
   };
@@ -110,8 +110,8 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
       reason: finalReason,
       severity: blacklistSeverity,
       exclusionType: blacklistExclusionType,
-      // Self-exclusions come from the state register; venue-raised bans and
-      // regulatory matches are recorded as this venue's own listing.
+      // Self-exclusions come from the state register; venue bans are
+      // recorded as this venue's own listing.
       source: blacklistExclusionType === EXCLUSION_TYPES.SELF ? EXCLUSION_SOURCES.STATE : EXCLUSION_SOURCES.VENUE,
       expiresAt: blacklistExclusionType === EXCLUSION_TYPES.SELF ? blacklistExpiresAt || null : null,
       addedDate: new Date().toLocaleDateString('en-AU', {

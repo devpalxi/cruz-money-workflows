@@ -9,8 +9,8 @@ import { EXCLUSION_TYPES, formatRegisterDate } from '@/lib/exclusionRegister';
  *
  * This never blocks the collector. The win happened and it has to be recorded -
  * what changes is whether the money moves afterwards. A live self-exclusion
- * holds the payout until it expires; a venue ban or regulatory listing is
- * information the approver weighs up.
+ * holds the payout until it expires; a venue ban is information the approver
+ * weighs up.
  */
 export default function ExclusionAlert({ screening, className = '' }) {
   if (!screening) return null;

@@ -241,7 +241,7 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
               ? 'border-[#0d9488] text-[#0d9488] font-bold'
               : 'border-transparent text-[#627d98] hover:text-[#102a43] font-semibold'}`}
         >
-          Exclusion register
+          Blacklist
         </button>
       </nav>
 
