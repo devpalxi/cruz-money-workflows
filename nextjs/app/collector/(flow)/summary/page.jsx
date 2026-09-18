@@ -25,6 +25,9 @@ import {
   LINK_STATUS,
   LINK_STATUS_LABELS,
 } from '@/lib/verificationLink';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+import { initialBlacklist } from '@/lib/mockData';
 
 function SummaryContent() {
   const router = useRouter();
@@ -349,6 +352,13 @@ function SummaryContent() {
   };
 
   const view = getActiveData();
+
+  // Screened here as well as at submission so the collector sees it before
+  // they hand anything over, not after the payout has already been created.
+  const exclusionScreening = screenPatron(
+    { name: view.fullName, dob: view.dob },
+    initialBlacklist
+  );
   const { hasBank, hasCheque } = getDisbursementFlags(view.disbursementMethod);
 
   // Determine Primary ID Edit destination
@@ -377,6 +387,8 @@ function SummaryContent() {
             </div>
             <p className="text-[14px] text-ink-mid m-0 whitespace-nowrap">{renderedAt}</p>
           </div>
+
+          <ExclusionAlert screening={exclusionScreening} className="mb-6" />
 
           {/* Patron self-service verification state */}
           {isLinkMode && linkRecord && (

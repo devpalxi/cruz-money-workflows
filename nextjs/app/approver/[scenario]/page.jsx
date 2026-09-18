@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
 import { formatOccupation } from '@/lib/venueCompliance';
+import { EXCLUSION_TYPES, formatRegisterDate } from '@/lib/exclusionRegister';
 import { initialPayouts } from '@/lib/mockData';
 
 /* ─── Scenario Data matching deploy/approver_v3.html ─── */
@@ -559,6 +560,12 @@ const SCENARIOS = {
   },
   'multi-id-mixed': {
     label: '8. Multi-ID mixed',
+    exclusion: {
+      type: EXCLUSION_TYPES.VENUE_BAN,
+      reason: 'Club barring order 12-months',
+      source: 'Venue list',
+      expiresAt: null,
+    },
     payoutNum: '#585',
     dateTime: '14 July 2026 · 1:15 pm · Riverside RSL Club',
     statusPill: 'Awaiting approval',
@@ -638,6 +645,12 @@ const SCENARIOS = {
   },
   'blacklist-match': {
     label: '9. Blacklist match',
+    exclusion: {
+      type: EXCLUSION_TYPES.SELF,
+      reason: 'Self-exclusion order #8841',
+      source: 'State register',
+      expiresAt: '12 Jan 2027',
+    },
     payoutNum: '#586',
     dateTime: '14 July 2026 · 2:00 pm · Riverside RSL Club',
     statusPill: 'Awaiting approval',
@@ -2018,6 +2031,13 @@ export default function ApproverScenarioPage() {
   const [confirmed, setConfirmed] = useState(false);
 
   const isOverridden = Boolean(risk && risk !== computedRisk.rating);
+
+  // A live self-exclusion is the one thing an Approver cannot clear. Everything
+  // else on the register is information they weigh up and may proceed past,
+  // provided they write down why.
+  const exclusion = scenario.exclusion || null;
+  const isSelfExclusionBlock = exclusion?.type === EXCLUSION_TYPES.SELF;
+  const exclusionNeedsNote = Boolean(exclusion) && !isSelfExclusionBlock;
   const [isRiskCalculationExpanded, setIsRiskCalculationExpanded] = useState(false);
 
   // Managed controlled accordion states
@@ -2680,6 +2700,43 @@ export default function ApproverScenarioPage() {
                 />
               </div>
 
+              {exclusion && (
+                <div
+                  className={`p-4 rounded-[8px] border mb-8 ${
+                    isSelfExclusionBlock
+                      ? 'bg-[#fef2f2] border-[#fca5a5]'
+                      : 'bg-[#fffbeb] border-[#fcd34d]'
+                  }`}
+                >
+                  <p
+                    className={`text-[16px] font-bold m-0 ${
+                      isSelfExclusionBlock ? 'text-[#991b1b]' : 'text-[#0f172a]'
+                    }`}
+                  >
+                    {isSelfExclusionBlock
+                      ? 'Funds cannot be released: gambling self-exclusion'
+                      : 'Patron is on the exclusion register'}
+                  </p>
+                  <p className="text-[14.5px] text-[#475569] mt-1 mb-0 leading-relaxed">
+                    {isSelfExclusionBlock ? (
+                      <>
+                        {exclusion.reason} ({exclusion.source}). This payout is held until{' '}
+                        <span className="font-bold text-[#0f172a]">
+                          {formatRegisterDate(exclusion.expiresAt)}
+                        </span>
+                        . An Approver cannot release it. Refer the payout to an Authoriser if it
+                        needs to be released sooner.
+                      </>
+                    ) : (
+                      <>
+                        {exclusion.reason} ({exclusion.source}). This does not block the payment.
+                        You may proceed, but record your reasoning in the notes below.
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+
               <label className="flex items-start gap-3.5 p-0 bg-transparent border-none mb-8 cursor-pointer hover:opacity-80 transition-opacity">
                 <input
                   type="checkbox"
@@ -2712,10 +2769,17 @@ export default function ApproverScenarioPage() {
                   </button>
                   <button
                     type="button"
-                    disabled={!risk || !confirmed || (!scenario.nameVerification.isMatch && !idConfirm) || (isOverridden && !notes.trim())}
+                    disabled={
+                      isSelfExclusionBlock ||
+                      !risk ||
+                      !confirmed ||
+                      (!scenario.nameVerification.isMatch && !idConfirm) ||
+                      (isOverridden && !notes.trim()) ||
+                      (exclusionNeedsNote && !notes.trim())
+                    }
                     onClick={handleApprove}
                     className={`h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5
-                      ${risk && confirmed && (scenario.nameVerification.isMatch || idConfirm) && (!isOverridden || notes.trim())
+                      ${!isSelfExclusionBlock && risk && confirmed && (scenario.nameVerification.isMatch || idConfirm) && (!isOverridden || notes.trim()) && (!exclusionNeedsNote || notes.trim())
                         ? 'bg-[#0d9488] hover:bg-[#0b7a6f] text-white cursor-pointer'
                         : 'bg-[#0d9488] opacity-40 cursor-not-allowed text-white'}`}
                   >

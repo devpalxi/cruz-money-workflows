@@ -3,11 +3,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3 } from 'lucide-react';
+import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3, ShieldAlert } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import AppHeader from '@/components/layout/AppHeader';
 import PageShell from '@/components/layout/PageShell';
 import { initialPayouts } from '@/lib/mockData';
+import { EXCLUSION_HOLD_STATUS, formatRegisterDate } from '@/lib/exclusionRegister';
 
 // Approver and Authoriser have nothing else to navigate to, so they get the
 // top-nav chrome used elsewhere in the app (Collector, design-system) instead
@@ -210,6 +211,7 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     { label: 'Pending authorisation', value: 'Pending Authorisation' },
     { label: 'Awaiting', value: 'Awaiting Approval' },
     { label: 'Pending verification', value: 'Pending verification' },
+    { label: 'Exclusion hold', value: EXCLUSION_HOLD_STATUS },
     { label: 'Completed', value: 'Payment Completed' },
     { label: 'Delayed', value: 'Payment Delayed' },
     { label: 'Failed', value: 'Failed' },
@@ -371,6 +373,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   // Null means nothing is scheduled to send: either it already settled, or the
   // payout never reached a state where a dispatch window exists.
   const timeToPaymentLabel = (item) => {
+    // A held payout is waiting on a date, not a wait time, so the column shows
+    // when the exclusion lifts instead of counting down to a PayTo send.
+    if (item.status === EXCLUSION_HOLD_STATUS && item.fundsReleaseDate) {
+      return `Releases ${formatRegisterDate(item.fundsReleaseDate)}`;
+    }
     if (item.paymentDueInMinutes == null) {
       return item.status === 'Payment Completed' ? 'Settled' : '-';
     }
@@ -381,6 +388,9 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     const label = timeToPaymentLabel(item);
     if (label === '-') return <span className="text-ink-lo">&mdash;</span>;
     if (label === 'Settled') return <span className="text-ink-mid">Settled</span>;
+    if (label.startsWith('Releases ')) {
+      return <span className="text-[12px] font-semibold text-state-fail-text">{label}</span>;
+    }
     if (label === 'Overdue') {
       return (
         <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
@@ -390,6 +400,30 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     }
     return <span className="font-mono tabular-nums font-bold text-ink-hi">{label}</span>;
   };
+
+  // What management asks: how many payouts are frozen, how much money that is,
+  // and when the next one comes out. Scoped the same way the table is, so the
+  // figure always matches the rows underneath it.
+  const exclusionHoldSummary = useMemo(() => {
+    const held = initialPayouts.filter(
+      (p) =>
+        p.status === EXCLUSION_HOLD_STATUS &&
+        (isSuperAdmin
+          ? selectedVenue === 'all' || p.venue === selectedVenue
+          : p.venue === 'Riverside RSL Club')
+    );
+    const nextRelease = held
+      .map((p) => p.fundsReleaseDate)
+      .filter(Boolean)
+      .sort((a, b) => Date.parse(a) - Date.parse(b))[0];
+    return {
+      count: held.length,
+      value: held.reduce((sum, p) => sum + p.amount, 0),
+      nextRelease,
+    };
+  }, [isSuperAdmin, selectedVenue]);
+
+  const showHoldSummary = !isReviewRole && exclusionHoldSummary.count > 0;
 
   const exportCSV = () => {
     if (filteredPayouts.length === 0) return;
@@ -494,6 +528,15 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   };
 
   const renderStatusPill = (status) => {
+    // Its own label rather than an amber "delayed": a gambling-harm hold is a
+    // block, and someone scanning the register should see that at a glance.
+    if (status === EXCLUSION_HOLD_STATUS) {
+      return (
+        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
+          {status}
+        </span>
+      );
+    }
     // Green tier: Completed / Paid / Settled / Authorised
     if (
       status === 'Payment Completed' ||
@@ -567,6 +610,39 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           </p>
         </div>
       </div>
+
+      {/* Self-exclusion holds - management view of frozen funds */}
+      {showHoldSummary && (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus([EXCLUSION_HOLD_STATUS]);
+            setCurrentPage(1);
+          }}
+          className="w-full text-left mb-5 p-4 rounded-lg bg-surface-card border border-state-fail-border shadow-card flex items-start gap-3 hover:bg-state-fail-bg/40 transition-colors cursor-pointer"
+        >
+          <ShieldAlert className="w-4 h-4 text-state-fail-text flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-bold text-ink-hi m-0">
+              {exclusionHoldSummary.count} payout{exclusionHoldSummary.count === 1 ? '' : 's'} held
+              on self-exclusion
+            </p>
+            <p className="text-[13.5px] text-ink-mid mt-0.5 mb-0">
+              <span className="font-mono tabular-nums font-bold text-ink-hi">
+                {formatCurrency(exclusionHoldSummary.value)}
+              </span>{' '}
+              held until each patron&apos;s exclusion ends
+              {exclusionHoldSummary.nextRelease
+                ? `. Next release ${formatRegisterDate(exclusionHoldSummary.nextRelease)}.`
+                : '.'}{' '}
+              Only an Authoriser can release funds sooner.
+            </p>
+          </div>
+          <span className="text-[12.5px] font-bold text-ink-mid whitespace-nowrap self-center">
+            View held payouts
+          </span>
+        </button>
+      )}
 
       {/* Main Table Card (Double Bezel Layout) */}
       <section className="bg-surface-card border border-border rounded-lg shadow-card relative">

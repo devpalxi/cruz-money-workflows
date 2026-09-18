@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { computeRisk } from '@/lib/riskEngine';
 import { initialPayouts } from '@/lib/mockData';
+import { EXCLUSION_TYPES, formatRegisterDate } from '@/lib/exclusionRegister';
 
 /* ─── Authoriser Scenario Data matching deploy/authoriser_v3.html ─── */
 const SCENARIOS = {
@@ -424,6 +425,12 @@ const SCENARIOS = {
   },
   'blacklist-match': {
     label: '9. Blacklist match',
+    exclusion: {
+      type: EXCLUSION_TYPES.SELF,
+      reason: 'Self-exclusion order #8841',
+      source: 'State register',
+      expiresAt: '12 Jan 2027',
+    },
     payoutNum: '#586',
     dateTime: '14 July 2026 · 2:00 pm · Riverside RSL Club',
     statusPill: 'Awaiting authorisation',
@@ -1601,6 +1608,10 @@ export default function AuthoriserScenarioPage() {
 
   const [authoriseStatus, setAuthoriseStatus] = useState(null); // 'authorised' | 'rejected' | 'cancelled' | null
 
+  // Releasing a self-exclusion early is the Authoriser's alone, and it is never
+  // a single click: the reason is written down and kept with the payout.
+  const [exclusionOverrideReason, setExclusionOverrideReason] = useState('');
+
   const handleOpenModal = (id) => {
     if (id === 'pep') setPepModalOpen(true);
     else if (id === 'sanctions' || id === 'sanc') setSancModalOpen(true);
@@ -1620,7 +1631,13 @@ export default function AuthoriserScenarioPage() {
     setTimeout(() => setBlacklistToast(null), 4000);
   };
 
-  const isAuthoriseDisabled = !authConfirmed || (scenario.blacklistMatch && !blacklistOverride);
+  const exclusion = scenario.exclusion || null;
+  const isSelfExclusion = exclusion?.type === EXCLUSION_TYPES.SELF;
+
+  const isAuthoriseDisabled =
+    !authConfirmed ||
+    (scenario.blacklistMatch && !blacklistOverride) ||
+    (isSelfExclusion && exclusionOverrideReason.trim() === '');
 
   return (
     <>
@@ -2119,6 +2136,34 @@ export default function AuthoriserScenarioPage() {
               <div className="text-[16px] text-[#334155] mb-5 leading-[1.5]">
                 Review all information above before authorising. This action cannot be undone.
               </div>
+
+              {/* Self-exclusion override - the only way funds move before expiry */}
+              {isSelfExclusion && (
+                <div className="mb-6 p-4 rounded-[8px] bg-[#fef2f2] border border-[#fca5a5]">
+                  <div className="text-[15.5px] font-bold text-[#991b1b]">
+                    Gambling self-exclusion - funds are held
+                  </div>
+                  <div className="text-[14.5px] text-[#334155] leading-[1.5] mt-1 mb-3">
+                    {exclusion.reason} ({exclusion.source}). These funds release on their own on{' '}
+                    <span className="font-bold text-[#0f172a]">
+                      {formatRegisterDate(exclusion.expiresAt)}
+                    </span>
+                    . An Approver cannot release them sooner. As Authoriser you may override that,
+                    and your reason is recorded against the payout.
+                  </div>
+                  <label className="text-[13px] font-bold text-[#0f172a] block mb-1">
+                    Reason for releasing before the exclusion ends{' '}
+                    <span className="text-[#e53e3e]">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={exclusionOverrideReason}
+                    onChange={(e) => setExclusionOverrideReason(e.target.value)}
+                    placeholder="Explain why these funds are being released before the self-exclusion expires."
+                    className="w-full p-2.5 border border-[#fca5a5] rounded-md text-[14px] text-[#0f172a] outline-none focus:border-[#e53e3e] bg-white"
+                  />
+                </div>
+              )}
 
               {/* Blacklist Warning Notice if matched (Unboxed) */}
               {scenario.blacklistMatch && (

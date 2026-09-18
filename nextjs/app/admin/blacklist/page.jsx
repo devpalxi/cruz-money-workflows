@@ -4,6 +4,12 @@ import React, { useState, useMemo } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import { initialBlacklist } from '@/lib/mockData';
+import {
+  EXCLUSION_TYPES,
+  EXCLUSION_TYPE_LABELS,
+  EXCLUSION_SOURCES,
+  formatRegisterDate,
+} from '@/lib/exclusionRegister';
 
 export default function VenueBlacklistPage() {
   const [blacklist, setBlacklist] = useState(initialBlacklist);
@@ -19,6 +25,11 @@ export default function VenueBlacklistPage() {
   const [state, setState] = useState('NSW');
   const [reason, setReason] = useState('');
   const [severity, setSeverity] = useState('High');
+  // The type is what decides how a payout is handled, so it is a choice rather
+  // than something read back out of the reason text.
+  const [exclusionType, setExclusionType] = useState(EXCLUSION_TYPES.SELF);
+  const [source, setSource] = useState(EXCLUSION_SOURCES.STATE);
+  const [expiresAt, setExpiresAt] = useState('');
 
   const filteredBlacklist = useMemo(() => {
     return blacklist.filter((item) => {
@@ -43,6 +54,9 @@ export default function VenueBlacklistPage() {
     setState('NSW');
     setReason('');
     setSeverity('High');
+    setExclusionType(EXCLUSION_TYPES.SELF);
+    setSource(EXCLUSION_SOURCES.STATE);
+    setExpiresAt('');
     setModalOpen(true);
   };
 
@@ -51,7 +65,22 @@ export default function VenueBlacklistPage() {
     if (editingItem) {
       setBlacklist((prev) =>
         prev.map((i) =>
-          i.id === editingItem.id ? { ...i, name, alias, dob, state, reason, severity } : i
+          i.id === editingItem.id
+            ? {
+                ...i,
+                name,
+                alias,
+                dob,
+                state,
+                reason,
+                severity,
+                exclusionType,
+                source,
+                // Only a self-exclusion runs to a date; the others stay until
+                // they are lifted, so there is nothing to store.
+                expiresAt: exclusionType === EXCLUSION_TYPES.SELF ? expiresAt || null : null,
+              }
+            : i
         )
       );
     } else {
@@ -63,6 +92,9 @@ export default function VenueBlacklistPage() {
         state,
         reason,
         severity,
+        exclusionType,
+        source,
+        expiresAt: exclusionType === EXCLUSION_TYPES.SELF ? expiresAt || null : null,
         addedDate: new Date().toLocaleDateString('en-AU', {
           day: '2-digit',
           month: 'short',
@@ -133,7 +165,7 @@ export default function VenueBlacklistPage() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse">
+            <table className="w-full min-w-[1040px] border-collapse">
               <thead>
                 <tr>
                   <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
@@ -149,7 +181,16 @@ export default function VenueBlacklistPage() {
                     Exclusion Reason
                   </th>
                   <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
+                    Exclusion Type
+                  </th>
+                  <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
+                    Source
+                  </th>
+                  <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
                     Severity
+                  </th>
+                  <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
+                    Expires
                   </th>
                   <th className="text-left px-4 py-3 bg-[#f8fafb] text-[#627d98] border-b border-[#d9e2ec] text-[11px] font-bold tracking-wide">
                     Status
@@ -175,6 +216,20 @@ export default function VenueBlacklistPage() {
                     <td className="px-4 py-3.5 border-b border-[#edf1f4]">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold border ${
+                          item.exclusionType === EXCLUSION_TYPES.SELF
+                            ? 'bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]'
+                            : 'bg-[#f1f5f9] text-[#334155] border-[#cbd5e1]'
+                        }`}
+                      >
+                        {EXCLUSION_TYPE_LABELS[item.exclusionType] || 'Exclusion'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-[#edf1f4] text-[13px] text-[#102a43]">
+                      {item.source || 'Venue list'}
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-[#edf1f4]">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold border ${
                           item.severity === 'High'
                             ? 'bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]'
                             : item.severity === 'Medium'
@@ -184,6 +239,9 @@ export default function VenueBlacklistPage() {
                       >
                         {item.severity}
                       </span>
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-[#edf1f4] font-mono text-[12.5px] text-[#102a43]">
+                      {item.expiresAt ? formatRegisterDate(item.expiresAt) : <span className="font-sans text-[#627d98]">Indefinite</span>}
                     </td>
                     <td className="px-4 py-3.5 border-b border-[#edf1f4]">
                       <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold bg-[#ecfdf5] text-[#065f46] border border-[#6ee7b7]">
@@ -248,6 +306,55 @@ export default function VenueBlacklistPage() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#627d98]">Exclusion Type *</label>
+                  <select
+                    value={exclusionType}
+                    onChange={(e) => setExclusionType(e.target.value)}
+                    className="w-full h-10 px-2.5 border border-[#d9e2ec] rounded-md text-[13.5px] text-[#102a43] outline-none focus:border-[#0d9488] bg-white"
+                  >
+                    {Object.values(EXCLUSION_TYPES).map((value) => (
+                      <option key={value} value={value}>
+                        {EXCLUSION_TYPE_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#627d98]">Source *</label>
+                  <select
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    className="w-full h-10 px-2.5 border border-[#d9e2ec] rounded-md text-[13.5px] text-[#102a43] outline-none focus:border-[#0d9488] bg-white"
+                  >
+                    {Object.values(EXCLUSION_SOURCES).map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {exclusionType === EXCLUSION_TYPES.SELF && (
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#627d98]">Exclusion Expires *</label>
+                  <input
+                    type="text"
+                    required
+                    value={expiresAt}
+                    placeholder="e.g. 12 Jan 2027"
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    className="w-full h-10 px-2.5 border border-[#d9e2ec] rounded-md text-[13.5px] text-[#102a43] outline-none focus:border-[#0d9488]"
+                  />
+                  <p className="text-[12px] text-[#627d98] m-0">
+                    Payouts for this patron are held until this date. Only an Authoriser can release
+                    them sooner.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-[12px] font-bold text-[#627d98]">Exclusion Reason *</label>
