@@ -12,6 +12,12 @@ import {
 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import { useWinners } from '@/lib/WinnersContext';
+import {
+  screenPatron,
+  EXCLUSION_TYPES,
+  EXCLUSION_TYPE_LABELS,
+  EXCLUSION_SOURCES,
+} from '@/lib/exclusionRegister';
 
 // Payout statuses where the cash/EFT split can still be corrected -
 // once a payout has actually settled (or is terminal), the split is locked.
@@ -26,7 +32,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
   const winnerId = propWinnerId || params?.id;
   const backHref = isSuperAdmin ? '/super-admin/winners' : '/admin/winners';
 
-  const { winners, setWinners } = useWinners();
+  const { winners, setWinners, blacklist, setBlacklist } = useWinners();
 
   const winner = useMemo(() => {
     if (!winners || winners.length === 0) return null;
@@ -49,6 +55,12 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
     );
   }, [winners, winnerId]);
 
+  // The register is the single source of truth for exclusion status - a
+  // winner is "blacklisted" whenever they match an active entry, the same
+  // check the Collector/Approver/Authoriser screen payouts with.
+  const screening = winner ? screenPatron({ name: winner.fullName, dob: winner.dob }, blacklist) : null;
+  const isBlacklisted = !!screening;
+
   // Modal & Form State
   const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
   const [blacklistReason, setBlacklistReason] = useState('FrankieOne PEP Match');
@@ -56,6 +68,8 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
   const [blacklistSeverity, setBlacklistSeverity] = useState('High');
   const [blacklistAlias, setBlacklistAlias] = useState('');
   const [blacklistState, setBlacklistState] = useState('NSW');
+  const [blacklistExclusionType, setBlacklistExclusionType] = useState(EXCLUSION_TYPES.REGULATORY);
+  const [blacklistExpiresAt, setBlacklistExpiresAt] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
   // Edit disbursement split state
@@ -77,6 +91,8 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
     setCustomReason('');
     setBlacklistSeverity('High');
     setBlacklistState('NSW');
+    setBlacklistExclusionType(EXCLUSION_TYPES.REGULATORY);
+    setBlacklistExpiresAt('');
     setIsBlacklistModalOpen(true);
   };
 
@@ -85,7 +101,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
     if (!winner) return;
 
     const finalReason = customReason.trim() ? customReason : blacklistReason;
-    const newBlacklistRecord = {
+    const newRegisterEntry = {
       id: `bl-${Date.now()}`,
       name: winner.fullName,
       alias: blacklistAlias || 'None',
@@ -93,6 +109,11 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
       state: blacklistState,
       reason: finalReason,
       severity: blacklistSeverity,
+      exclusionType: blacklistExclusionType,
+      // Self-exclusions come from the state register; venue-raised bans and
+      // regulatory matches are recorded as this venue's own listing.
+      source: blacklistExclusionType === EXCLUSION_TYPES.SELF ? EXCLUSION_SOURCES.STATE : EXCLUSION_SOURCES.VENUE,
+      expiresAt: blacklistExclusionType === EXCLUSION_TYPES.SELF ? blacklistExpiresAt || null : null,
       addedDate: new Date().toLocaleDateString('en-AU', {
         day: '2-digit',
         month: 'short',
@@ -101,43 +122,23 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
       status: 'Active',
     };
 
-    setWinners((prev) =>
-      prev.map((w) => {
-        if (w.id === winner.id || w.fullName.toLowerCase() === winner.fullName.toLowerCase()) {
-          return {
-            ...w,
-            isBlacklisted: true,
-            blacklistDetails: newBlacklistRecord,
-          };
-        }
-        return w;
-      })
-    );
+    // Written into the same register the Exclusion register tab and every
+    // payout screening reads, not a field on the winner record.
+    setBlacklist((prev) => [newRegisterEntry, ...prev]);
 
     setIsBlacklistModalOpen(false);
-    showToast(`Patron ${winner.fullName} has been added to venue blacklist.`);
+    showToast(`Patron ${winner.fullName} has been added to the exclusion register.`);
   };
 
   const handleRemoveFromBlacklist = () => {
-    if (!winner) return;
-    if (!confirm(`Are you sure you want to remove ${winner.fullName} from the blacklist?`)) {
+    if (!winner || !screening) return;
+    if (!confirm(`Are you sure you want to remove ${winner.fullName} from the exclusion register?`)) {
       return;
     }
 
-    setWinners((prev) =>
-      prev.map((w) => {
-        if (w.id === winner.id || w.fullName.toLowerCase() === winner.fullName.toLowerCase()) {
-          return {
-            ...w,
-            isBlacklisted: false,
-            blacklistDetails: null,
-          };
-        }
-        return w;
-      })
-    );
+    setBlacklist((prev) => prev.filter((entry) => entry.id !== screening.entry.id));
 
-    showToast(`Blacklist order for ${winner.fullName} has been lifted.`);
+    showToast(`Exclusion order for ${winner.fullName} has been lifted.`);
   };
 
   const isSplitEditable = winner && SPLIT_EDITABLE_STATUSES.includes(winner.payoutStatus);
@@ -285,7 +286,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
             <h1 className="text-[28px] sm:text-[30px] font-bold text-[#102a43] m-0 tracking-tight leading-tight">
               {winner.fullName}
             </h1>
-            {winner.isBlacklisted ? (
+            {isBlacklisted ? (
               <span className="inline-flex items-center px-3 py-0.5 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#991b1b] border border-[#fca5a5]">
                 Blacklisted patron
               </span>
@@ -311,7 +312,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
 
         {/* Header Action Button */}
         <div className="flex-shrink-0">
-          {winner.isBlacklisted ? (
+          {isBlacklisted ? (
             <button
               type="button"
               onClick={handleRemoveFromBlacklist}
@@ -670,13 +671,13 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
             Venue exclusion standing
           </h2>
 
-          {winner.isBlacklisted && (
+          {isBlacklisted && (
             <div className="p-3.5 rounded-lg border border-red-200 bg-red-50 shadow-2xs flex items-start gap-3 mb-3.5">
               <AlertCircle className="w-4 h-4 text-[#dc2626] shrink-0 mt-0.5" />
               <div>
                 <div className="text-[13px] font-bold text-[#102a43]">Venue Blacklist Exclusion Order Active</div>
                 <p className="text-[12px] text-[#627d98] m-0 leading-relaxed">
-                  {winner.blacklistDetails?.reason || 'Patron matches venue exclusion register. Payout disbursement blocked pending supervisor clearance.'}
+                  {screening?.entry?.reason || 'Patron matches venue exclusion register. Payout disbursement blocked pending supervisor clearance.'}
                 </p>
               </div>
             </div>
@@ -688,7 +689,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                 Exclusion standing
               </span>
               <div className="flex-1 flex items-center gap-2.5 flex-wrap text-[14.5px]">
-                {winner.isBlacklisted ? (
+                {isBlacklisted ? (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#991b1b] border border-[#fca5a5]">
                     Blacklisted patron
                   </span>
@@ -698,8 +699,8 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                   </span>
                 )}
                 <span className="text-[13.5px] text-[#475569]">
-                  {winner.isBlacklisted
-                    ? `Reason: ${winner.blacklistDetails?.reason || 'Self-exclusion order'} (${winner.blacklistDetails?.severity || 'High'} severity)`
+                  {isBlacklisted
+                    ? `Reason: ${screening?.entry?.reason || 'Exclusion order'} (${EXCLUSION_TYPE_LABELS[screening?.type] || 'Exclusion'}, ${screening?.entry?.severity || 'High'} severity)`
                     : 'No active venue exclusion orders recorded. Cleared for payouts.'}
                 </span>
               </div>
@@ -710,7 +711,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                 Blacklist action
               </span>
               <div className="flex-1">
-                {winner.isBlacklisted ? (
+                {isBlacklisted ? (
                   <button
                     type="button"
                     onClick={handleRemoveFromBlacklist}
@@ -792,6 +793,23 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#64748b]">
+                    Exclusion type <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <select
+                    value={blacklistExclusionType}
+                    onChange={e => setBlacklistExclusionType(e.target.value)}
+                    className="w-full h-9 px-3 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] bg-white outline-none focus:border-[#dc2626]"
+                  >
+                    {Object.values(EXCLUSION_TYPES).map((value) => (
+                      <option key={value} value={value}>
+                        {EXCLUSION_TYPE_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-bold text-[#64748b]">
                     Severity level <span className="text-[#dc2626]">*</span>
                   </label>
                   <select
@@ -804,26 +822,45 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                     <option value="Low">Low severity</option>
                   </select>
                 </div>
+              </div>
 
+              {blacklistExclusionType === EXCLUSION_TYPES.SELF && (
                 <div className="space-y-1">
                   <label className="text-[12px] font-bold text-[#64748b]">
-                    Jurisdiction state <span className="text-[#dc2626]">*</span>
+                    Exclusion expires <span className="text-[#dc2626]">*</span>
                   </label>
-                  <select
-                    value={blacklistState}
-                    onChange={e => setBlacklistState(e.target.value)}
-                    className="w-full h-9 px-3 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] bg-white outline-none focus:border-[#dc2626]"
-                  >
-                    <option value="NSW">NSW</option>
-                    <option value="VIC">VIC</option>
-                    <option value="QLD">QLD</option>
-                    <option value="SA">SA</option>
-                    <option value="WA">WA</option>
-                    <option value="TAS">TAS</option>
-                    <option value="ACT">ACT</option>
-                    <option value="NT">NT</option>
-                  </select>
+                  <input
+                    type="text"
+                    required
+                    value={blacklistExpiresAt}
+                    placeholder="e.g. 12 Jan 2027"
+                    onChange={e => setBlacklistExpiresAt(e.target.value)}
+                    className="w-full h-9 px-3 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] outline-none focus:border-[#dc2626]"
+                  />
+                  <p className="text-[12px] text-[#64748b] m-0">
+                    This payout is held until this date. Only an Authoriser can release it sooner.
+                  </p>
                 </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[12px] font-bold text-[#64748b]">
+                  Jurisdiction state <span className="text-[#dc2626]">*</span>
+                </label>
+                <select
+                  value={blacklistState}
+                  onChange={e => setBlacklistState(e.target.value)}
+                  className="w-full h-9 px-3 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] bg-white outline-none focus:border-[#dc2626]"
+                >
+                  <option value="NSW">NSW</option>
+                  <option value="VIC">VIC</option>
+                  <option value="QLD">QLD</option>
+                  <option value="SA">SA</option>
+                  <option value="WA">WA</option>
+                  <option value="TAS">TAS</option>
+                  <option value="ACT">ACT</option>
+                  <option value="NT">NT</option>
+                </select>
               </div>
 
               <div className="space-y-1">
@@ -860,7 +897,10 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                 </button>
                 <button
                   type="submit"
-                  disabled={!customReason.trim() && !blacklistReason}
+                  disabled={
+                    (!customReason.trim() && !blacklistReason) ||
+                    (blacklistExclusionType === EXCLUSION_TYPES.SELF && !blacklistExpiresAt.trim())
+                  }
                   className="h-[36px] px-4 rounded-md text-[13px] font-bold bg-[#dc2626] text-white hover:bg-[#b91c1c] cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Confirm &amp; add to blacklist

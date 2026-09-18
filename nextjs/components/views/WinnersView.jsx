@@ -12,8 +12,10 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
-import { initialWinners, initialVenues } from '@/lib/mockData';
+import ExclusionRegisterPanel from '@/components/views/ExclusionRegisterPanel';
+import { initialWinners, initialBlacklist, initialVenues } from '@/lib/mockData';
 import { useWinners } from '@/lib/WinnersContext';
+import { screenPatron } from '@/lib/exclusionRegister';
 
 export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside RSL Club' }) {
   const isSuperAdmin = role === 'SUPER ADMIN';
@@ -28,8 +30,13 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
   }
 
   const [localWinners, setLocalWinners] = useState(initialWinners);
+  const [localBlacklist, setLocalBlacklist] = useState(initialBlacklist);
   const winners = winnersContext ? winnersContext.winners : localWinners;
   const setWinners = winnersContext ? winnersContext.setWinners : setLocalWinners;
+  const blacklist = winnersContext ? winnersContext.blacklist : localBlacklist;
+  const setBlacklist = winnersContext ? winnersContext.setBlacklist : setLocalBlacklist;
+
+  const [activeTab, setActiveTab] = useState('winners'); // 'winners' | 'register'
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVenue, setSelectedVenue] = useState(isSuperAdmin ? 'all' : defaultVenue);
@@ -47,6 +54,11 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Whether a winner is blacklisted is worked out live against the shared
+  // register (name + DOB), the same check payouts are screened with -
+  // there is no separate stored flag to go stale.
+  const isWinnerBlacklisted = (w) => !!screenPatron({ name: w.fullName, dob: w.dob }, blacklist);
 
   // Filtered Winners List
   const filteredWinners = useMemo(() => {
@@ -66,15 +78,17 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
 
       const matchesRisk = selectedRisk === 'all' || w.riskRating === selectedRisk;
       const matchesStatus = selectedStatus === 'all' || w.payoutStatus === selectedStatus;
+      const blacklisted = isWinnerBlacklisted(w);
       const matchesBlacklist =
         selectedBlacklist === 'all' ||
-        (selectedBlacklist === 'blacklisted' && w.isBlacklisted) ||
-        (selectedBlacklist === 'active' && !w.isBlacklisted);
+        (selectedBlacklist === 'blacklisted' && blacklisted) ||
+        (selectedBlacklist === 'active' && !blacklisted);
 
       return matchesSearch && matchesRisk && matchesStatus && matchesBlacklist;
     });
   }, [
     winners,
+    blacklist,
     isSuperAdmin,
     defaultVenue,
     selectedVenue,
@@ -99,7 +113,7 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
       : winners.filter((w) => w.venue === defaultVenue);
 
     const totalWinAmount = pool.reduce((sum, item) => sum + item.winAmount, 0);
-    const blacklistedCount = pool.filter((w) => w.isBlacklisted).length;
+    const blacklistedCount = pool.filter((w) => isWinnerBlacklisted(w)).length;
     const verifiedCount = pool.filter((w) => w.idvStatus === 'Pass').length;
     const verificationRate = pool.length > 0 ? Math.round((verifiedCount / pool.length) * 100) : 0;
 
@@ -109,7 +123,7 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
       blacklistedCount,
       verificationRate,
     };
-  }, [winners, isSuperAdmin, selectedVenue, defaultVenue]);
+  }, [winners, blacklist, isSuperAdmin, selectedVenue, defaultVenue]);
 
   // Navigate to Detail Page
   const handleRowClick = (winner) => {
@@ -125,7 +139,7 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
     const rows = filteredWinners
       .map(
         (w) =>
-          `"${w.id}","${w.payoutId}","${w.fullName}","${w.memberNumber}","${w.venue}","${w.machineId}",${w.winAmount.toFixed(2)},${w.cashDisbursed.toFixed(2)},${w.eftDisbursed.toFixed(2)},"${w.winTimestamp}","${w.idvStatus}","${w.riskRating}",${w.isBlacklisted ? 'Yes' : 'No'}`
+          `"${w.id}","${w.payoutId}","${w.fullName}","${w.memberNumber}","${w.venue}","${w.machineId}",${w.winAmount.toFixed(2)},${w.cashDisbursed.toFixed(2)},${w.eftDisbursed.toFixed(2)},"${w.winTimestamp}","${w.idvStatus}","${w.riskRating}",${isWinnerBlacklisted(w) ? 'Yes' : 'No'}`
       )
       .join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
@@ -207,6 +221,42 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
         </div>
       </div>
 
+      {/* Tab Switcher */}
+      <nav className="flex items-center gap-7 border-b border-[#d9e2ec] mb-6" aria-label="Winners sections">
+        <button
+          type="button"
+          onClick={() => setActiveTab('winners')}
+          className={`pb-3 -mb-px text-[14px] transition-all cursor-pointer border-b-2 bg-transparent whitespace-nowrap
+            ${activeTab === 'winners'
+              ? 'border-[#0d9488] text-[#0d9488] font-bold'
+              : 'border-transparent text-[#627d98] hover:text-[#102a43] font-semibold'}`}
+        >
+          Winners
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('register')}
+          className={`pb-3 -mb-px text-[14px] transition-all cursor-pointer border-b-2 bg-transparent whitespace-nowrap
+            ${activeTab === 'register'
+              ? 'border-[#0d9488] text-[#0d9488] font-bold'
+              : 'border-transparent text-[#627d98] hover:text-[#102a43] font-semibold'}`}
+        >
+          Exclusion register
+        </button>
+      </nav>
+
+      {activeTab === 'register' ? (
+        <section className="bg-white border border-[#d9e2ec] rounded-[10px] overflow-hidden">
+          <div className="p-5">
+            <ExclusionRegisterPanel
+              blacklist={blacklist}
+              setBlacklist={setBlacklist}
+              isSuperAdmin={isSuperAdmin}
+            />
+          </div>
+        </section>
+      ) : (
+      <>
       {/* 4-Stat Metric Snapshot Grid */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6" aria-label="Winners summary">
         <div className="bg-white border border-[#d9e2ec] rounded-[10px] p-[18px]">
@@ -429,7 +479,7 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
 
                     {/* Blacklist Status */}
                     <td className="px-4 py-3.5 border-b border-[#edf1f4]">
-                      {winner.isBlacklisted ? (
+                      {isWinnerBlacklisted(winner) ? (
                         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-[#fef2f2] text-[#991b1b] border border-[#fca5a5]">
                           Blacklisted
                         </span>
@@ -480,6 +530,8 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
           )}
         </div>
       </section>
+      </>
+      )}
     </AdminShell>
   );
 }

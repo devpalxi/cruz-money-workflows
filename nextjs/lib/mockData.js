@@ -262,8 +262,6 @@ export const initialWinners = [
       accountNumber: '213123123',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -296,8 +294,6 @@ export const initialWinners = [
       accountNumber: '445566778',
       bankName: 'Commonwealth Bank of Australia'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -329,14 +325,6 @@ export const initialWinners = [
       bsb: '082-001',
       accountNumber: '998811223',
       bankName: 'National Australia Bank'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-001',
-      reason: 'Self-exclusion order #8841',
-      severity: 'High',
-      state: 'NSW',
-      addedDate: '12 Jan 2026'
     },
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   },
@@ -370,8 +358,6 @@ export const initialWinners = [
       accountNumber: '554433221',
       bankName: 'ANZ Banking Group'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -404,8 +390,6 @@ export const initialWinners = [
       accountNumber: '112233445',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   },
   {
@@ -437,14 +421,6 @@ export const initialWinners = [
       bsb: '063-000',
       accountNumber: '776655443',
       bankName: 'Commonwealth Bank of Australia'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-002',
-      reason: 'Anti-money laundering SMR inquiry',
-      severity: 'High',
-      state: 'VIC',
-      addedDate: '04 Mar 2026'
     },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
@@ -478,14 +454,6 @@ export const initialWinners = [
       accountNumber: '665544332',
       bankName: 'National Australia Bank'
     },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-003',
-      reason: 'Repeated suspicious transaction structuring',
-      severity: 'Medium',
-      state: 'NSW',
-      addedDate: '19 Apr 2026'
-    },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
   {
@@ -517,14 +485,6 @@ export const initialWinners = [
       bsb: '014-002',
       accountNumber: '990011223',
       bankName: 'ANZ Banking Group'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-004',
-      reason: 'Club barring order 12-months',
-      severity: 'Low',
-      state: 'QLD',
-      addedDate: '01 Jun 2026'
     },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
@@ -558,14 +518,6 @@ export const initialWinners = [
       accountNumber: '334455667',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-005',
-      reason: 'Sanctions match cross-reference',
-      severity: 'High',
-      state: 'NSW',
-      addedDate: '14 Jul 2026'
-    },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
   {
@@ -598,8 +550,6 @@ export const initialWinners = [
       accountNumber: '887766554',
       bankName: 'Commonwealth Bank of Australia'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -632,8 +582,6 @@ export const initialWinners = [
       accountNumber: '443322119',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -666,8 +614,6 @@ export const initialWinners = [
       accountNumber: '120934875',
       bankName: 'National Australia Bank'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   }
 ];
