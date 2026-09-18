@@ -105,9 +105,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const isReviewRole = isApprover || isAuthoriser;
   const reviewBasePath = isAuthoriser ? '/authoriser' : '/approver';
   const reviewScenarios = isAuthoriser ? AUTHORISER_SCENARIOS : APPROVER_SCENARIOS;
-  // A payout still waiting on the patron has no verification results yet, so
-  // there is nothing to review. Every other status opens the review screen.
-  const isReviewable = (payout) => payout.status !== 'Pending verification';
+  // A payout still waiting on the patron never reaches an approver: the
+  // collector cannot submit until the patron has finished verifying, so these
+  // rows only exist for the venue's own staff to watch. They are filtered out
+  // of the review queues entirely rather than shown with no action.
+  const HIDDEN_FROM_REVIEW_QUEUE = ['Pending verification'];
 
 
   // Filters state
@@ -201,18 +203,21 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     return ['all', ...Array.from(set)];
   }, []);
 
-  // Filter options config
+  // Filter options config. A status the role can never see is not offered as a
+  // filter, so the picker cannot produce an empty table.
+  const statusFilterOptions = [
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Pending authorisation', value: 'Pending Authorisation' },
+    { label: 'Awaiting', value: 'Awaiting Approval' },
+    { label: 'Pending verification', value: 'Pending verification' },
+    { label: 'Completed', value: 'Payment Completed' },
+    { label: 'Delayed', value: 'Payment Delayed' },
+    { label: 'Failed', value: 'Failed' },
+    { label: 'Rejected', value: 'Rejected' },
+  ].filter((option) => !(isReviewRole && HIDDEN_FROM_REVIEW_QUEUE.includes(option.value)));
+
   const filterGroups = {
-    status: [
-      { label: 'Draft', value: 'Draft' },
-      { label: 'Pending authorisation', value: 'Pending Authorisation' },
-      { label: 'Awaiting', value: 'Awaiting Approval' },
-      { label: 'Pending verification', value: 'Pending verification' },
-      { label: 'Completed', value: 'Payment Completed' },
-      { label: 'Delayed', value: 'Payment Delayed' },
-      { label: 'Failed', value: 'Failed' },
-      { label: 'Rejected', value: 'Rejected' },
-    ],
+    status: statusFilterOptions,
     idv: [
       { label: 'Pass', value: 'Pass' },
       { label: 'Fail', value: 'Fail' },
@@ -257,6 +262,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   // Filtered dataset
   const filteredPayouts = useMemo(() => {
     return initialPayouts.filter((p) => {
+      // Statuses that never reach this role's queue
+      if (isReviewRole && HIDDEN_FROM_REVIEW_QUEUE.includes(p.status)) {
+        return false;
+      }
+
       // Role-based venue filter for Admin vs Super Admin
       if (!isSuperAdmin && p.venue !== 'Riverside RSL Club') {
         return false;
@@ -1137,16 +1147,12 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         {/* Actions */}
                         {isReviewRole && (
                           <td className="px-2.5 py-3 whitespace-nowrap">
-                            {isReviewable(item) ? (
-                              <Link
-                                href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
-                                className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
-                              >
-                                Review
-                              </Link>
-                            ) : (
-                              <span className="text-[13px] text-ink-lo">&mdash;</span>
-                            )}
+                            <Link
+                              href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
+                              className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
+                            >
+                              Review
+                            </Link>
                           </td>
                         )}
                       </tr>
