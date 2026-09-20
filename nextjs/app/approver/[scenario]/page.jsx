@@ -6,8 +6,13 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
 import { formatOccupation } from '@/lib/venueCompliance';
-import { EXCLUSION_TYPES, formatRegisterDate } from '@/lib/exclusionRegister';
-import { initialPayouts } from '@/lib/mockData';
+import {
+  EXCLUSION_TYPES,
+  EXCLUSION_TYPE_LABELS,
+  formatRegisterDate,
+  screenPatron,
+} from '@/lib/exclusionRegister';
+import { initialPayouts, initialBlacklist } from '@/lib/mockData';
 
 /* ─── Scenario Data matching deploy/approver_v3.html ─── */
 const SCENARIOS = {
@@ -678,7 +683,7 @@ const SCENARIOS = {
       { label: 'Venue Blacklist', status: 'fail', text: 'Match found' },
     ],
     amlRows: [
-      { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'warn', badgeText: 'Action required', action: 'btn-warn' },
+      { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'warn', badgeText: 'View resolution', action: 'btn-warn' },
       { id: 'pep', label: 'PEP - No matches', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
       { id: 'sanctions', label: 'Sanctions - No matches', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
     ],
@@ -690,6 +695,16 @@ const SCENARIOS = {
       name: 'M.Santos',
       timestamp: '14/07/2026 02:00pm',
     },
+    // This patron is not on the shared blacklist, so the popup reads this record.
+    blacklistRecord: {
+      id: 'BL-0041',
+      name: 'JOHN PATRON',
+      alias: 'None',
+      dob: '15/08/1980',
+      reason: 'Self-exclusion order #8841',
+      severity: 'High',
+      addedDate: '12 Jan 2026',
+    },
     execSummary: [
       { label: 'Identity verification', value: 'Fully verified', color: 'ok' },
       { label: 'Name match', value: 'Match', color: 'ok' },
@@ -697,7 +712,7 @@ const SCENARIOS = {
       { label: 'Venue blacklist', value: 'Match found', color: 'danger' },
     ],
     amlAuditRows: [
-      { id: 'blacklist', label: 'Venue blacklist status', sub: 'Active exclusion order matched in venue blacklist database.', badgeType: 'warn', badgeText: 'Action required', action: 'btn-warn' },
+      { id: 'blacklist', label: 'Venue blacklist status', sub: 'Active exclusion order matched in venue blacklist database.', badgeType: 'warn', badgeText: 'View resolution', action: 'btn-warn' },
       { id: 'pep', label: 'PEP match status', sub: 'No PEP matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
       { id: 'sanctions', label: 'Sanctions match status', sub: 'No sanctions matches found.', badgeType: 'pass', badgeText: 'Clear', action: 'pill' },
     ],
@@ -1800,33 +1815,38 @@ function SancModal({ open, onClose, onSave, savedData, showAddBlacklist = true, 
   );
 }
 
-/* 3. Blacklist Match Resolution Modal */
-function BlacklistModal({ open, onClose, onSave, savedData, scenario }) {
-  const [resolution, setResolution] = useState(savedData?.resolution || null);
-  const [notes, setNotes] = useState(savedData?.notes || '');
-  const [hasFile, setHasFile] = useState(savedData?.hasFile || false);
+/* 3. Blacklist Record Modal (view only - an Approver cannot resolve a blacklist match) */
+function BlacklistDetailRow({ label, children }) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 py-2.5 border-b border-[#edf2f7] last:border-b-0">
+      <span className="text-[13.5px] font-bold text-[#475569] flex-shrink-0">{label}</span>
+      <span className="text-[15px] font-bold text-[#0f172a] text-right">{children}</span>
+    </div>
+  );
+}
 
-  React.useEffect(() => {
-    if (open) {
-      setResolution(savedData?.resolution || null);
-      setNotes(savedData?.notes || '');
-      setHasFile(savedData?.hasFile || false);
-    }
-  }, [open, savedData]);
-
+function BlacklistModal({ open, onClose, scenario }) {
   if (!open) return null;
 
-  const isSaveDisabled = !resolution || !notes.trim() || (resolution === 'override' && !hasFile);
+  // Read from the real blacklist so the person shown is the person on it. A
+  // scenario with no register entry carries a record of its own instead.
+  const registerEntry = screenPatron({ name: scenario?.member?.fullName }, initialBlacklist)?.entry;
+  const record = registerEntry || scenario?.blacklistRecord || null;
 
-  const blacklistResolutionOptions = [
-    { key: 'false_positive', label: 'Not a match', variant: 'pass' },
-    { key: 'override', label: 'Override exclusion', variant: 'warn' },
-    { key: 'confirm_match', label: 'Confirm blacklist match', variant: 'fail' },
-  ];
+  const exclusion = scenario?.exclusion || null;
+  const isSelfBlock = exclusion?.type === EXCLUSION_TYPES.SELF;
+  const isSelf = record?.exclusionType === EXCLUSION_TYPES.SELF;
+
+  const severityClass =
+    record?.severity === 'High'
+      ? 'bg-[#fef2f2] text-[#991b1b] border-[#fca5a5]'
+      : record?.severity === 'Medium'
+      ? 'bg-[#fffbeb] text-[#78350f] border-[#fcd34d]'
+      : 'bg-[#ecfdf5] text-[#065f46] border-[#6ee7b7]';
 
   return (
     <div className="fixed inset-0 z-50 bg-[#12132b]/55 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-[20px] border border-[#e2e8f0] w-full max-w-[750px] max-h-[calc(100vh-40px)] flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-[20px] border border-[#e2e8f0] w-full max-w-[650px] max-h-[calc(100vh-40px)] flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-[#edf2f7] bg-white flex-shrink-0">
           <div>
@@ -1839,140 +1859,79 @@ function BlacklistModal({ open, onClose, onSave, savedData, scenario }) {
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-[18px_22px] flex flex-col gap-3.5">
-          {/* Comparison Table */}
-          <table className="w-full border-collapse mb-1">
-            <thead>
-              <tr>
-                <th className="w-[110px] text-left text-[12.5px] font-bold text-[#475569] pb-2.5 border-b-[1.5px] border-[#edf2f7]"></th>
-                <th className="text-left text-[12.5px] font-bold text-[#0f172a] px-3 pb-2.5 border-b-[1.5px] border-[#edf2f7]">Target Patron</th>
-                <th className="text-left text-[12.5px] font-bold text-[#0f172a] px-3 pb-2.5 border-b-[1.5px] border-[#edf2f7]">Matched Blacklist Record</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="text-[13px] font-bold text-[#334155] py-2 border-b border-[#edf2f7]">Name</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b border-[#edf2f7]">{scenario?.member?.fullName || 'JOHN PATRON'}</td>
-                <td className="text-[14.5px] font-bold text-[#e53e3e] px-3 py-2 border-b border-[#edf2f7]">JOHN PATRON</td>
-              </tr>
-              <tr>
-                <td className="text-[13px] font-bold text-[#334155] py-2 border-b border-[#edf2f7]">DOB</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b border-[#edf2f7]">15/08/1980</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b border-[#edf2f7]">15/08/1980</td>
-              </tr>
-              <tr>
-                <td className="text-[13px] font-bold text-[#334155] py-2 border-b border-[#edf2f7]">Record Ref</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b border-[#edf2f7]">IDV Session #586</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b border-[#edf2f7]">Ref #BL-0041 · Severity: High</td>
-              </tr>
-              <tr>
-                <td className="text-[13px] font-bold text-[#334155] py-2 border-b-0">Reason Category</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b-0">—</td>
-                <td className="text-[14.5px] font-bold text-[#0f172a] px-3 py-2 border-b-0">Self-exclusion order #8841 (Added: 12 Jan 2026)</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* Exclusion Context Note (Clean unboxed paragraph without card background) */}
-          <p className="text-[14px] text-[#475569] leading-relaxed m-0 font-sans">
-            This patron matches an active exclusion order registered for <strong className="text-[#0f172a]">Riverside RSL Club</strong>. Supervisor determination is required prior to releasing payment.
-          </p>
-
-          {/* Resolution Status Selector */}
-          <div className="flex flex-col gap-1.5 mt-1">
-            <label className="text-[14px] font-bold tracking-[0.06em] text-[#0f172a]">
-              Resolution status <span className="text-[#e53e3e]">*</span>
-            </label>
-            <div className="flex w-full mt-1.5">
-              {blacklistResolutionOptions.map(({ key, label, variant }, idx) => {
-                const sel = resolution === key;
-                let selClass = '';
-                if (sel) {
-                  if (variant === 'pass') selClass = 'border-[#059669] bg-[#ecfdf5] text-[#059669] z-10 font-bold';
-                  if (variant === 'warn') selClass = 'border-[#b45309] bg-[#fffbeb] text-[#b45309] z-10 font-bold';
-                  if (variant === 'fail') selClass = 'border-[#e53e3e] bg-[#fff5f5] text-[#e53e3e] z-10 font-bold';
-                } else {
-                  selClass = 'border-[#dde1ea] bg-white text-[#0f172a] hover:bg-[#f8fafc] font-bold';
-                }
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setResolution(key)}
-                    className={`flex-1 flex items-center justify-center h-11 px-4 border text-[15px] font-sans cursor-pointer transition-all duration-180 relative
-                      ${idx === 0 ? 'rounded-l-[8px]' : ''}
-                      ${idx === blacklistResolutionOptions.length - 1 ? 'rounded-r-[8px]' : ''}
-                      ${idx > 0 ? '-ml-px' : ''}
-                      ${selClass}`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+        <div className="overflow-y-auto flex-1 p-[18px_32px_24px] flex flex-col gap-5">
+          {record ? (
+            <div>
+              <BlacklistDetailRow label="Name">{record.name}</BlacklistDetailRow>
+              {record.alias && record.alias !== 'None' && (
+                <BlacklistDetailRow label="Known alias">{record.alias}</BlacklistDetailRow>
+              )}
+              <BlacklistDetailRow label="Date of birth">
+                <span className="font-mono">{record.dob}</span>
+              </BlacklistDetailRow>
+              <BlacklistDetailRow label="Record ref">
+                <span className="font-mono">{record.id}</span>
+              </BlacklistDetailRow>
+              {record.exclusionType && (
+                <BlacklistDetailRow label="Exclusion type">{EXCLUSION_TYPE_LABELS[record.exclusionType] || 'Exclusion'}</BlacklistDetailRow>
+              )}
+              {record.source && <BlacklistDetailRow label="Source">{record.source}</BlacklistDetailRow>}
+              <BlacklistDetailRow label="Severity">
+                <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[12px] font-bold border ${severityClass}`}>
+                  {record.severity}
+                </span>
+              </BlacklistDetailRow>
+              <BlacklistDetailRow label="Reason">{record.reason}</BlacklistDetailRow>
+              <BlacklistDetailRow label="Date added">{record.addedDate}</BlacklistDetailRow>
+              {isSelf && record.expiresAt && (
+                <BlacklistDetailRow label="Funds release date">
+                  <span className="font-mono">{formatRegisterDate(record.expiresAt)}</span>
+                </BlacklistDetailRow>
+              )}
             </div>
+          ) : (
+            <p className="text-[14.5px] text-[#475569] m-0">No blacklist record could be found for this patron.</p>
+          )}
 
-            {/* Dynamic Override Compliance Notice */}
-            {resolution === 'override' && (
-              <p className="text-[13.5px] text-[#b45309] font-medium leading-normal m-0 pt-1.5 font-sans">
-                <strong>Mandatory compliance requirement:</strong> Overriding an active exclusion requires comprehensive written investigation notes and supporting evidence documentation for statutory AUSTRAC audit records.
+          {/* What this means for the payment */}
+          {exclusion ? (
+            <div className={`border-l-[3px] pl-4 py-0.5 ${isSelfBlock ? 'border-l-[#e53e3e]' : 'border-l-[#d97706]'}`}>
+              <p className={`text-[16px] font-bold m-0 ${isSelfBlock ? 'text-[#991b1b]' : 'text-[#0f172a]'}`}>
+                {isSelfBlock
+                  ? 'Funds cannot be released: gambling self-exclusion'
+                  : 'Patron is on the exclusion register'}
               </p>
-            )}
-          </div>
-
-          {/* Investigation Notes */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="blacklistNotes" className="text-[14px] font-bold tracking-[0.06em] text-[#0f172a]">
-              Investigation notes {resolution === 'override' && <span className="text-[#b45309] font-semibold">(Mandatory for override)</span>} <span className="text-[#e53e3e]">*</span>
-            </label>
-            <textarea
-              id="blacklistNotes"
-              rows={2}
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder={resolution === 'override' ? 'Enter mandatory audit rationale and statutory justification for overriding this exclusion...' : 'Enter audit rationale and compliance justification for this blacklist match...'}
-              className="w-full min-h-[60px] p-3 rounded-[6px] border-[1.5px] border-[#e2e8f0] bg-white text-[15.5px] text-[#0f172a] font-sans outline-none focus:border-[#0f172a] resize-vertical leading-[1.5]"
-            />
-          </div>
-
-          {/* Supporting Document */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[14px] font-bold tracking-[0.06em] text-[#0f172a]">
-              Supporting evidence {resolution === 'override' && <span className="text-[#b45309] font-semibold">(Mandatory for override) *</span>}
-            </label>
-            <div
-              onClick={() => setHasFile(p => !p)}
-              className={`border border-dashed rounded-[6px] bg-white p-3 flex items-center gap-3 cursor-pointer transition-colors ${hasFile ? 'border-[#059669] bg-[#ecfdf5]/40' : 'border-[#cbd5e1] hover:bg-slate-50'}`}
-            >
-              <div className="w-8 h-8 rounded-[6px] bg-slate-100 flex items-center justify-center text-[#0f172a] flex-shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4" /><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3" /></svg>
-              </div>
-              <div>
-                <div className="text-[14.5px] font-bold text-[#0f172a]">{hasFile ? 'Blacklist_verification_evidence.pdf (Uploaded)' : 'Click to upload supporting evidence'}</div>
-                <div className="text-[13px] text-[#475569]">PDF, JPG, PNG up to 10MB</div>
-              </div>
+              <p className="text-[14.5px] text-[#475569] mt-1 mb-0 leading-relaxed">
+                {isSelfBlock ? (
+                  <>
+                    {exclusion.reason} ({exclusion.source}). This payout is held until{' '}
+                    <span className="font-bold text-[#0f172a]">{formatRegisterDate(exclusion.expiresAt)}</span>
+                    . An Approver cannot release it. Refer the payout to an Authoriser if it needs to be
+                    released sooner.
+                  </>
+                ) : (
+                  <>
+                    {exclusion.reason} ({exclusion.source}). This does not block the payment. You may
+                    proceed, but record your reasoning in your approval note.
+                  </>
+                )}
+              </p>
             </div>
-          </div>
+          ) : (
+            <p className="text-[14px] text-[#475569] leading-relaxed m-0 font-sans">
+              This patron matches an active exclusion order registered for <strong className="text-[#0f172a]">Riverside RSL Club</strong>.
+            </p>
+          )}
         </div>
 
-        {/* Footer (No Add to Venue Blacklist button) */}
+        {/* Footer */}
         <div className="flex items-center justify-end gap-2.5 px-[22px] py-3.5 border-t border-[#edf2f7] bg-white flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="h-[42px] px-4 rounded-[6px] border border-[#e2e8f0] bg-white text-[#1a202c] hover:bg-[#f4f4f4] text-[15px] font-bold cursor-pointer font-sans"
+            className="h-[42px] px-5 rounded-[6px] border border-[#e2e8f0] bg-white text-[#1a202c] hover:bg-[#f4f4f4] text-[15px] font-bold cursor-pointer font-sans"
           >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={isSaveDisabled}
-            onClick={() => onSave({ resolution, notes, hasFile })}
-            className={`h-10 px-[22px] rounded-[6px] text-[16px] font-bold border-none transition-all font-sans
-              ${isSaveDisabled
-                ? 'bg-[#0d9488] opacity-40 cursor-not-allowed text-white'
-                : 'bg-[#0d9488] text-white cursor-pointer hover:bg-[#0b7a6f]'}`}
-          >
-            Save resolution
+            Close
           </button>
         </div>
       </div>
@@ -2246,6 +2205,14 @@ export default function ApproverScenarioPage() {
   const exclusion = scenario.exclusion || null;
   const isSelfExclusionBlock = exclusion?.type === EXCLUSION_TYPES.SELF;
   const exclusionNeedsNote = Boolean(exclusion) && !isSelfExclusionBlock;
+
+  // With the exclusion notice moved into the blacklist popup, a greyed-out
+  // Approve button would otherwise give no reason on the page itself.
+  const approveHint = isSelfExclusionBlock
+    ? 'Held on self-exclusion. See the blacklist record under AML checks.'
+    : exclusionNeedsNote && !notes.trim()
+    ? 'Add a note to approve. See the blacklist record under AML checks.'
+    : '';
   const [isRiskCalculationExpanded, setIsRiskCalculationExpanded] = useState(false);
 
   // Managed controlled accordion states
@@ -2290,17 +2257,13 @@ export default function ApproverScenarioPage() {
   const [pepData, setPepData] = useState({ resolution: null, notes: '', hasFile: false });
   const [sancResolved, setSancResolved] = useState(false);
   const [sancData, setSancData] = useState({ resolution: null, notes: '', hasFile: false });
-  const [blacklistResolved, setBlacklistResolved] = useState(false);
-  const [blacklistData, setBlacklistData] = useState({ resolution: null, notes: '', hasFile: false });
   const [idConfirm, setIdConfirm] = useState(false);
 
   React.useEffect(() => {
     setPepResolved(false);
     setSancResolved(false);
-    setBlacklistResolved(false);
     setPepData({ resolution: null, notes: '', hasFile: false });
     setSancData({ resolution: null, notes: '', hasFile: false });
-    setBlacklistData({ resolution: null, notes: '', hasFile: false });
     setIdConfirm(false);
     setApprovalStatus(null);
     setConfirmed(false);
@@ -2352,12 +2315,6 @@ export default function ApproverScenarioPage() {
     setSancModalOpen(false);
   };
 
-  const handleSaveBlacklist = (data) => {
-    setBlacklistData(data);
-    setBlacklistResolved(true);
-    setBlacklistModalOpen(false);
-  };
-
   const handleRefer = () => {
     setApprovalStatus('referred');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2371,7 +2328,7 @@ export default function ApproverScenarioPage() {
     <>
       <PepModal open={pepModalOpen} onClose={() => setPepModalOpen(false)} onSave={handleSavePep} savedData={pepData} showAddBlacklist={scenarioKey !== 'blacklist-match'} onOpenAddBlacklist={handleOpenAddBlacklist} />
       <SancModal open={sancModalOpen} onClose={() => setSancModalOpen(false)} onSave={handleSaveSanc} savedData={sancData} showAddBlacklist={scenarioKey !== 'blacklist-match'} onOpenAddBlacklist={handleOpenAddBlacklist} />
-      <BlacklistModal open={blacklistModalOpen} onClose={() => setBlacklistModalOpen(false)} onSave={handleSaveBlacklist} savedData={blacklistData} scenario={scenario} />
+      <BlacklistModal open={blacklistModalOpen} onClose={() => setBlacklistModalOpen(false)} scenario={scenario} />
       <AddBlacklistModal
         open={addBlacklistModalOpen}
         onClose={() => setAddBlacklistModalOpen(false)}
@@ -2709,7 +2666,7 @@ export default function ApproverScenarioPage() {
                 <SectionHead>AML screening</SectionHead>
                 <div className="flex flex-col mb-2">
                   {scenario.amlRows.map((row, i) => {
-                    const isResolved = (row.id === 'pep' && pepResolved) || (row.id === 'sanctions' && sancResolved) || (row.id === 'blacklist' && blacklistResolved);
+                    const isResolved = (row.id === 'pep' && pepResolved) || (row.id === 'sanctions' && sancResolved);
                     return (
                       <div
                         key={i}
@@ -2850,7 +2807,7 @@ export default function ApproverScenarioPage() {
                 </div>
                 <div className="grid grid-cols-1">
                   {scenario.amlAuditRows.map((row, i) => {
-                    const isResolved = (row.id === 'pep' && pepResolved) || (row.id === 'sanctions' && sancResolved) || (row.id === 'blacklist' && blacklistResolved);
+                    const isResolved = (row.id === 'pep' && pepResolved) || (row.id === 'sanctions' && sancResolved);
                     return (
                       <div key={i} className="flex items-center justify-between p-[12px_14px] border-b border-[#edf2f7] last:border-b-0">
                         <div className="flex flex-col gap-[3px] max-w-[70%]">
@@ -2982,43 +2939,6 @@ export default function ApproverScenarioPage() {
                 />
               </div>
 
-              {exclusion && (
-                <div
-                  className={`p-4 rounded-[8px] border mb-8 ${
-                    isSelfExclusionBlock
-                      ? 'bg-[#fef2f2] border-[#fca5a5]'
-                      : 'bg-[#fffbeb] border-[#fcd34d]'
-                  }`}
-                >
-                  <p
-                    className={`text-[16px] font-bold m-0 ${
-                      isSelfExclusionBlock ? 'text-[#991b1b]' : 'text-[#0f172a]'
-                    }`}
-                  >
-                    {isSelfExclusionBlock
-                      ? 'Funds cannot be released: gambling self-exclusion'
-                      : 'Patron is on the exclusion register'}
-                  </p>
-                  <p className="text-[14.5px] text-[#475569] mt-1 mb-0 leading-relaxed">
-                    {isSelfExclusionBlock ? (
-                      <>
-                        {exclusion.reason} ({exclusion.source}). This payout is held until{' '}
-                        <span className="font-bold text-[#0f172a]">
-                          {formatRegisterDate(exclusion.expiresAt)}
-                        </span>
-                        . An Approver cannot release it. Refer the payout to an Authoriser if it
-                        needs to be released sooner.
-                      </>
-                    ) : (
-                      <>
-                        {exclusion.reason} ({exclusion.source}). This does not block the payment.
-                        You may proceed, but record your reasoning in the notes below.
-                      </>
-                    )}
-                  </p>
-                </div>
-              )}
-
               <label className="flex items-start gap-3.5 p-0 bg-transparent border-none mb-8 cursor-pointer hover:opacity-80 transition-opacity">
                 <input
                   type="checkbox"
@@ -3058,24 +2978,28 @@ export default function ApproverScenarioPage() {
                       Refer to Authoriser
                     </button>
                   )}
-                  <button
-                    type="button"
-                    disabled={
-                      isSelfExclusionBlock ||
-                      !risk ||
-                      !confirmed ||
-                      (!scenario.nameVerification.isMatch && !idConfirm) ||
-                      (isOverridden && !notes.trim()) ||
-                      (exclusionNeedsNote && !notes.trim())
-                    }
-                    onClick={handleApprove}
-                    className={`h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5
-                      ${!isSelfExclusionBlock && risk && confirmed && (scenario.nameVerification.isMatch || idConfirm) && (!isOverridden || notes.trim()) && (!exclusionNeedsNote || notes.trim())
-                        ? 'bg-[#0d9488] hover:bg-[#0b7a6f] text-white cursor-pointer'
-                        : 'bg-[#0d9488] opacity-40 cursor-not-allowed text-white'}`}
-                  >
-                    Approve payout
-                  </button>
+                  {/* The hint sits on a wrapper because a disabled button does not
+                      reliably show its own tooltip */}
+                  <span title={approveHint || undefined} className="inline-flex">
+                    <button
+                      type="button"
+                      disabled={
+                        isSelfExclusionBlock ||
+                        !risk ||
+                        !confirmed ||
+                        (!scenario.nameVerification.isMatch && !idConfirm) ||
+                        (isOverridden && !notes.trim()) ||
+                        (exclusionNeedsNote && !notes.trim())
+                      }
+                      onClick={handleApprove}
+                      className={`h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5
+                        ${!isSelfExclusionBlock && risk && confirmed && (scenario.nameVerification.isMatch || idConfirm) && (!isOverridden || notes.trim()) && (!exclusionNeedsNote || notes.trim())
+                          ? 'bg-[#0d9488] hover:bg-[#0b7a6f] text-white cursor-pointer'
+                          : 'bg-[#0d9488] opacity-40 cursor-not-allowed text-white'}`}
+                    >
+                      Approve payout
+                    </button>
+                  </span>
                 </div>
               </div>
 
