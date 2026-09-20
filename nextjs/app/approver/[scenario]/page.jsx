@@ -2367,16 +2367,6 @@ export default function ApproverScenarioPage() {
     if (!confirmed) return;
     setApprovalStatus('approved');
   };
-
-  // Only the second approver can reject: they are the one weighing up a call
-  // that has already been made, and a written reason is required because the
-  // rejection overturns another approver's decision.
-  const handleReject = () => {
-    if (!notes.trim()) return;
-    setApprovalStatus('rejected');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <>
       <PepModal open={pepModalOpen} onClose={() => setPepModalOpen(false)} onSave={handleSavePep} savedData={pepData} showAddBlacklist={scenarioKey !== 'blacklist-match'} onOpenAddBlacklist={handleOpenAddBlacklist} />
@@ -2440,15 +2430,6 @@ export default function ApproverScenarioPage() {
                   : `✓ Payout ${scenario.payoutNum} successfully approved. Forwarded to Authoriser queue.`}
               </span>
               <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#065f46] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
-            </div>
-          )}
-          {approvalStatus === 'rejected' && (
-            <div className="mb-6 bg-[#fef2f2] border border-[#fca5a5] rounded-lg p-4 text-[#991b1b] font-bold flex items-center justify-between">
-              <span>
-                ✕ Payout {scenario.payoutNum} rejected at second approval. The first approval by{' '}
-                {firstApproval?.name} is overturned and the payout will not reach the Authoriser.
-              </span>
-              <button type="button" onClick={() => setApprovalStatus(null)} className="text-[#991b1b] hover:underline cursor-pointer bg-transparent border-none font-bold">Dismiss</button>
             </div>
           )}
           {approvalStatus === 'referred' && (
@@ -3075,19 +3056,6 @@ export default function ApproverScenarioPage() {
                       className="h-11 px-7 rounded-[6px] text-[17px] font-bold border-none transition-all font-sans flex items-center justify-center gap-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white cursor-pointer"
                     >
                       Refer to Authoriser
-                    </button>
-                  )}
-                  {isSecondApprover && (
-                    <button
-                      type="button"
-                      onClick={handleReject}
-                      disabled={!notes.trim()}
-                      title={!notes.trim() ? 'A written reason is required to overturn the first approval' : undefined}
-                      className={`h-11 px-7 rounded-[6px] text-[17px] font-bold transition-all font-sans flex items-center justify-center gap-2.5 bg-white border border-[#fca5a5] text-[#ef4444] ${
-                        notes.trim() ? 'hover:bg-[#fef2f2] hover:border-[#f87171] cursor-pointer' : 'opacity-40 cursor-not-allowed'
-                      }`}
-                    >
-                      Reject payout
                     </button>
                   )}
                   <button
