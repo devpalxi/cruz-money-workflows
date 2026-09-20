@@ -15,7 +15,7 @@ import AdminShell from '@/components/layout/AdminShell';
 import ExclusionRegisterPanel from '@/components/views/ExclusionRegisterPanel';
 import { initialWinners, initialBlacklist, initialVenues } from '@/lib/mockData';
 import { useWinners } from '@/lib/WinnersContext';
-import { screenPatron } from '@/lib/exclusionRegister';
+import { screenPatron, EXCLUSION_TYPES, EXCLUSION_TYPE_LABELS } from '@/lib/exclusionRegister';
 
 export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside RSL Club' }) {
   const isSuperAdmin = role === 'SUPER ADMIN';
@@ -78,11 +78,15 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
 
       const matchesRisk = selectedRisk === 'all' || w.riskRating === selectedRisk;
       const matchesStatus = selectedStatus === 'all' || w.payoutStatus === selectedStatus;
-      const blacklisted = isWinnerBlacklisted(w);
+      const screening = screenPatron({ name: w.fullName, dob: w.dob }, blacklist);
+      const blacklisted = !!screening;
+      // Beyond "any blacklist", the filter can pick one exclusion type, so a
+      // venue can pull up just its self-exclusions or just its venue bans.
       const matchesBlacklist =
         selectedBlacklist === 'all' ||
         (selectedBlacklist === 'blacklisted' && blacklisted) ||
-        (selectedBlacklist === 'active' && !blacklisted);
+        (selectedBlacklist === 'active' && !blacklisted) ||
+        (blacklisted && screening.type === selectedBlacklist);
 
       return matchesSearch && matchesRisk && matchesStatus && matchesBlacklist;
     });
@@ -356,7 +360,12 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
             >
               <option value="all">All exclusion states</option>
               <option value="active">Active (clear)</option>
-              <option value="blacklisted">Blacklisted</option>
+              <option value="blacklisted">Any blacklist type</option>
+              {Object.values(EXCLUSION_TYPES).map((type) => (
+                <option key={type} value={type}>
+                  {EXCLUSION_TYPE_LABELS[type]}
+                </option>
+              ))}
             </select>
 
             {/* Payout Status Filter */}

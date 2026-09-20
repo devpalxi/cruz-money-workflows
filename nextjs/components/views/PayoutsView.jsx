@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3, ShieldAlert } from 'lucide-react';
+import { Search, Filter, Download, RefreshCw, ChevronDown, Columns3 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import AppHeader from '@/components/layout/AppHeader';
 import PageShell from '@/components/layout/PageShell';
@@ -408,30 +408,6 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     return <span className="font-mono tabular-nums font-bold text-ink-hi">{label}</span>;
   };
 
-  // What management asks: how many payouts are frozen, how much money that is,
-  // and when the next one comes out. Scoped the same way the table is, so the
-  // figure always matches the rows underneath it.
-  const exclusionHoldSummary = useMemo(() => {
-    const held = initialPayouts.filter(
-      (p) =>
-        p.status === EXCLUSION_HOLD_STATUS &&
-        (isSuperAdmin
-          ? selectedVenue === 'all' || p.venue === selectedVenue
-          : p.venue === 'Riverside RSL Club')
-    );
-    const nextRelease = held
-      .map((p) => p.fundsReleaseDate)
-      .filter(Boolean)
-      .sort((a, b) => Date.parse(a) - Date.parse(b))[0];
-    return {
-      count: held.length,
-      value: held.reduce((sum, p) => sum + p.amount, 0),
-      nextRelease,
-    };
-  }, [isSuperAdmin, selectedVenue]);
-
-  const showHoldSummary = !isReviewRole && exclusionHoldSummary.count > 0;
-
   const exportCSV = () => {
     if (filteredPayouts.length === 0) return;
 
@@ -617,39 +593,6 @@ export default function PayoutsView({ role = 'ADMIN' }) {
           </p>
         </div>
       </div>
-
-      {/* Self-exclusion holds - management view of frozen funds */}
-      {showHoldSummary && (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedStatus([EXCLUSION_HOLD_STATUS]);
-            setCurrentPage(1);
-          }}
-          className="w-full text-left mb-5 p-4 rounded-lg bg-surface-card border border-state-fail-border shadow-card flex items-start gap-3 hover:bg-state-fail-bg/40 transition-colors cursor-pointer"
-        >
-          <ShieldAlert className="w-4 h-4 text-state-fail-text flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-bold text-ink-hi m-0">
-              {exclusionHoldSummary.count} payout{exclusionHoldSummary.count === 1 ? '' : 's'} held
-              on self-exclusion
-            </p>
-            <p className="text-[13.5px] text-ink-mid mt-0.5 mb-0">
-              <span className="font-mono tabular-nums font-bold text-ink-hi">
-                {formatCurrency(exclusionHoldSummary.value)}
-              </span>{' '}
-              held until each patron&apos;s exclusion ends
-              {exclusionHoldSummary.nextRelease
-                ? `. Next release ${formatRegisterDate(exclusionHoldSummary.nextRelease)}.`
-                : '.'}{' '}
-              Only an Authoriser can release funds sooner.
-            </p>
-          </div>
-          <span className="text-[12.5px] font-bold text-ink-mid whitespace-nowrap self-center">
-            View held payouts
-          </span>
-        </button>
-      )}
 
       {/* Main Table Card (Double Bezel Layout) */}
       <section className="bg-surface-card border border-border rounded-lg shadow-card relative">
