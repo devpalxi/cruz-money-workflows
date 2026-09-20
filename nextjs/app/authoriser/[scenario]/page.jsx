@@ -600,6 +600,93 @@ SCENARIOS['self-exclusion'] = {
   },
 };
 
+// The same payout the approver side shows as 'foreign-payment' and
+// 'second-approval'. Two approvers signed it off, so the resolution panel
+// carries one entry per approver in `approvals` instead of a single risk level
+// and note. Scenarios without `approvals` keep the single-approver layout.
+SCENARIOS['foreign-payment'] = {
+  ...SCENARIOS['high-value'],
+  label: '12. Foreign payment (2 approvers)',
+  payoutNum: '#588',
+  dateTime: '14 July 2026 · 4:10 pm · Riverside RSL Club',
+  payout: {
+    cashAmount: 'AUD 0.00',
+    transferAmount: 'AUD 3,200.00',
+    txnId: '223',
+    machineId: 'EGM-011',
+    venue: 'Riverside RSL Club',
+    disbursementPolicy: 'Bank transfer only',
+    payoutType: 'EGM',
+  },
+  member: {
+    membershipNumber: '8p21k',
+    email: 'sofia.almeida@email.com',
+    fullName: 'SOFIA ALMEIDA',
+    documentType: 'Passport',
+  },
+  bank: {
+    accountName: 'SOFIA ALMEIDA',
+    bsb: '062-444',
+    accountNumber: '221-334-556',
+  },
+  nameVerification: {
+    isMatch: true,
+    idName: 'SOFIA ALMEIDA',
+    bankName: 'SOFIA ALMEIDA',
+    approverVerified: true,
+  },
+  idvHistory: [
+    { doc: 'Portugal Passport IDV', dateTime: '14 July 2026, 04:10 pm', result: 'pass' },
+  ],
+  collector: {
+    initials: 'MS',
+    name: 'M.Santos',
+    timestamp: '14/07/2026 04:10pm',
+  },
+  approverResolution: {
+    verificationOverview: [
+      { label: 'Identity verification', value: 'Fully verified', color: 'ok' },
+      { label: 'Name match', value: 'Exact match', color: 'ok' },
+      { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+      { label: 'Payment destination', value: 'Foreign payment', color: 'warn' },
+    ],
+    amlTrail: [
+      { id: 'blacklist', label: 'Venue blacklist status', sub: 'Automated exclusion check evaluated against venue database.', badgeType: 'pass', badgeText: 'No match' },
+      { id: 'pep', label: 'PEP match status', sub: 'No PEP matches found', badgeType: 'pass', badgeText: 'Clear' },
+      { id: 'sanctions', label: 'Sanctions match status', sub: 'No sanctions matches found', badgeType: 'pass', badgeText: 'Clear' },
+    ],
+    approvals: [
+      {
+        name: 'D.Walsh',
+        role: 'Approver',
+        timestamp: '14/07/2026 04:22pm',
+        risk: 'Medium',
+        note: 'Passport verified against DVS and CoP matched exactly. Foreign destination is the only flag; patron is a visiting contractor with a local membership since 2024.',
+      },
+      {
+        name: 'T.Nguyen',
+        role: 'Approver',
+        timestamp: '14/07/2026 04:41pm',
+        risk: 'Medium',
+        note: 'Reviewed the first approval and confirmed the destination account details against the passport. No sanctions or PEP exposure. Agree with Medium risk.',
+      },
+    ],
+  },
+  riskSignals: {
+    idvPath: 'IDV1',
+    documentCountry: 'PT',
+    driverLicenceResult: null,
+    passportResult: 'pass',
+    isPEP: false,
+    isSanction: false,
+    adverseMediaHits: 0,
+    transactionValue: 3200.00,
+    cashRatio: 0.0,
+    blacklistMatch: false,
+    foreignPayment: true,
+  },
+};
+
 
 /* ─── Payout total helper ─── */
 function formatTotalAmount(cashAmount, transferAmount) {
@@ -781,6 +868,56 @@ function AccordionItem({ icon, title, children, isOpen, onToggle }) {
       </button>
       {isOpen && (
         <div className="px-[22px] pb-5 pt-1 bg-white">{children}</div>
+      )}
+    </div>
+  );
+}
+
+// One approver's own sign-off. The header carries who and what they decided so
+// the Authoriser can read the gist without opening it.
+function ApproverSection({ label, approval, isOpen, onToggle }) {
+  const riskVariant = approval.risk === 'High' ? 'fail' : approval.risk === 'Medium' ? 'warn' : 'pass';
+  return (
+    <div className="border-t first:border-t-0 border-[#edf2f7]">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="w-full flex items-center gap-3 bg-none border-none cursor-pointer py-4 text-left font-sans group"
+      >
+        <span className="text-[15px] font-bold text-[#0f172a] group-hover:text-[#0d9488] transition-colors">
+          {label}
+        </span>
+        <span className="text-[14px] text-[#475569] flex-1">
+          {approval.name} &middot; {approval.role}
+        </span>
+        <Pill variant={riskVariant}>{approval.risk} risk</Pill>
+        <svg
+          className={`w-[17px] h-[17px] text-[#475569] transition-transform duration-250 flex-shrink-0 ${isOpen ? 'rotate-180 text-[#0f172a]' : ''}`}
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="pb-4">
+          <div className="flex items-center justify-between p-[10px_0] border-b border-[#edf2f7]">
+            <span className="text-[14.5px] font-bold text-[#475569]">Approved by</span>
+            <span className="text-[15px] font-bold text-[#0f172a]">{approval.name} &middot; {approval.role}</span>
+          </div>
+          <div className="flex items-center justify-between p-[10px_0] border-b border-[#edf2f7]">
+            <span className="text-[14.5px] font-bold text-[#475569]">Approved at</span>
+            <span className="text-[14.5px] font-mono text-[#0f172a]">{approval.timestamp}</span>
+          </div>
+          <div className="flex items-center justify-between p-[10px_0] border-b border-[#edf2f7]">
+            <span className="text-[14.5px] font-bold text-[#475569]">Determined risk level</span>
+            <Pill variant={riskVariant}>{approval.risk} risk</Pill>
+          </div>
+          <div className="pt-3">
+            <div className="text-[14.5px] font-bold text-[#475569] mb-1.5">Approver note</div>
+            <p className="text-[15px] text-[#334155] leading-relaxed m-0">{approval.note}</p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1576,6 +1713,12 @@ export default function AuthoriserScenarioPage() {
   const [authConfirmed, setAuthConfirmed] = useState(false);
   const [blacklistOverride, setBlacklistOverride] = useState(false);
   const [isRiskCalculationExpanded, setIsRiskCalculationExpanded] = useState(false);
+  const [openApprovers, setOpenApprovers] = useState({ 0: false, 1: false });
+
+  // A scenario carries `approvals` only when more than one approver signed it
+  // off; everything else keeps the single determined-risk-and-note layout.
+  const approvals = scenario.approverResolution?.approvals || [];
+  const hasMultipleApprovers = approvals.length > 1;
 
   // Managed controlled accordion states
   const [openSections, setOpenSections] = useState({
@@ -2114,27 +2257,51 @@ export default function AuthoriserScenarioPage() {
                 )}
               </div>
 
-              {/* Approver Determined Risk Level */}
-              <div className="mt-6 pt-6 border-t border-[#edf2f7]">
-                <div className="flex items-center justify-between">
+              {hasMultipleApprovers ? (
+                <div className="mt-6 pt-6 border-t border-[#edf2f7]">
                   <div className="text-[15px] font-bold text-[#0f172a]">
-                    Approver determined risk level
+                    Approver sign-offs
                   </div>
-                  <Pill variant={scenario.approverResolution.risk === 'High' ? 'fail' : scenario.approverResolution.risk === 'Medium' ? 'warn' : 'pass'}>
-                    {scenario.approverResolution.risk} risk
-                  </Pill>
+                  <p className="text-[14px] text-[#475569] mt-1 mb-3 leading-normal">
+                    {computedRisk.recommendedApprovers} approvers were required: {computedRisk.routingReason}
+                  </p>
+                  <div>
+                    {approvals.map((approval, i) => (
+                      <ApproverSection
+                        key={i}
+                        label={`Approver ${i + 1}`}
+                        approval={approval}
+                        isOpen={openApprovers[i]}
+                        onToggle={() => setOpenApprovers((prev) => ({ ...prev, [i]: !prev[i] }))}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Approver Determined Risk Level */}
+                  <div className="mt-6 pt-6 border-t border-[#edf2f7]">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[15px] font-bold text-[#0f172a]">
+                        Approver determined risk level
+                      </div>
+                      <Pill variant={scenario.approverResolution.risk === 'High' ? 'fail' : scenario.approverResolution.risk === 'Medium' ? 'warn' : 'pass'}>
+                        {scenario.approverResolution.risk} risk
+                      </Pill>
+                    </div>
+                  </div>
 
-              {/* Approver Note */}
-              <div className="mt-6 pt-6 border-t border-[#edf2f7]">
-                <div className="text-[14px] font-bold tracking-[0.06em] text-[#0f172a] mb-2">
-                  Approver note
-                </div>
-                <p className="text-[15px] text-[#334155] leading-relaxed m-0">
-                  {scenario.approverResolution.riskOverrideNote || scenario.approverResolution.approverNote || 'Approver confirmed all identity, AML, and risk parameters and approved payout for secondary authorisation.'}
-                </p>
-              </div>
+                  {/* Approver Note */}
+                  <div className="mt-6 pt-6 border-t border-[#edf2f7]">
+                    <div className="text-[14px] font-bold tracking-[0.06em] text-[#0f172a] mb-2">
+                      Approver note
+                    </div>
+                    <p className="text-[15px] text-[#334155] leading-relaxed m-0">
+                      {scenario.approverResolution.riskOverrideNote || scenario.approverResolution.approverNote || 'Approver confirmed all identity, AML, and risk parameters and approved payout for secondary authorisation.'}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
