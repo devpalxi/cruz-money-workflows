@@ -18,9 +18,9 @@ import {
   EXCLUSION_TYPE_LABELS,
   EXCLUSION_SOURCES,
   formatRegisterDate,
-  isoToRegisterDate,
-  registerDateToIso,
+  applyReleaseDateChange,
 } from '@/lib/exclusionRegister';
+import ReleaseDateModal from '@/components/shared/ReleaseDateModal';
 
 // Payout statuses where the cash/EFT split can still be corrected -
 // once a payout has actually settled (or is terminal), the split is locked.
@@ -75,10 +75,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
   const [blacklistExpiresAt, setBlacklistExpiresAt] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Release date change state (self-exclusions only)
   const [isReleaseDateOpen, setIsReleaseDateOpen] = useState(false);
-  const [newReleaseDate, setNewReleaseDate] = useState('');
-  const [releaseDateReason, setReleaseDateReason] = useState('');
 
   // Edit disbursement split state
   const [isEditSplitOpen, setIsEditSplitOpen] = useState(false);
@@ -152,51 +149,14 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
   // Only a self-exclusion has a release date - a venue ban runs until it is
   // lifted, so there is nothing to change.
   const isSelfExclusion = screening?.type === EXCLUSION_TYPES.SELF;
-  const currentReleaseIso = registerDateToIso(screening?.entry?.expiresAt);
-  const canSaveReleaseDate =
-    newReleaseDate !== '' && newReleaseDate !== currentReleaseIso && releaseDateReason.trim() !== '';
 
-  const handleOpenReleaseDate = () => {
-    setNewReleaseDate(currentReleaseIso);
-    setReleaseDateReason('');
-    setIsReleaseDateOpen(true);
-  };
-
-  const handleSaveReleaseDate = (e) => {
-    e.preventDefault();
-    if (!screening || !canSaveReleaseDate) return;
-
-    const oldDate = screening.entry.expiresAt || null;
-    const newDate = isoToRegisterDate(newReleaseDate);
-    const historyEntry = {
-      id: `rd-${Date.now()}`,
-      timestamp: new Date().toLocaleString('en-AU', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      changedBy: isSuperAdmin ? 'J. Chen (Super Admin)' : 'J. Chen (Venue Admin)',
-      oldDate,
-      newDate,
-      reason: releaseDateReason.trim(),
-    };
-
-    setBlacklist((prev) =>
-      prev.map((entry) =>
-        entry.id === screening.entry.id
-          ? {
-              ...entry,
-              expiresAt: newDate,
-              releaseDateHistory: [...(entry.releaseDateHistory || []), historyEntry],
-            }
-          : entry
-      )
-    );
-
+  const handleSaveReleaseDate = (newIso, reason) => {
+    if (!screening) return;
+    const changedBy = isSuperAdmin ? 'J. Chen (Super Admin)' : 'J. Chen (Venue Admin)';
+    const updated = applyReleaseDateChange(screening.entry, newIso, reason, changedBy);
+    setBlacklist((prev) => prev.map((entry) => (entry.id === updated.id ? updated : entry)));
     setIsReleaseDateOpen(false);
-    showToast(`Release date for ${winner.fullName} changed to ${formatRegisterDate(newDate)}.`);
+    showToast(`Release date for ${winner.fullName} changed to ${formatRegisterDate(updated.expiresAt)}.`);
   };
 
   const isSplitEditable = winner && SPLIT_EDITABLE_STATUSES.includes(winner.payoutStatus);
@@ -775,7 +735,7 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
                   </span>
                   <button
                     type="button"
-                    onClick={handleOpenReleaseDate}
+                    onClick={() => setIsReleaseDateOpen(true)}
                     className="h-[36px] px-3.5 rounded-md text-[13px] font-bold bg-white text-[#102a43] border border-[#d9e2ec] hover:bg-[#f4f7f9] cursor-pointer shadow-xs transition-colors"
                   >
                     Change release date
@@ -1015,81 +975,12 @@ export default function WinnerDetailView({ role = 'ADMIN', winnerId: propWinnerI
       )}
 
       {isReleaseDateOpen && screening && (
-        <div className="fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setIsReleaseDateOpen(false)}>
-          <div className="bg-white rounded-[12px] border border-[#d9e2ec] max-w-md w-full p-6 shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between pb-3 border-b border-[#edf1f4]">
-              <div>
-                <h3 className="text-[16px] font-bold text-[#102a43] m-0">Change funds release date</h3>
-                <p className="text-[12px] text-[#64748b] mt-0.5 mb-0">
-                  Self-exclusion for {winner.fullName}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsReleaseDateOpen(false)}
-                className="text-[#64748b] hover:text-[#102a43] p-1 cursor-pointer bg-transparent border-none"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveReleaseDate} className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="text-[12px] font-bold text-[#64748b]">Current release date</label>
-                <div className="font-mono text-[14px] font-bold text-[#102a43]">
-                  {screening.entry.expiresAt ? formatRegisterDate(screening.entry.expiresAt) : 'Not set'}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[12px] font-bold text-[#64748b]">
-                  New release date <span className="text-[#dc2626]">*</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={newReleaseDate}
-                  onChange={(e) => setNewReleaseDate(e.target.value)}
-                  className="w-full h-9 px-3 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] outline-none focus:border-[#0d9488]"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[12px] font-bold text-[#64748b]">
-                  Reason for change <span className="text-[#dc2626]">*</span>
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  value={releaseDateReason}
-                  onChange={(e) => setReleaseDateReason(e.target.value)}
-                  placeholder="e.g. Date corrected to match the state register"
-                  className="w-full p-2 border border-[#d9e2ec] rounded-md text-[13px] text-[#0f172a] outline-none focus:border-[#0d9488]"
-                />
-                <p className="text-[12px] text-[#64748b] m-0">
-                  Recorded with your name and the old and new dates.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-[#edf1f4]">
-                <button
-                  type="button"
-                  onClick={() => setIsReleaseDateOpen(false)}
-                  className="h-[36px] px-3.5 rounded-md text-[13px] font-bold border border-[#d9e2ec] text-[#102a43] hover:bg-[#f4f7f9] cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!canSaveReleaseDate}
-                  className="h-[36px] px-4 rounded-md text-[13px] font-bold bg-[#0d9488] text-white hover:bg-[#0b7a6f] cursor-pointer border-none disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Save release date
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ReleaseDateModal
+          entry={screening.entry}
+          patronName={winner.fullName}
+          onSave={handleSaveReleaseDate}
+          onClose={() => setIsReleaseDateOpen(false)}
+        />
       )}
 
       {/* ─────────────────────────────────────────────────────────── */}

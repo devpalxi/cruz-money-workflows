@@ -77,6 +77,41 @@ export function registerDateToIso(value) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// Register entries hold dates of birth as DD/MM/YYYY, which is what screening
+// compares against. A date input gives "1985-02-08", so it has to be converted
+// before it is stored or the person will never match.
+export function isoToDobText(iso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : iso || '';
+}
+
+// Returns the entry with a new release date and one more line of history.
+// Kept here so every screen that changes a date records it the same way.
+export function applyReleaseDateChange(entry, newIso, reason, changedBy) {
+  const newDate = isoToRegisterDate(newIso);
+  return {
+    ...entry,
+    expiresAt: newDate,
+    releaseDateHistory: [
+      ...(entry.releaseDateHistory || []),
+      {
+        id: `rd-${Date.now()}`,
+        timestamp: new Date().toLocaleString('en-AU', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        changedBy,
+        oldDate: entry.expiresAt || null,
+        newDate,
+        reason: reason.trim(),
+      },
+    ],
+  };
+}
+
 // An expiry that has already passed releases the payout on its own. Without
 // this a stale entry nobody remembered to close would strand the money
 // indefinitely.

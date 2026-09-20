@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import {
   EXCLUSION_TYPES,
   EXCLUSION_TYPE_LABELS,
   EXCLUSION_SOURCES,
   formatRegisterDate,
+  isoToDobText,
 } from '@/lib/exclusionRegister';
 
 // The exclusion register, moved here from the old standalone Blacklist page.
@@ -14,6 +16,8 @@ import {
 // against and that "Add to blacklist" on a winner's own page writes to -
 // there is only one register now, not two.
 export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSuperAdmin = false }) {
+  const router = useRouter();
+  const detailBase = isSuperAdmin ? '/super-admin/winners/blacklist' : '/admin/winners/blacklist';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
@@ -84,7 +88,9 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
         id: `bl-${Date.now()}`,
         name,
         alias: alias || 'None',
-        dob,
+        // Stored as DD/MM/YYYY like every other entry, otherwise screening
+        // would never match this person to a winner or payout.
+        dob: isoToDobText(dob),
         state,
         reason,
         severity,
@@ -188,9 +194,13 @@ export default function ExclusionRegisterPanel({ blacklist, setBlacklist, isSupe
           </thead>
           <tbody>
             {filteredBlacklist.map((item) => (
-              <tr key={item.id} className="hover:bg-[#fbfdfd] transition-colors">
+              <tr
+                key={item.id}
+                onClick={() => router.push(`${detailBase}/${item.id}`)}
+                className="hover:bg-[#f0fdfa] cursor-pointer transition-colors group"
+              >
                 <td className="px-4 py-3.5 border-b border-[#edf1f4]">
-                  <div className="font-bold text-[13.5px] text-[#102a43]">{item.name}</div>
+                  <div className="font-bold text-[13.5px] text-[#102a43] group-hover:text-[#0d9488] transition-colors">{item.name}</div>
                   <div className="text-[12px] font-mono text-[#627d98] mt-0.5">{item.id}</div>
                 </td>
                 <td className="px-4 py-3.5 border-b border-[#edf1f4] text-[13px] text-[#102a43]">

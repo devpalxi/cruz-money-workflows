@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -37,6 +37,14 @@ export default function WinnersView({ role = 'ADMIN', defaultVenue = 'Riverside 
   const setBlacklist = winnersContext ? winnersContext.setBlacklist : setLocalBlacklist;
 
   const [activeTab, setActiveTab] = useState('winners'); // 'winners' | 'register'
+
+  // Coming back from a blacklist record lands on the Blacklist tab, not the
+  // Winners tab. Read after mount so the server and client render the same.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'blacklist') {
+      setActiveTab('register');
+    }
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVenue, setSelectedVenue] = useState(isSuperAdmin ? 'all' : defaultVenue);
