@@ -1,3 +1,14 @@
+import {
+  screenPatron,
+  getExclusionHold,
+  EXCLUSION_HOLD_STATUS,
+} from './exclusionRegister';
+
+// Fixtures are seeded relative to a fixed date so the same rows are held on
+// every render. Reading the live clock here would make a prerendered page
+// disagree with the client (React hydration error #418).
+const EXCLUSION_SCREENING_NOW = Date.parse('2026-07-14');
+
 export const initialClients = [
   { id: 'client-riverside', name: 'Riverside Leagues Ltd', contact: 'J. Chen', email: 'admin@riversiderg.com.au', venues: 3, plan: 'PAYG', status: 'Active' },
   { id: 'client-northside', name: 'Northside Community Club', contact: 'S. Patel', email: 'ops@northsideclub.com.au', venues: 2, plan: 'PAYG', status: 'Active' },
@@ -52,12 +63,20 @@ export const initialMachines = [
   { id: 'm-20', machineId: 'EGM-020', name: 'Aristocrat Timber Wolf', serialNumber: 'SN-AR-00441', venue: 'Northside Sports Club', status: 'active', description: '', createdBy: 'System seed', lastUpdatedBy: 'System seed' },
 ];
 
+// exclusionType is what decides how a payout is handled, so it is stored
+// rather than inferred from the free-text reason: 'self' holds the money until
+// expiresAt, 'venue_ban' only warns. Self-exclusions are the only kind that
+// expire - a barring order or a sanctions listing runs until it is lifted, so
+// there is nothing to count down to.
 export const initialBlacklist = [
-  { id: 'bl-001', name: 'Marcus Vance', alias: 'Mark Vance', dob: '14/05/1982', reason: 'Self-exclusion order #8841', state: 'NSW', addedDate: '12 Jan 2026', severity: 'High', status: 'Active' },
-  { id: 'bl-002', name: 'Elena Rostova', alias: 'Helen Ross', dob: '22/09/1979', reason: 'Anti-money laundering SMR inquiry', state: 'VIC', addedDate: '04 Mar 2026', severity: 'High', status: 'Active' },
-  { id: 'bl-003', name: 'David K. Lawson', alias: 'Dave Lawson', dob: '30/11/1990', reason: 'Repeated suspicious transaction structuring', state: 'NSW', addedDate: '19 Apr 2026', severity: 'Medium', status: 'Active' },
-  { id: 'bl-004', name: 'Chloe Gallagher', alias: 'C. Gallagher', dob: '08/02/1985', reason: 'Club barring order 12-months', state: 'QLD', addedDate: '01 Jun 2026', severity: 'Low', status: 'Active' },
-  { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-001', name: 'Marcus Vance', alias: 'Mark Vance', dob: '14/05/1982', reason: 'Self-exclusion order #8841', exclusionType: 'self', source: 'State register', expiresAt: '12 Jan 2027', state: 'NSW', addedDate: '12 Jan 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-002', name: 'Elena Rostova', alias: 'Helen Ross', dob: '22/09/1979', reason: 'Anti-money laundering SMR inquiry', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'VIC', addedDate: '04 Mar 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-003', name: 'David K. Lawson', alias: 'Dave Lawson', dob: '30/11/1990', reason: 'Repeated suspicious transaction structuring', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '19 Apr 2026', severity: 'Medium', status: 'Active' },
+  { id: 'bl-004', name: 'Chloe Gallagher', alias: 'C. Gallagher', dob: '08/02/1985', reason: 'Club barring order 12-months', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'QLD', addedDate: '01 Jun 2026', severity: 'Low', status: 'Active' },
+  { id: 'bl-005', name: 'Tariq Al-Mansoor', alias: 'Terry Mansoor', dob: '17/07/1974', reason: 'Sanctions match cross-reference', exclusionType: 'venue_ban', source: 'Venue list', expiresAt: null, state: 'NSW', addedDate: '14 Jul 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-006', name: 'Priya Raman', alias: 'P. Raman', dob: '03/03/1991', reason: 'Self-exclusion order #9127', exclusionType: 'self', source: 'State register', expiresAt: '20 Mar 2027', state: 'NSW', addedDate: '20 Mar 2026', severity: 'High', status: 'Active' },
+  { id: 'bl-008', name: 'Sarah Jane Jenkins', alias: 'Sarah Jenkins', dob: '09/06/1984', reason: 'Self-exclusion order #9302', exclusionType: 'self', source: 'State register', expiresAt: '03 Oct 2026', state: 'NSW', addedDate: '03 Oct 2025', severity: 'High', status: 'Active' },
+  { id: 'bl-007', name: 'Grace Wilson', alias: 'G. Wilson', dob: '11/11/1988', reason: 'Self-exclusion order #7734, lapsed', exclusionType: 'self', source: 'State register', expiresAt: '02 Feb 2026', state: 'NSW', addedDate: '02 Feb 2025', severity: 'Medium', status: 'Active' },
 ];
 
 const payoutStatuses = ['Draft', 'Payment Delayed', 'Payment Completed', 'Pending Authorisation', 'Awaiting Approval', 'Pending verification', 'Failed', 'Rejected'];
@@ -176,7 +195,41 @@ const basePayouts = [
   })
 ];
 
-export const initialPayouts = basePayouts.map(withPaymentDue).map(withAmountSplit);
+// Screening runs at submission, so a payout that matches a live self-exclusion
+// arrives already labelled and no approver can release it by accident. Only
+// payouts that have actually been submitted are held - a draft or one still
+// waiting on the patron has not entered the payment path yet, and a completed
+// or rejected one is past it.
+const HOLDABLE_STATUSES = new Set([
+  'Awaiting Approval',
+  'Pending Authorisation',
+  'Payment Delayed',
+]);
+
+function withExclusionHold(payout) {
+  const screening = screenPatron(
+    { name: payout.accountName },
+    initialBlacklist,
+    EXCLUSION_SCREENING_NOW
+  );
+  const hold = getExclusionHold(screening);
+  if (!hold || !HOLDABLE_STATUSES.has(payout.status)) {
+    return { ...payout, exclusionHold: null, fundsReleaseDate: null };
+  }
+  return {
+    ...payout,
+    ...hold,
+    status: EXCLUSION_HOLD_STATUS,
+    // A held payout has no PayTo countdown - it is waiting on a date, not a
+    // wait time, so the register shows the release date instead.
+    paymentDueInMinutes: null,
+  };
+}
+
+export const initialPayouts = basePayouts
+  .map(withPaymentDue)
+  .map(withAmountSplit)
+  .map(withExclusionHold);
 
 export const initialWinners = [
   {
@@ -209,8 +262,6 @@ export const initialWinners = [
       accountNumber: '213123123',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -243,8 +294,6 @@ export const initialWinners = [
       accountNumber: '445566778',
       bankName: 'Commonwealth Bank of Australia'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -276,14 +325,6 @@ export const initialWinners = [
       bsb: '082-001',
       accountNumber: '998811223',
       bankName: 'National Australia Bank'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-001',
-      reason: 'Self-exclusion order #8841',
-      severity: 'High',
-      state: 'NSW',
-      addedDate: '12 Jan 2026'
     },
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   },
@@ -317,8 +358,6 @@ export const initialWinners = [
       accountNumber: '554433221',
       bankName: 'ANZ Banking Group'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -351,8 +390,6 @@ export const initialWinners = [
       accountNumber: '112233445',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   },
   {
@@ -384,14 +421,6 @@ export const initialWinners = [
       bsb: '063-000',
       accountNumber: '776655443',
       bankName: 'Commonwealth Bank of Australia'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-002',
-      reason: 'Anti-money laundering SMR inquiry',
-      severity: 'High',
-      state: 'VIC',
-      addedDate: '04 Mar 2026'
     },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
@@ -425,14 +454,6 @@ export const initialWinners = [
       accountNumber: '665544332',
       bankName: 'National Australia Bank'
     },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-003',
-      reason: 'Repeated suspicious transaction structuring',
-      severity: 'Medium',
-      state: 'NSW',
-      addedDate: '19 Apr 2026'
-    },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
   {
@@ -464,14 +485,6 @@ export const initialWinners = [
       bsb: '014-002',
       accountNumber: '990011223',
       bankName: 'ANZ Banking Group'
-    },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-004',
-      reason: 'Club barring order 12-months',
-      severity: 'Low',
-      state: 'QLD',
-      addedDate: '01 Jun 2026'
     },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
@@ -505,14 +518,6 @@ export const initialWinners = [
       accountNumber: '334455667',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: true,
-    blacklistDetails: {
-      id: 'bl-005',
-      reason: 'Sanctions match cross-reference',
-      severity: 'High',
-      state: 'NSW',
-      addedDate: '14 Jul 2026'
-    },
     collector: { name: 'P. Sharma', id: 'usr-6f7g8h' }
   },
   {
@@ -545,8 +550,6 @@ export const initialWinners = [
       accountNumber: '887766554',
       bankName: 'Commonwealth Bank of Australia'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -579,8 +582,6 @@ export const initialWinners = [
       accountNumber: '443322119',
       bankName: 'Westpac Banking Corporation'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'M. Santos', id: 'usr-1a2b3c' }
   },
   {
@@ -613,8 +614,6 @@ export const initialWinners = [
       accountNumber: '120934875',
       bankName: 'National Australia Bank'
     },
-    isBlacklisted: false,
-    blacklistDetails: null,
     collector: { name: 'J. Chen', id: 'usr-2b3c4d' }
   }
 ];

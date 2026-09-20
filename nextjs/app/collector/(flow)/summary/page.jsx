@@ -14,16 +14,36 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
 import {
   getLink,
   resendLink,
   cancelLink,
   buildVerifyUrl,
   formatExpiry,
+  getLinkType,
   LINK_STATUS,
   LINK_STATUS_LABELS,
 } from '@/lib/verificationLink';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+import { initialBlacklist } from '@/lib/mockData';
+
+
+// Prototype preview switch for the exclusion register. Screening normally keys
+// off the patron's own name, which means a tester has to know which seeded
+// patron to type. These presets pick a register entry directly so all three
+// outcomes are one click away.
+const EXCLUSION_PROTO_OPTIONS = [
+  { value: 'none', label: 'Exclusion: None' },
+  { value: 'self', label: 'Exclusion: Self-exclusion' },
+  { value: 'venueBan', label: 'Exclusion: Venue ban' },
+];
+
+const EXCLUSION_PROTO_NAMES = {
+  self: 'Marcus Vance',
+  venueBan: 'Chloe Gallagher',
+};
 
 function SummaryContent() {
   const router = useRouter();
@@ -44,6 +64,7 @@ function SummaryContent() {
   const [verificationMode, setVerificationMode] = useState('manual');
   const [verificationToken, setVerificationToken] = useState(null);
   const [linkRecord, setLinkRecord] = useState(null);
+  const [exclusionProtoState, setExclusionProtoState] = useState('none');
   const [resendNotice, setResendNotice] = useState(false);
 
   // This page is prerendered, so a timestamp produced during render would be
@@ -155,10 +176,24 @@ function SummaryContent() {
   const patronPending = isLinkMode && !patronVerified;
   const patronResult = linkRecord?.result || null;
 
+  // Only what the link type covered comes from the patron's phone. Everything
+  // else the collector captured at the counter, so it reads from the form.
+  const linkType = getLinkType(linkRecord?.payout?.linkType);
+  const patronCoversBank = isLinkMode && linkType.includesBank;
+  const patronCoversSecondary = isLinkMode && linkType.includesSecondary;
+  const patronCoveredLabel = [
+    'identity',
+    patronCoversSecondary && 'secondary ID',
+    patronCoversBank && 'bank details',
+  ]
+    .filter(Boolean)
+    .join(', ')
+    .replace(/, ([^,]*)$/, ' and $1');
+
   // The patron flow and the prototype toggle name CoP outcomes differently;
   // normalise to the labels this page already renders.
   const effectiveCop =
-    patronVerified && patronResult
+    patronVerified && patronResult && patronCoversBank
       ? { closeMatch: 'close', noMatch: 'fail' }[patronResult.copResult] || 'match'
       : copProtoState;
 
@@ -334,7 +369,23 @@ function SummaryContent() {
   };
 
   const view = getActiveData();
+
+  // Screened here as well as at submission so the collector sees it before
+  // they hand anything over, not after the payout has already been created.
+  // The preview switch overrides the name being screened; left on "None" the
+  // real patron name is used, so a genuine match still shows.
+  const exclusionScreening = screenPatron(
+    exclusionProtoState === 'none'
+      ? { name: view.fullName, dob: view.dob }
+      : { name: EXCLUSION_PROTO_NAMES[exclusionProtoState] },
+    initialBlacklist
+  );
   const { hasBank, hasCheque } = getDisbursementFlags(view.disbursementMethod);
+  // A small cash-only payout never had a bank step, so the section is left out
+  // rather than printed as "not required". Read from the stored form, not the
+  // preview-adjusted view: `view.state` is the patron's address state, not the
+  // venue's.
+  const showsBankSection = needsBankStep(formData);
 
   // Determine Primary ID Edit destination
   const getPrimaryIdEditUrl = () => {
@@ -363,6 +414,8 @@ function SummaryContent() {
             <p className="text-[14px] text-ink-mid m-0 whitespace-nowrap">{renderedAt}</p>
           </div>
 
+          <ExclusionAlert screening={exclusionScreening} className="mb-6" />
+
           {/* Patron self-service verification state */}
           {isLinkMode && linkRecord && (
             <div className="mb-6">
@@ -374,7 +427,7 @@ function SummaryContent() {
                       Patron verification complete
                     </p>
                     <p className="text-[13.5px] text-ink-mid m-0">
-                      {linkRecord.payout?.patronName} verified their identity and bank details on
+                      {linkRecord.payout?.patronName} verified their {patronCoveredLabel} on
                       their phone. This payout is ready to submit for approval.
                     </p>
                   </div>
@@ -581,10 +634,21 @@ function SummaryContent() {
                       </div>
                     ) : (
                       <>
+                    {(view.occupation || patronResult?.occupation) && (
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-ink-mid font-medium">Occupation</span>
+                        <span className="font-bold text-ink-hi">
+                          {patronResult?.occupation || view.occupation}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center py-1">
                       <span className="text-ink-mid font-medium">Document type</span>
                       <span className="font-bold text-ink-hi">
-                        {patronVerified && patronResult ? patronResult.docLabel : view.docTypeLabel}
+                        {patronVerified && patronResult
+                          ? [patronResult.docLabel, patronResult.secondaryDocLabel].filter(Boolean).join(', ')
+                          : view.docTypeLabel}
                       </span>
                     </div>
 
@@ -775,12 +839,14 @@ function SummaryContent() {
                     </div>
 
                     {/* Bank account subsection */}
+                    {showsBankSection && (
+                      <>
                     <div className="flex items-center justify-between pt-4 pb-1">
                       <p className="text-[13px] font-semibold text-ink-mid m-0">
                         Bank account
                         {!hasBank && <span className="ml-1 font-normal text-ink-lo">(not required)</span>}
                       </p>
-                      {hasBank && !isLinkMode && (
+                      {hasBank && !patronCoversBank && (
                         <Link
                           href="/collector/bank-account?from=summary"
                           className="text-ink-mid hover:text-ink-hi underline font-semibold text-[13px] inline-flex items-center gap-1 transition-colors"
@@ -790,7 +856,7 @@ function SummaryContent() {
                         </Link>
                       )}
                     </div>
-                    {hasBank && patronPending ? (
+                    {hasBank && patronPending && patronCoversBank ? (
                       <div className="py-1">
                         <span className="text-[14px] text-ink-lo">
                           The patron is entering their bank details on their phone. They will appear
@@ -802,19 +868,19 @@ function SummaryContent() {
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account name</span>
                           <span className="font-bold text-ink-hi">
-                            {(patronVerified && patronResult?.accountName) || view.accountName || 'Test Testerson'}
+                            {(patronVerified && patronCoversBank && patronResult?.accountName) || view.accountName || 'Test Testerson'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">BSB number</span>
                           <span className="font-bold text-ink-hi tabular-nums font-mono">
-                            {(patronVerified && patronResult?.bsb) || view.bsb || '062-000'}
+                            {(patronVerified && patronCoversBank && patronResult?.bsb) || view.bsb || '062-000'}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="text-ink-mid font-medium">Account number</span>
                           <span className="font-bold text-ink-hi tabular-nums font-mono">
-                            {(patronVerified && patronResult?.accountNumber) || view.accountNumber || '12345678'}
+                            {(patronVerified && patronCoversBank && patronResult?.accountNumber) || view.accountNumber || '12345678'}
                           </span>
                         </div>
 
@@ -851,6 +917,8 @@ function SummaryContent() {
                           Bank transfer wasn&apos;t selected as a payment method for this payout.
                         </span>
                       </div>
+                    )}
+                      </>
                     )}
 
                     {/* Cheque subsection */}
@@ -907,6 +975,27 @@ function SummaryContent() {
 
           {/* Prototype Simulation Toggles matching deploy/13-summary.html */}
           <div className="mt-8 space-y-2">
+            {/* Exclusion register toggle */}
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
+              <span className="font-semibold text-ink-mid">
+                Prototype preview only:
+              </span>
+              {EXCLUSION_PROTO_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setExclusionProtoState(option.value)}
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors ${
+                    exclusionProtoState === option.value
+                      ? 'bg-slate-800 text-white'
+                      : 'bg-slate-100 text-ink-mid hover:bg-slate-200'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
             {/* CoP Toggle */}
             <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
               <span className="font-semibold text-ink-mid">

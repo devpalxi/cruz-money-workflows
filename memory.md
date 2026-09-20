@@ -1,65 +1,90 @@
-# Memory — Patron self-service verification & Approver/Authoriser dashboards
+# Memory — Blacklist on Winners page, cash-only bank step, two-approver scenarios
 
-Last updated: 2026-09-16
+Last updated: 2026-09-21
+
+Work is on branch `feature/dineth`. Everything below was built after commit `9f04fa4` and is **not committed** as far as this session knows (the user commits manually). Last build: 43 routes, 0 errors.
 
 ## What was built
 
-### 1. Patron self-service verification (committed as `a1621ae`)
+### 1. Blacklist merged into the Winners page
+- Deleted `app/admin/blacklist` and `app/super-admin/blacklist`, and the "Venue Blacklist" links in `AdminSidebar.jsx` and `AppHeader.jsx`.
+- `WinnersView.jsx` now has two tabs: **Winners** and **Blacklist**. The Blacklist tab is `components/views/ExclusionRegisterPanel.jsx` (new); rows are clickable. The tab reads `?tab=blacklist` so the back link returns to it.
+- `lib/WinnersContext.jsx` holds a shared `blacklist` (seeded from `initialBlacklist`) beside `winners`. Winner list, winner detail and the Blacklist tab all read and write it.
+- A winner's "blacklisted" status is worked out live with `screenPatron` (name + DOB). The old `isBlacklisted` / `blacklistDetails` fields were deleted from `initialWinners` in `mockData.js`.
+- `WinnerDetailView.jsx`: "Add to blacklist" writes a real register entry (exclusion type, expiry for self-exclusions; source defaults to State register for self, Venue list otherwise). "Remove" deletes the entry.
+- Winners list has a filter by type: All / Active (clear) / Any blacklist type / Self-exclusion / Venue ban.
+- The **regulatory** exclusion type was removed. Its 3 entries (bl-002, bl-003, bl-005) are now `venue_ban`. Only `self` and `venue_ban` exist.
+- The "N payouts held on self-exclusion" card was removed from `PayoutsView.jsx` for every role, with its dead code.
 
-A branch in the Collector flow that hands identity and bank verification to the patron's own phone instead of the counter.
+### 2. Blacklist detail page and release date changes
+- `components/views/BlacklistDetailView.jsx` (new), routes `app/admin/winners/blacklist/[id]` and `app/super-admin/winners/blacklist/[id]`. Shows patron details, exclusion details, release date history, linked winner records. Actions: Edit details, Change release date (self-exclusions only), Remove from blacklist.
+- `components/shared/ReleaseDateModal.jsx` (new, shared with the winner page). Needs a written reason; the change is logged on the entry as `releaseDateHistory` (who, when, old, new, reason). Moving the date earlier is allowed.
+- `WinnerDetailView.jsx` shows a Funds release date row, a Change release date button and the history.
+- `lib/exclusionRegister.js` gained `isoToRegisterDate`, `registerDateToIso`, `isoToDobText`, `applyReleaseDateChange`.
+- Bug fixed: entries added from the Blacklist tab stored DOB as `1985-02-08` instead of `08/02/1985`, so they never matched a winner.
 
-- **`nextjs/lib/verificationLink.js`** (new) — the mock "backend". Token issue, status machine (`sent` / `in_progress` / `completed` / `staff_action` / `expired` / `cancelled`), 30-minute expiry, resend, cancel. Records live in `localStorage` keyed by token, **not** sessionStorage, because the collector terminal and the patron's page are different tabs and must read the same record.
-- **`nextjs/app/verify/[token]/layout.jsx` + `page.jsx`** (new) — the patron mobile surface. Single client page with an internal step machine (welcome → consent → ID → face → bank → review → submit) rather than sub-routes, so a deep link cannot land someone in a half-finished state. Terminal screens: done, return to counter, expired, closed, invalid.
-- **`nextjs/app/collector/(flow)/email-address/page.jsx`** — added phone/first/last name fields, the "Verify at the counter" vs "Send link to patron" segmented rail, and the link-sent confirmation (URL + copy + open patron view).
-- **`nextjs/app/collector/(flow)/summary/page.jsx`** — three verification banners (waiting / complete / needs staff), ID and bank sections rendered as "waiting on patron", Resend link / Switch to manual verification / Open patron view actions, switch-to-manual confirm modal, 2s poll of the link record.
-- **`nextjs/components/layout/Stepper.jsx`** — "(with patron)" state for steps 4-6; now re-reads sessionStorage on `pathname` change.
-- **`nextjs/lib/mockData.js` + `PayoutsView.jsx`** — new `Pending verification` status (amber tier), filter option, 3 seeded records.
-- **`DESIGN.md` §6 + `ui-rules.md` §2.8** — documented the patron surface and the sticky-CTA exception, per `agent.md` §4.
+### 3. Bank step removed for small cash-only payouts
+- `lib/payoutFlow.js`: `needsBankStep(form)` is false only when cash is the **only** method and the win is under $5,000 (`AML_THRESHOLD` via `computeComplianceGate`, which is now finally used). $5,000 or more keeps the step.
+- Applied in `Stepper.jsx`, `AppHeader.jsx` (row dropped, not greyed), `getStepAfterSecondary`, `getStepBeforeCheque`, `getCollectorResumePath` (takes a `needsBank` argument, passed in to avoid an import cycle), the summary page section, and `bank-account/page.jsx` (redirects to cheque details).
+- Cheque was already fully built (step 1 selector, step 2 amount, details step); no change.
 
-### 2. Approver / Authoriser dashboards (uncommitted at time of writing)
+### 4. Second AML approver (conditional, UI scenarios only)
+- `lib/riskEngine.js`: new `foreignPayment` signal (medium trigger) and `secondApproverConditions`; returns `requiresSecondApprover`. A condition only counts while its signal is switched on.
+- `VenueSettingsView.jsx`: "Foreign Payment" toggle added to the signal list.
+- Approver page (`app/approver/[scenario]/page.jsx`): routing banner ("2 approver sign-offs required", approver 1 or 2 of 2); a **First approval** accordion section below Collector (second approver only); presets `foreign-payment` and `second-approval` (#588 Sofia Almeida); confirmation wording differs for approver 1 and 2. The Reject payout button was added then removed at the user's request.
+- Authoriser page (`app/authoriser/[scenario]/page.jsx`): new preset `foreign-payment` whose "Approver resolution" keeps the common blocks and shows collapsible **Approver 1** (D.Walsh) and **Approver 2** (T.Nguyen) sections (`ApproverSection`). Driven by `approverResolution.approvals` in the scenario data; scenarios without it keep the single layout.
 
-- **`nextjs/app/approver/dashboard/page.jsx`**, **`nextjs/app/authoriser/dashboard/page.jsx`** (new) — thin wrappers rendering `PayoutsView` with `role="APPROVER"` / `"AUTHORISER"`.
-- **`nextjs/components/views/PayoutsView.jsx`** — two new roles; `Payment ETA` column (between Amount and Status) and `Actions` column (Review link, after Status), both gated to review roles only so admin/super-admin are untouched; role-aware `scenarioForPayout()`; CSV export mirrors visible columns.
-- **`nextjs/components/layout/AdminSidebar.jsx`** — `APPROVER`/`AUTHORISER` roles with a single Dashboard link each; footer role-switcher converted from a ternary to a lookup map.
-- **`nextjs/lib/mockData.js`** — `paymentEta` derived from status via `PAYMENT_ETA_BY_STATUS` and applied with `basePayouts.map(withPaymentEta)`, rather than hand-editing 96 records.
-- **`nextjs/components/layout/AppHeader.jsx`** — defined the missing `superAdminNavLinks`, which was a dormant `ReferenceError` for any `role="SUPER ADMIN"` render.
+### 5. Approver blacklist popup is view only
+- `BlacklistModal` (approver page) now shows only the blacklisted person's record, read from the shared blacklist by name (`screenPatron`). The comparison table, resolution status, notes and evidence upload are gone; only a Close button remains.
+- The blacklist row button reads **View resolution**. The "Funds cannot be released: gambling self-exclusion" notice (and its venue ban version) moved from the page into the popup. Approve now has a tooltip hint when disabled for an exclusion.
+- `blacklist-match` (John Patron) is not on the register, so it carries its own `blacklistRecord` in the scenario data.
 
 ## Decisions made
 
-- **Patron record is created when the collector submits at Summary**, as `Pending verification`. The win already happened, so the audit trail starts then and an abandoned link leaves a record to chase.
-- **Two electronic ID attempts, then hand back to staff.** IDV3 and the no-ID path stay staff-only because `v1-glossary.md` requires a Collector to attest to physically viewing the document — a patron cannot attest about their own.
-- **The patron never gets a staff override.** The CoP bypass-with-justification that exists on `bank-account/page.jsx` is deliberately absent; CoP no-match follows the glossary rule (retry limit, then escalate to the Approver).
-- **Consent moved to the patron** (`consent.general` / `consent.docs` / `consent.creditheader`) — stronger compliance than staff attesting on their behalf.
-- **Capture uses `<input type="file" capture=...>`, not `getUserMedia`** — opens the real camera on a phone, degrades to a file picker, needs no HTTPS, and matches the repo's existing convention.
-- **Approver/authoriser dashboards reuse `PayoutsView`, not a fork** — user specified `/admin/dashboard` as the visual reference.
-- **Those dashboards show the full register, no default filter**, and their sidebar is Dashboard only (both explicitly chosen by the user over the alternatives).
-- **Risk rating column kept** on the review dashboards even though the reference screenshots omit it — it is what an approver is actually assessing.
-- **Screenshots supply fields, not styling.** The user's reference images use blue `Awaiting Approval` pills, ALL-CAPS headers and a `✓` in the CoP pill — all three violate `DESIGN.md`. Rendered per the design system instead.
+- **This is a screens-only prototype.** Do not build enforcement, stored approvals or real state machines for scenarios. The user said so explicitly.
+- **One blacklist, one source of truth**: the shared `blacklist` in `WinnersContext`, checked live with `screenPatron`. No separate flag on winners.
+- **Foreign payment forces two approvers without being called High risk.** The rating stays honest; the second approver is a separate condition.
+- **Two approvals show on the authoriser page only where the scenario data carries them**, not from the engine. The user chose a separate scenario over engine-driven.
+- **Approver cannot resolve a blacklist match**; that popup is view only. The user said earlier that an Authoriser can approve self-excluded payouts, so early release and date changes were left unrestricted.
+- **Cash-only + under $5,000 removes the bank step**; at or above $5,000 it stays for the AUSTRAC record.
 
 ## Problems solved
 
-- **Authoriser has only 7 scenarios, approver has 10.** Missing: `single-hit`, `name-mismatch`, `all-clear`. A naive row-to-scenario mapping silently fell back to `dual-hit`, so a clean low-risk payout would have opened a dual sanctions-and-PEP review. `scenarioForPayout(payout, available)` now lists candidates best-first and picks the first the role actually has. Verified offline: 99/99 rows resolve to valid targets for both roles.
-- **Never run `npm run build` while the user's `next dev` is running** — both write to the same `.next` and it corrupts the dev server (symptoms: stale bundles, `usePathname is not defined` from a Fast Refresh artifact). Next 16 also refuses a second `next dev` on the same directory. Use `npm run start -p 3100` against a fresh build for a parallel server instead.
-- **`/collector/summary` renders on the first load in a tab and gets stuck on its Suspense fallback on every reload after that**, with React error #418 (hydration). Reproduces identically on the pre-change `HEAD` version, so it is **pre-existing, not caused by this work**. Does not affect real use — a collector reaches Summary by walking the flow (client-side navigation), which works fine.
-- Fixed one genuine hydration cause in that file: it rendered `new Date()` during render on a prerendered page, so the build-time timestamp could never match the client's. Now filled in after mount via `renderedAt`.
-- `Stepper` lives in the flow layout, which persists across client-side navigation — a mount-only sessionStorage read showed stale choices. Now keyed on `pathname`.
+- Risk engine test caught that switching the Foreign Payment signal off still forced a second approver with no trigger visible. Fixed: the condition requires its signal to be on.
+- No Python in this shell. Use `node -e` for scripted edits, and splice large blocks by line markers.
+- Node ESM cannot import the lib files directly. Working pattern: copy them into the scratchpad `harness/` folder as `.mjs` and rewrite the import specifier with `sed`.
+- Disabled buttons do not reliably show their own tooltip, so the hint sits on a wrapping `<span title>`.
 
 ## Current state
 
-- `npm run build` is clean: **48/48 routes, 0 errors, 0 warnings**.
-- Patron verification is **verified end to end in a browser**: collector branch, link send, stepper "(with patron)", all three summary banners, the full patron flow, ID-fail-twice hand-back (records `staff_action` / IDV3), switch-to-manual (cancels link, reverts mode, returns to Primary ID), and all terminal screens.
-- Approver/authoriser dashboards are **built and compiling but NOT visually verified** — the user explicitly asked not to open a browser. Statically checked: 12 `<th>` vs 12 `<td>` across data/skeleton/empty rows, `colSpan` math, and the scenario mapping run offline over all 99 records.
-- Uncommitted: the dashboard work (`AdminSidebar.jsx`, `AppHeader.jsx`, `PayoutsView.jsx`, `mockData.js`, plus the two new dashboard route folders).
-- `.claude/launch.json` at the project root defines `riverside-prod` (`npm --prefix nextjs run start -- -p 3100`).
+Everything above builds clean and was checked with offline Node scripts, **not in a browser** (agent.md forbids browser verification). Known gaps, all deliberate:
+
+- `dual-hit`, `no-id`, `blacklist-match`, `high-value` and `self-exclusion` on the authoriser page still show one approver, though the engine rates each as needing two.
+- The Payouts dashboard "Releases <date>" note reads fixed sample payouts, so it does not follow a release date changed on a winner or blacklist page.
+- All changes live only in browser session state and reset on reload.
+- The dev-only `StepTabs.jsx` still shows every step, including the removed bank step.
+- Approver and authoriser review screens still read hardcoded `SCENARIOS`, not `initialPayouts` (the older structural gap).
+- Approver preset labels reuse numbers 11 and 12 ("11. Self-exclusion hold", "12. Venue ban", "11. Foreign payment", "12. Foreign payment (2nd approver)").
+- EFT/cash columns still skip CSV export and the empty-state width.
 
 ## Next session starts with
 
-Open `/approver/dashboard` and `/authoriser/dashboard` in a browser and compare against `/admin/dashboard` — that is the one piece of this session's work with no visual confirmation. Check pill colours, sentence-case headers, the two new columns, and that Review lands on a sensible review screen.
+Nothing is mid-flight. Ask the user what they want next. The most valuable structural piece is still wiring the approver and authoriser screens to `initialPayouts`. Smaller options: renumber the approver presets, add occupation to the remaining ID paths, bring `StepTabs.jsx` in line.
 
 ## Open questions
 
-- **`paymentEta` is invented.** Derived from payout status (`Next business day` / `On authorisation` / `Settled` / `-`) based on the lifecycle in `v1-glossary.md`. If the field has a real backend definition, replace the seed values rather than building on them.
-- **The Review link lands on canned scenario data, not the row's own payout.** The `[scenario]` pages read a hardcoded `SCENARIOS` object and are not wired to `initialPayouts`. Connecting them is the obvious next structural fix.
-- **Does patron self-service change the risk rating?** Currently it does not — IDV2 still means Medium. Remote unsupervised verification is arguably riskier than a staff-witnessed one. Flagged for compliance, not implemented.
-- The nav role badge in `AdminSidebar`/`AppHeader` still uses `uppercase tracking-wider`, which `DESIGN.md` §3 explicitly supersedes. Pre-existing; left alone because changing it would alter admin and super-admin visuals too.
-- Two older proposals remain exploratory and unscoped: patron self-service SMS/mobile KYC beyond what was built, and whether "House ID" should ever exist as a field.
+- Should the other engine-rated two-approver payouts on the authoriser page also show two approvers?
+- Should `Draft` payouts be hidden from Approver and Authoriser queues (same reasoning as the earlier Pending verification removal)?
+- The float-account funding alert (PayTo/Zepto insufficient funds) is still deferred and needs a notification surface.
+
+## Standing constraints
+
+From `agent.md` and the user:
+
+- **Never run `git commit` or `git push`.** The user commits manually.
+- **`deploy/` is read-only reference.**
+- **Always run `npm run build`** and **post a Build Summary** after changes.
+- **Do not open a browser to verify.** Use builds and offline Node scripts.
+- **Never run `npm run build` while `next dev` is running.**
+- Ask before introducing UI patterns not in `DESIGN.md` / `ui-rules.md`.
+- The user prefers **simple English** and uses `/architect` before building features: align terms, decide one question at a time, present a plan, wait for "build it".

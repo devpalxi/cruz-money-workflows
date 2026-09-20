@@ -18,9 +18,13 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import MemberLookupPanel from '@/components/shared/MemberLookupPanel';
-import { initialVenues } from '@/lib/mockData';
+import { initialVenues, initialBlacklist } from '@/lib/mockData';
 import { getEffectiveCashCap } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, MOCK_CLUB_MEMBERS } from '@/lib/mockMembershipDatabase';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+
+
 
 export default function PayoutDetailsPage() {
   const router = useRouter();
@@ -65,6 +69,12 @@ export default function PayoutDetailsPage() {
   // Prototype toggle options
   const [amountOption, setAmountOption] = useState('A'); // A: simple, B: preview
   const [docketOption, setDocketOption] = useState('A'); // A: manual, B: simulated
+
+  // A prefilled member is the earliest point the collector knows who they are
+  // dealing with, so that is where the register is checked.
+  const exclusionScreening = prefilledMember
+    ? screenPatron({ name: prefilledMember.fullName, dob: prefilledMember.dob }, initialBlacklist)
+    : null;
 
   const machines = [
     'EGM-001',
@@ -356,6 +366,8 @@ export default function PayoutDetailsPage() {
             </button>
             <h1 className="text-xl sm:text-2xl font-bold text-ink-hi">New payout details</h1>
           </div>
+
+          <ExclusionAlert screening={exclusionScreening} className="mb-6" />
 
           {/* Form Card */}
           <Card padding="md" className="border-border shadow-card mb-6">

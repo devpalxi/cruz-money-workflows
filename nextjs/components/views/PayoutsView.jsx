@@ -8,6 +8,7 @@ import AdminShell from '@/components/layout/AdminShell';
 import AppHeader from '@/components/layout/AppHeader';
 import PageShell from '@/components/layout/PageShell';
 import { initialPayouts } from '@/lib/mockData';
+import { EXCLUSION_HOLD_STATUS, formatRegisterDate } from '@/lib/exclusionRegister';
 
 // Approver and Authoriser have nothing else to navigate to, so they get the
 // top-nav chrome used elsewhere in the app (Collector, design-system) instead
@@ -48,6 +49,8 @@ const APPROVER_SCENARIOS = new Set([
   'multi-id-mixed',
   'blacklist-match',
   'high-value',
+  'self-exclusion',
+  'venue-ban',
 ]);
 
 const AUTHORISER_SCENARIOS = new Set([
@@ -58,9 +61,14 @@ const AUTHORISER_SCENARIOS = new Set([
   'multi-id-mixed',
   'blacklist-match',
   'high-value',
+  'self-exclusion',
 ]);
 
 function scenarioForPayout(payout, available) {
+  // A held row has one obvious case to open, so it never falls through to the
+  // generic signature matching below.
+  if (payout.status === EXCLUSION_HOLD_STATUS) return 'self-exclusion';
+
   const pepHit = payout.pep === 'Hit';
   const sanctionsHit = payout.sanctions === 'Hit';
   const candidates = [];
@@ -105,9 +113,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   const isReviewRole = isApprover || isAuthoriser;
   const reviewBasePath = isAuthoriser ? '/authoriser' : '/approver';
   const reviewScenarios = isAuthoriser ? AUTHORISER_SCENARIOS : APPROVER_SCENARIOS;
-  // A payout still waiting on the patron has no verification results yet, so
-  // there is nothing to review. Every other status opens the review screen.
-  const isReviewable = (payout) => payout.status !== 'Pending verification';
+  // A payout still waiting on the patron never reaches an approver: the
+  // collector cannot submit until the patron has finished verifying, so these
+  // rows only exist for the venue's own staff to watch. They are filtered out
+  // of the review queues entirely rather than shown with no action.
+  const HIDDEN_FROM_REVIEW_QUEUE = ['Pending verification'];
 
 
   // Filters state
@@ -201,18 +211,22 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     return ['all', ...Array.from(set)];
   }, []);
 
-  // Filter options config
+  // Filter options config. A status the role can never see is not offered as a
+  // filter, so the picker cannot produce an empty table.
+  const statusFilterOptions = [
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Pending authorisation', value: 'Pending Authorisation' },
+    { label: 'Awaiting', value: 'Awaiting Approval' },
+    { label: 'Pending verification', value: 'Pending verification' },
+    { label: 'Exclusion hold', value: EXCLUSION_HOLD_STATUS },
+    { label: 'Completed', value: 'Payment Completed' },
+    { label: 'Delayed', value: 'Payment Delayed' },
+    { label: 'Failed', value: 'Failed' },
+    { label: 'Rejected', value: 'Rejected' },
+  ].filter((option) => !(isReviewRole && HIDDEN_FROM_REVIEW_QUEUE.includes(option.value)));
+
   const filterGroups = {
-    status: [
-      { label: 'Draft', value: 'Draft' },
-      { label: 'Pending authorisation', value: 'Pending Authorisation' },
-      { label: 'Awaiting', value: 'Awaiting Approval' },
-      { label: 'Pending verification', value: 'Pending verification' },
-      { label: 'Completed', value: 'Payment Completed' },
-      { label: 'Delayed', value: 'Payment Delayed' },
-      { label: 'Failed', value: 'Failed' },
-      { label: 'Rejected', value: 'Rejected' },
-    ],
+    status: statusFilterOptions,
     idv: [
       { label: 'Pass', value: 'Pass' },
       { label: 'Fail', value: 'Fail' },
@@ -257,6 +271,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   // Filtered dataset
   const filteredPayouts = useMemo(() => {
     return initialPayouts.filter((p) => {
+      // Statuses that never reach this role's queue
+      if (isReviewRole && HIDDEN_FROM_REVIEW_QUEUE.includes(p.status)) {
+        return false;
+      }
+
       // Role-based venue filter for Admin vs Super Admin
       if (!isSuperAdmin && p.venue !== 'Riverside RSL Club') {
         return false;
@@ -361,6 +380,11 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   // Null means nothing is scheduled to send: either it already settled, or the
   // payout never reached a state where a dispatch window exists.
   const timeToPaymentLabel = (item) => {
+    // A held payout is waiting on a date, not a wait time, so the column shows
+    // when the exclusion lifts instead of counting down to a PayTo send.
+    if (item.status === EXCLUSION_HOLD_STATUS && item.fundsReleaseDate) {
+      return `Releases ${formatRegisterDate(item.fundsReleaseDate)}`;
+    }
     if (item.paymentDueInMinutes == null) {
       return item.status === 'Payment Completed' ? 'Settled' : '-';
     }
@@ -371,6 +395,9 @@ export default function PayoutsView({ role = 'ADMIN' }) {
     const label = timeToPaymentLabel(item);
     if (label === '-') return <span className="text-ink-lo">&mdash;</span>;
     if (label === 'Settled') return <span className="text-ink-mid">Settled</span>;
+    if (label.startsWith('Releases ')) {
+      return <span className="text-[12px] font-semibold text-state-fail-text">{label}</span>;
+    }
     if (label === 'Overdue') {
       return (
         <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
@@ -484,6 +511,15 @@ export default function PayoutsView({ role = 'ADMIN' }) {
   };
 
   const renderStatusPill = (status) => {
+    // Its own label rather than an amber "delayed": a gambling-harm hold is a
+    // block, and someone scanning the register should see that at a glance.
+    if (status === EXCLUSION_HOLD_STATUS) {
+      return (
+        <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11.5px] font-bold bg-state-fail-bg text-state-fail-text border border-state-fail-border whitespace-nowrap select-none">
+          {status}
+        </span>
+      );
+    }
     // Green tier: Completed / Paid / Settled / Authorised
     if (
       status === 'Payment Completed' ||
@@ -1137,16 +1173,12 @@ export default function PayoutsView({ role = 'ADMIN' }) {
                         {/* Actions */}
                         {isReviewRole && (
                           <td className="px-2.5 py-3 whitespace-nowrap">
-                            {isReviewable(item) ? (
-                              <Link
-                                href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
-                                className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
-                              >
-                                Review
-                              </Link>
-                            ) : (
-                              <span className="text-[13px] text-ink-lo">&mdash;</span>
-                            )}
+                            <Link
+                              href={`${reviewBasePath}/${scenarioForPayout(item, reviewScenarios)}?payout=${item.id}`}
+                              className="text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline"
+                            >
+                              Review
+                            </Link>
                           </td>
                         )}
                       </tr>

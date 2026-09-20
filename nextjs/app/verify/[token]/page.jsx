@@ -18,19 +18,33 @@ import Badge from '@/components/ui/Badge';
 import Checkbox from '@/components/ui/Checkbox';
 import {
   getLink,
+  getLinkType,
   updateLink,
   LINK_STATUS,
   MAX_ID_ATTEMPTS,
   MAX_COP_ATTEMPTS,
 } from '@/lib/verificationLink';
+import { isOccupationCaptureEnabled } from '@/lib/venueCompliance';
 
-const STAGES = [
+const ALL_STAGES = [
   { key: 'consent', label: 'Consent' },
   { key: 'id', label: 'ID' },
   { key: 'face', label: 'Photo' },
+  { key: 'secondary', label: 'Secondary ID' },
   { key: 'bank', label: 'Bank' },
   { key: 'review', label: 'Review' },
 ];
+
+// The collector chose which checks this link covers. Consent, ID, photo and
+// review are always part of it; secondary ID and bank only when asked for.
+function getStagesForLinkType(linkType) {
+  const type = getLinkType(linkType);
+  return ALL_STAGES.filter(
+    (stage) =>
+      (stage.key !== 'secondary' || type.includesSecondary) &&
+      (stage.key !== 'bank' || type.includesBank)
+  );
+}
 
 const DOC_TYPES = [
   { value: 'licence', label: 'Licence' },
@@ -184,8 +198,16 @@ export default function VerifyPage() {
   const [idPreview, setIdPreview] = useState(null);
   const [idAttempts, setIdAttempts] = useState(0);
 
+  const [occupation, setOccupation] = useState('');
+  // Venue-level setting. The link carries the venue, so the patron is only
+  // asked when that venue has opted in.
+  const [occupationEnabled, setOccupationEnabled] = useState(false);
+
   const [facePhase, setFacePhase] = useState('capture');
   const [facePreview, setFacePreview] = useState(null);
+
+  const [secondaryPhase, setSecondaryPhase] = useState('capture');
+  const [secondaryPreview, setSecondaryPreview] = useState(null);
 
   const [accountName, setAccountName] = useState('');
   const [bsb, setBsb] = useState('');
@@ -197,6 +219,7 @@ export default function VerifyPage() {
   // Prototype simulation switches, standing in for DVS and Zepto responses.
   const [simId, setSimId] = useState('pass');
   const [simFace, setSimFace] = useState('pass');
+  const [simSecondary, setSimSecondary] = useState('pass');
   const [simCop, setSimCop] = useState('match');
 
   useEffect(() => {
@@ -208,6 +231,7 @@ export default function VerifyPage() {
     else if (found.status === LINK_STATUS.EXPIRED) setStep('expired');
     else if (found.status === LINK_STATUS.CANCELLED) setStep('cancelled');
     if (found.payout?.patronName) setAccountName(found.payout.patronName);
+    setOccupationEnabled(isOccupationCaptureEnabled(found.payout?.venueId));
   }, [token]);
 
   const patronName = record?.payout?.patronName || '';
@@ -216,8 +240,33 @@ export default function VerifyPage() {
     [docType, patronName]
   );
 
+  const linkType = getLinkType(record?.payout?.linkType);
+  const STAGES = useMemo(() => getStagesForLinkType(linkType.value), [linkType.value]);
+
+  // Medicare is the secondary document, so it cannot also be the primary one
+  // on a link that asks for both.
+  const primaryDocTypes = linkType.includesSecondary
+    ? DOC_TYPES.filter((doc) => doc.value !== 'medicare')
+    : DOC_TYPES;
+
+  const secondaryExtracted = useMemo(
+    () => simulateExtraction('medicare', patronName),
+    [patronName]
+  );
+
   const stageIndex = STAGES.findIndex((s) => s.key === step);
   const isFlowStep = stageIndex >= 0;
+
+  // Every "Continue" moves to whichever stage this link type puts next, so a
+  // step never has to know which optional stages were left out.
+  const stageAfter = (key) => {
+    const index = STAGES.findIndex((s) => s.key === key);
+    return STAGES[index + 1]?.key || 'review';
+  };
+  const stageBefore = (key) => {
+    const index = STAGES.findIndex((s) => s.key === key);
+    return STAGES[index - 1]?.key || 'consent';
+  };
 
   const setPreview = (setter, current, file) => {
     if (current) URL.revokeObjectURL(current);
@@ -266,6 +315,13 @@ export default function VerifyPage() {
     }, 1400);
   };
 
+  const handleRunSecondaryCheck = () => {
+    setSecondaryPhase('checking');
+    setTimeout(() => {
+      setSecondaryPhase(simSecondary === 'pass' ? 'passed' : 'failed');
+    }, 1400);
+  };
+
   const handleRunCop = () => {
     setBankPhase('checking');
     setTimeout(() => {
@@ -292,6 +348,11 @@ export default function VerifyPage() {
     if (facePhase === 'passed' || facePhase === 'failed') setFacePhase('capture');
   };
 
+  const chooseSimSecondary = (value) => {
+    setSimSecondary(value);
+    if (secondaryPhase === 'passed' || secondaryPhase === 'failed') setSecondaryPhase('captured');
+  };
+
   const chooseSimCop = (value) => {
     setSimCop(value);
     setCopAttempts(0);
@@ -311,6 +372,11 @@ export default function VerifyPage() {
           { label: 'Face pass', active: simFace === 'pass', onSelect: () => chooseSimFace('pass') },
           { label: 'Face fail', active: simFace === 'fail', onSelect: () => chooseSimFace('fail') },
         ]
+      : step === 'secondary'
+      ? [
+          { label: 'Secondary pass', active: simSecondary === 'pass', onSelect: () => chooseSimSecondary('pass') },
+          { label: 'Secondary fail', active: simSecondary === 'fail', onSelect: () => chooseSimSecondary('fail') },
+        ]
       : step === 'bank'
       ? [
           { label: 'CoP match', active: simCop === 'match', onSelect: () => chooseSimCop('match') },
@@ -328,12 +394,22 @@ export default function VerifyPage() {
         docType,
         docLabel: DOC_LABELS[docType],
         livenessPassed: true,
-        accountName,
-        bsb,
-        accountNumber,
-        copResult,
-        copAttempts,
-        copEscalated: copResult === 'noMatch',
+        linkType: linkType.value,
+        occupation: occupation.trim(),
+        occupationAsked: occupationEnabled,
+        ...(linkType.includesSecondary && {
+          secondaryDoc: 'medicare',
+          secondaryDocLabel: DOC_LABELS.medicare,
+          secondaryPassed: true,
+        }),
+        ...(linkType.includesBank && {
+          accountName,
+          bsb,
+          accountNumber,
+          copResult,
+          copAttempts,
+          copEscalated: copResult === 'noMatch',
+        }),
       },
     });
     setStep('done');
@@ -467,7 +543,9 @@ export default function VerifyPage() {
               <div className="flex items-start gap-3">
                 <Camera className="w-5 h-5 text-ink-hi flex-shrink-0 mt-0.5" />
                 <span className="text-[15px] text-ink-hi">
-                  An Australian driver licence, passport, or Medicare card
+                  {linkType.includesSecondary
+                    ? 'An Australian driver licence or passport'
+                    : 'An Australian driver licence, passport, or Medicare card'}
                 </span>
               </div>
               <div className="flex items-start gap-3">
@@ -476,12 +554,22 @@ export default function VerifyPage() {
                   A moment to take a photo of your face
                 </span>
               </div>
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-ink-hi flex-shrink-0 mt-0.5" />
-                <span className="text-[15px] text-ink-hi">
-                  Your BSB and account number for the transfer
-                </span>
-              </div>
+              {linkType.includesSecondary && (
+                <div className="flex items-start gap-3">
+                  <Camera className="w-5 h-5 text-ink-hi flex-shrink-0 mt-0.5" />
+                  <span className="text-[15px] text-ink-hi">
+                    Your Medicare card as a second form of ID
+                  </span>
+                </div>
+              )}
+              {linkType.includesBank && (
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-ink-hi flex-shrink-0 mt-0.5" />
+                  <span className="text-[15px] text-ink-hi">
+                    Your BSB and account number for the transfer
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="divide-y divide-[#eceef2]">
@@ -559,10 +647,10 @@ export default function VerifyPage() {
             {(idPhase === 'select' || idPhase === 'failed') && (
               <>
                 <div className="flex w-full">
-                  {DOC_TYPES.map((doc, index) => {
+                  {primaryDocTypes.map((doc, index) => {
                     const isActive = docType === doc.value;
                     const isFirst = index === 0;
-                    const isLast = index === DOC_TYPES.length - 1;
+                    const isLast = index === primaryDocTypes.length - 1;
                     return (
                       <button
                         key={doc.value}
@@ -627,6 +715,26 @@ export default function VerifyPage() {
                 </span>
               </div>
             )}
+
+            {idPhase === 'passed' && occupationEnabled && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="occupation" className="text-[14px] font-semibold text-ink-hi">
+                  What is your occupation?{' '}
+                  <span className="text-[13px] font-normal text-ink-lo">(optional)</span>
+                </label>
+                <input
+                  id="occupation"
+                  type="text"
+                  value={occupation}
+                  placeholder="For example, electrician"
+                  onChange={(e) => setOccupation(e.target.value)}
+                  className="h-12 w-full px-4 bg-white border border-border rounded-md text-base text-ink-hi placeholder:text-ink-lo focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none transition-all"
+                />
+                <p className="text-[13.5px] text-ink-mid m-0">
+                  The venue asks this for its anti-money-laundering records. You can leave it blank.
+                </p>
+              </div>
+            )}
           </>
         )}
 
@@ -673,6 +781,69 @@ export default function VerifyPage() {
                   setFacePhase('capture');
                 }}
               />
+            )}
+          </>
+        )}
+
+        {step === 'secondary' && (
+          <>
+            <div className="space-y-2">
+              <h1 className="text-[20px] font-bold text-ink-hi m-0">Add your Medicare card</h1>
+              <p className="text-[15px] text-ink-mid m-0 leading-relaxed">
+                {secondaryPhase === 'failed'
+                  ? 'That card could not be verified. Check the photo is clear and try again.'
+                  : 'A second form of ID strengthens your verification. Take a clear photo of your Medicare card with all four corners visible.'}
+              </p>
+            </div>
+
+            {secondaryPhase === 'failed' && (
+              <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 space-y-1">
+                <p className="text-[15px] font-bold text-[#991b1b] m-0 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  We could not verify that card
+                </p>
+                <p className="text-[13.5px] text-ink-mid m-0">
+                  This can happen if the photo was blurry, or the details do not match Medicare
+                  records.
+                </p>
+              </div>
+            )}
+
+            {secondaryPhase === 'checking' ? (
+              <Checking message="Checking your Medicare card..." />
+            ) : secondaryPhase === 'passed' ? (
+              <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-200 flex items-center gap-2.5">
+                <Check className="w-4 h-4 text-[#0d9488] stroke-[3] flex-shrink-0" />
+                <span className="text-[14.5px] font-bold text-ink-hi">
+                  Your Medicare card has been verified.
+                </span>
+              </div>
+            ) : (
+              <>
+                <CaptureTile
+                  id="secondaryCapture"
+                  facing="environment"
+                  title="Photograph your Medicare card"
+                  hint="Lay it flat, avoid glare, and keep all four corners in frame"
+                  previewUrl={secondaryPreview}
+                  onCapture={(file) => {
+                    setPreview(setSecondaryPreview, secondaryPreview, file);
+                    setSecondaryPhase('captured');
+                  }}
+                />
+                {secondaryPreview && (
+                  <>
+                    <p className="text-[13px] font-semibold text-ink-mid m-0">
+                      Check these details match your card
+                    </p>
+                    <div className="divide-y divide-[#eceef2]">
+                      {secondaryExtracted.map((row) => (
+                        <DetailRow key={row.label} label={row.label} value={row.value} mono={row.mono} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </>
         )}
@@ -818,9 +989,25 @@ export default function VerifyPage() {
                   <DetailRow key={row.label} label={row.label} value={row.value} mono={row.mono} />
                 ))}
                 <DetailRow label="Face photo" value="Matched" />
+                {occupationEnabled && (
+                  <DetailRow label="Occupation" value={occupation.trim() || 'Not provided'} />
+                )}
               </div>
             </div>
 
+            {linkType.includesSecondary && (
+              <div>
+                <h2 className="text-[13px] font-semibold text-ink-mid m-0 pb-1 pt-2">Your secondary ID</h2>
+                <div className="divide-y divide-[#eceef2]">
+                  <DetailRow label="Document" value={DOC_LABELS.medicare} />
+                  {secondaryExtracted.map((row) => (
+                    <DetailRow key={row.label} label={row.label} value={row.value} mono={row.mono} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {linkType.includesBank && (
             <div>
               <h2 className="text-[13px] font-semibold text-ink-mid m-0 pb-1 pt-2">Your bank account</h2>
               <div className="divide-y divide-[#eceef2]">
@@ -844,8 +1031,9 @@ export default function VerifyPage() {
                 </div>
               </div>
             </div>
+            )}
 
-            {copResult === 'noMatch' && (
+            {linkType.includesBank && copResult === 'noMatch' && (
               <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200">
                 <p className="text-[13.5px] text-ink-mid m-0">
                   Because your account name could not be matched, a staff member will review this
@@ -946,10 +1134,29 @@ export default function VerifyPage() {
           <Button
             size="lg"
             disabled={!facePreview || facePhase === 'checking'}
-            onClick={facePhase === 'passed' ? () => setStep('bank') : handleRunFaceCheck}
+            onClick={facePhase === 'passed' ? () => setStep(stageAfter('face')) : handleRunFaceCheck}
             className="w-full h-12 text-[16px] font-semibold"
           >
             {facePhase === 'failed' ? 'Try again' : 'Continue'}
+          </Button>
+        )}
+
+        {step === 'secondary' && (
+          <Button
+            size="lg"
+            disabled={!secondaryPreview || secondaryPhase === 'checking'}
+            onClick={
+              secondaryPhase === 'passed'
+                ? () => setStep(stageAfter('secondary'))
+                : handleRunSecondaryCheck
+            }
+            className="w-full h-12 text-[16px] font-semibold"
+          >
+            {secondaryPhase === 'passed'
+              ? 'Continue'
+              : secondaryPhase === 'failed'
+              ? 'Try again'
+              : 'Verify my card'}
           </Button>
         )}
 
@@ -958,7 +1165,7 @@ export default function VerifyPage() {
             {bankPhase === 'result' && (copResult === 'match' || copResult === 'closeMatch' || copExhausted) ? (
               <Button
                 size="lg"
-                onClick={() => setStep('review')}
+                onClick={() => setStep(stageAfter('bank'))}
                 className="w-full h-12 text-[16px] font-semibold"
               >
                 Continue
@@ -988,8 +1195,9 @@ export default function VerifyPage() {
             <button
               type="button"
               onClick={() => {
-                setBankPhase('form');
-                setStep('bank');
+                const previous = stageBefore('review');
+                if (previous === 'bank') setBankPhase('form');
+                setStep(previous);
               }}
               className="w-full inline-flex items-center justify-center gap-1.5 text-[13px] font-semibold text-ink-mid hover:text-ink-hi underline cursor-pointer py-1"
             >

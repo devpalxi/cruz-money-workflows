@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check } from 'lucide-react';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
+import { getPatronCoverage } from '@/lib/verificationLink';
 
 export const COLLECTOR_STEPS = [
   { step: 1, title: 'New payout details', path: '/collector/payout-details' },
@@ -18,12 +19,13 @@ export const COLLECTOR_STEPS = [
 ];
 
 export default function Stepper({ currentStep = 1, completedThrough, className = '' }) {
-  // Bank account and Cheque details always stay in the list - only the
-  // method actually picked on the first step is skipped, not the step
-  // itself, so both are always visible and marked "not required" when they
-  // don't apply. `null` means the disbursement method hasn't been read yet.
+  // Cheque details stays in the list whether or not it applies, marked "not
+  // required" when it doesn't. Bank account is different: a small cash-only
+  // payout has no bank step at all, so it is dropped from the list rather
+  // than shown greyed out. `null` means the form hasn't been read yet.
   const [disbursementMethod, setDisbursementMethod] = useState(null);
-  const [verificationMode, setVerificationMode] = useState('manual');
+  const [showsBankStep, setShowsBankStep] = useState(true);
+  const [patronCoverage, setPatronCoverage] = useState({ id: false, secondary: false, bank: false });
 
   // Re-read on every route change: this component lives in the flow layout,
   // which persists across client-side navigation, so a mount-only read would
@@ -34,24 +36,28 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
-      setVerificationMode(saved.verificationMode || 'manual');
+      setShowsBankStep(needsBankStep(saved));
+      setPatronCoverage(getPatronCoverage(saved));
     } catch (e) {
       setDisbursementMethod('');
     }
   }, [pathname]);
 
   const { hasBank, hasCheque } = getDisbursementFlags(disbursementMethod);
+  const steps = showsBankStep
+    ? COLLECTOR_STEPS
+    : COLLECTOR_STEPS.filter((s) => s.path !== '/collector/bank-account');
 
-  // Steps the patron is completing on their own phone. Cheque details stay
-  // with staff either way - a cheque is handed over at the counter.
-  const PATRON_STEPS = [
-    '/collector/primary-id',
-    '/collector/secondary-id',
-    '/collector/bank-account',
-  ];
+  // Steps the patron is completing on their own phone, depending on the link
+  // type the collector chose. Cheque details stay with staff either way - a
+  // cheque is handed over at the counter.
+  const PATRON_STEP_COVERAGE = {
+    '/collector/primary-id': 'id',
+    '/collector/secondary-id': 'secondary',
+    '/collector/bank-account': 'bank',
+  };
 
-  const isWithPatron = (path) =>
-    verificationMode === 'link' && PATRON_STEPS.includes(path);
+  const isWithPatron = (path) => Boolean(patronCoverage[PATRON_STEP_COVERAGE[path]]);
 
   const isStepSkipped = (path) => {
     if (disbursementMethod === null) return false;
@@ -64,11 +70,11 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
   return (
     <nav aria-label="Payout creation steps" className={`w-[220px] flex-shrink-0 py-1 select-none ${className}`}>
       <ol className="space-y-0 relative list-none m-0 p-0">
-        {COLLECTOR_STEPS.map((item, index) => {
+        {steps.map((item, index) => {
           const skipped = isStepSkipped(item.path);
           const isDone = !skipped && (completedThrough !== undefined ? item.step <= completedThrough : item.step < currentStep);
           const isActive = !skipped && (completedThrough !== undefined ? false : item.step === currentStep);
-          const isLast = index === COLLECTOR_STEPS.length - 1;
+          const isLast = index === steps.length - 1;
 
           return (
             <li key={item.step} className="relative pb-6 last:pb-0 flex items-center gap-3">

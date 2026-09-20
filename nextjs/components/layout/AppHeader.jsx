@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, User } from 'lucide-react';
-import { getDisbursementFlags } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
 
 export default function AppHeader({ role = 'ADMIN' }) {
   const pathname = usePathname();
@@ -15,11 +15,15 @@ export default function AppHeader({ role = 'ADMIN' }) {
   // itself, so both are always visible and marked "not required" when they
   // don't apply. `null` means the disbursement method hasn't been read yet.
   const [disbursementMethod, setDisbursementMethod] = useState(null);
+  // A small cash-only payout has no Bank account step at all, so it comes out
+  // of the list rather than showing as "not required".
+  const [showsBankStep, setShowsBankStep] = useState(true);
 
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
+      setShowsBankStep(needsBankStep(saved));
     } catch (e) {
       setDisbursementMethod('');
     }
@@ -29,7 +33,6 @@ export default function AppHeader({ role = 'ADMIN' }) {
     { label: 'Dashboard', href: '/admin/dashboard' },
     { label: 'Machines', href: '/admin/machines' },
     { label: 'Users', href: '/admin/users' },
-    { label: 'Venue Blacklist', href: '/admin/blacklist' },
     { label: 'AUSTRAC Reports', href: '/admin/austrac' },
     { label: 'Billing', href: '/admin/billing' },
     { label: 'Venue settings', href: '/admin/venue-settings' },
@@ -53,11 +56,13 @@ export default function AppHeader({ role = 'ADMIN' }) {
     { title: 'Cheque details', href: '/collector/cheque-details' },
     { title: 'Summary', href: '/collector/summary' },
   ];
-  const collectorNavLinks = collectorSteps.map((item, idx) => ({
-    label: `${idx + 1}. ${item.title}`,
-    href: item.href,
-    skipped: isStepSkipped(item.href),
-  }));
+  const collectorNavLinks = collectorSteps
+    .filter((item) => showsBankStep || item.href !== '/collector/bank-account')
+    .map((item, idx) => ({
+      label: `${idx + 1}. ${item.title}`,
+      href: item.href,
+      skipped: isStepSkipped(item.href),
+    }));
 
   const approverNavLinks = [];
 
@@ -70,7 +75,6 @@ export default function AppHeader({ role = 'ADMIN' }) {
     { label: 'Machines', href: '/super-admin/machines' },
     { label: 'Users', href: '/super-admin/users' },
     { label: 'Payouts', href: '/super-admin/payouts' },
-    { label: 'Venue Blacklist', href: '/super-admin/blacklist' },
     { label: 'AUSTRAC / SMRs', href: '/super-admin/smr' },
     { label: 'Billing', href: '/super-admin/billing' },
     { label: 'Administration', href: '/super-admin/administration' },

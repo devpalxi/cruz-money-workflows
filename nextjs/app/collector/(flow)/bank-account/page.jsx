@@ -13,7 +13,7 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
-import { getDisbursementFlags, getStepBeforeBank } from '@/lib/payoutFlow';
+import { getDisbursementFlags, getStepBeforeBank, needsBankStep } from '@/lib/payoutFlow';
 
 const SCENARIOS = {
   match: {
@@ -68,7 +68,7 @@ function BankAccountContent() {
   const [bypassNotes, setBypassNotes] = useState('');
 
   const [disbursementMethod, setDisbursementMethod] = useState('');
-  const [secondaryDoc, setSecondaryDoc] = useState('none');
+  const [bankBackHref, setBankBackHref] = useState('/collector/secondary-id');
 
   useEffect(() => {
     try {
@@ -82,10 +82,13 @@ function BankAccountContent() {
       }
       if (saved.bsb) setBsb(saved.bsb);
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
-      if (saved.secondaryDoc) setSecondaryDoc(saved.secondaryDoc);
+      setBankBackHref(getStepBeforeBank(saved.secondaryDoc, saved));
       if (saved.disbursementMethod) setDisbursementMethod(saved.disbursementMethod);
+      // This payout has no bank step - reached by a stale link or a typed URL,
+      // so carry on to the step that follows instead of showing a dead page.
+      if (!needsBankStep(saved)) router.replace('/collector/cheque-details');
     } catch (e) {}
-  }, []);
+  }, [router]);
 
   const persist = (patch) => {
     try {
@@ -167,7 +170,7 @@ function BankAccountContent() {
       {/* Header Row */}
           <div className="flex items-center gap-6 mb-6">
             <Link
-              href={fromSummary ? '/collector/summary' : getStepBeforeBank(secondaryDoc)}
+              href={fromSummary ? '/collector/summary' : bankBackHref}
               className="inline-flex items-center gap-1.5 text-[15px] font-bold text-ink-hi hover:text-black transition-colors underline cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-brand" />

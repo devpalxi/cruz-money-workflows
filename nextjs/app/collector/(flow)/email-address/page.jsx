@@ -16,7 +16,20 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { findReturningPlayer } from '@/lib/mockReturningPlayers';
-import { createLink, buildVerifyUrl, formatExpiry } from '@/lib/verificationLink';
+import { initialVenues } from '@/lib/mockData';
+import {
+  createLink,
+  buildVerifyUrl,
+  formatExpiry,
+  getLink,
+  getLinkType,
+  getCollectorResumePath,
+  LINK_TYPES,
+  DEFAULT_LINK_TYPE,
+  LINK_STATUS,
+  LINK_STATUS_LABELS,
+} from '@/lib/verificationLink';
+import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
 
 const VERIFY_MODES = [
   { value: 'manual', label: 'Verify at the counter' },
@@ -65,7 +78,13 @@ function EmailAddressContent() {
   const [mobile, setMobile] = useState('');
   const [linkFieldsTouched, setLinkFieldsTouched] = useState(false);
 
+  const [linkType, setLinkType] = useState(DEFAULT_LINK_TYPE);
+  // Bank link types only make sense when money is actually going to a bank
+  // account. null until sessionStorage has been read.
+  const [hasBank, setHasBank] = useState(null);
+
   const [sentLink, setSentLink] = useState(null);
+  const [linkStatus, setLinkStatus] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,8 +109,26 @@ function EmailAddressContent() {
       if (saved.firstName) setFirstName(saved.firstName);
       if (saved.lastName) setLastName(saved.lastName);
       if (saved.mobile) setMobile(saved.mobile);
+
+      const bank = getDisbursementFlags(saved.disbursementMethod).hasBank;
+      setHasBank(bank);
+      const savedType = getLinkType(saved.linkType);
+      // A saved bank type is no longer valid once Bank transfer is deselected,
+      // so fall back to the fullest type that still applies.
+      setLinkType(!bank && savedType.includesBank ? 'id_secondary' : savedType.value);
     } catch (e) {}
   }, []);
+
+  // The patron's phone writes progress into localStorage. The storage event
+  // fires in this tab whenever another tab changes it, so Continue unlocks the
+  // moment the patron submits without polling.
+  useEffect(() => {
+    if (!sentLink) return undefined;
+    const read = () => setLinkStatus(getLink(sentLink.token)?.status || null);
+    read();
+    window.addEventListener('storage', read);
+    return () => window.removeEventListener('storage', read);
+  }, [sentLink]);
 
   const persist = (patch) => {
     try {
@@ -108,6 +145,11 @@ function EmailAddressContent() {
     }
   };
 
+  const handleLinkTypeChange = (value) => {
+    setLinkType(value);
+    persist({ linkType: value });
+  };
+
   const handleModeChange = (mode) => {
     setVerifyMode(mode);
     persist({ verificationMode: mode });
@@ -121,6 +163,11 @@ function EmailAddressContent() {
 
     const record = createLink({
       venue: form.venue || 'Riverside RSL Club',
+      // Carried so the patron's phone can read that venue's own CDD settings.
+      venueId:
+        form.venueId ||
+        initialVenues.find((v) => v.name === (form.venue || 'Riverside RSL Club'))?.id ||
+        'venue-riverside-rsl',
       payoutType: form.payoutType || 'EGM',
       machine: form.machine || '',
       winAmount: form.winAmount || DEFAULT_WIN_AMOUNT,
@@ -133,9 +180,11 @@ function EmailAddressContent() {
       email: email.trim(),
       membership: membership.trim(),
       mobile: cleanMobile,
+      linkType,
     });
 
     persist({
+      linkType,
       email: email.trim(),
       membership: membership.trim(),
       verificationMode: 'link',
@@ -146,6 +195,7 @@ function EmailAddressContent() {
     });
 
     setSentLink(record);
+    setLinkStatus(record.status);
     setCopied(false);
   };
 
@@ -194,6 +244,27 @@ function EmailAddressContent() {
 
   if (sentLink) {
     const verifyUrl = buildVerifyUrl(sentLink.token);
+    const sentType = getLinkType(sentLink.payout.linkType);
+    const resumePath = getCollectorResumePath(sentType.value, linkStatus, needsBankStep());
+    const isStaffAction = linkStatus === LINK_STATUS.STAFF_ACTION;
+
+    const handleContinue = () => {
+      if (!resumePath) return;
+      // A failed electronic ID hands verification back to the counter, so the
+      // rest of the flow runs manually and the link no longer covers any step.
+      if (isStaffAction) persist({ verificationMode: 'manual', verificationToken: null });
+      router.push(resumePath);
+    };
+
+    const patronCovers = [
+      'ID',
+      sentType.includesSecondary && 'secondary ID',
+      sentType.includesBank && 'bank details',
+    ].filter(Boolean);
+    const coversLabel =
+      patronCovers.length > 1
+        ? `${patronCovers.slice(0, -1).join(', ')} and ${patronCovers[patronCovers.length - 1]}`
+        : patronCovers[0];
     return (
       <div className="max-w-2xl mx-auto">
         <h1 className="text-xl sm:text-2xl font-bold text-ink-hi mb-6">Verification link sent</h1>
@@ -205,8 +276,8 @@ function EmailAddressContent() {
               Sent to {sentLink.payout.mobile}
             </p>
             <p className="text-[13.5px] text-ink-mid m-0">
-              {sentLink.payout.patronName} can now verify their identity and enter bank details on
-              their own phone. The link stops working at {formatExpiry(sentLink.expiresAt)}.
+              {sentLink.payout.patronName} can now complete their {coversLabel} on their own phone.
+              The link stops working at {formatExpiry(sentLink.expiresAt)}.
             </p>
           </div>
         </div>
@@ -216,9 +287,14 @@ function EmailAddressContent() {
             <h2 className="text-[13px] font-semibold text-ink-mid m-0">What happens next</h2>
             <ol className="text-[15px] text-ink-hi space-y-2 m-0 pl-5">
               <li>The patron scans their ID and takes a photo of their face.</li>
-              <li>They enter their bank details, which are checked against bank records.</li>
+              {sentType.includesSecondary && (
+                <li>They photograph their Medicare card as a secondary ID.</li>
+              )}
+              {sentType.includesBank && (
+                <li>They enter their bank details, which are checked against bank records.</li>
+              )}
               <li>They confirm everything and submit.</li>
-              <li>The payout then moves to approval.</li>
+              <li>You continue here with the steps they did not cover.</li>
             </ol>
           </div>
 
@@ -248,13 +324,34 @@ function EmailAddressContent() {
           </div>
         </Card>
 
-        <div className="mt-6">
+        <div className="mt-6 space-y-2">
+          {isStaffAction ? (
+            <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="text-[15px] font-bold text-[#991b1b] m-0">
+                  Patron could not be verified electronically
+                </p>
+                <p className="text-[13.5px] text-ink-mid m-0">
+                  Their documents failed both electronic checks. Continue to verify their ID in
+                  person at the counter.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[13.5px] text-ink-mid m-0 text-center">
+              {linkStatus === LINK_STATUS.COMPLETED
+                ? 'Patron verification complete.'
+                : `${LINK_STATUS_LABELS[linkStatus] || LINK_STATUS_LABELS[LINK_STATUS.SENT]}. You can continue once the patron submits.`}
+            </p>
+          )}
           <Button
             size="lg"
-            onClick={() => router.push('/collector/summary')}
+            disabled={!resumePath}
+            onClick={handleContinue}
             className="w-full h-12 text-[16px] font-semibold"
           >
-            Continue to summary
+            Continue
           </Button>
         </div>
       </div>
@@ -391,13 +488,47 @@ function EmailAddressContent() {
             <p className="text-[13.5px] text-ink-mid m-0">
               {verifyMode === 'manual'
                 ? 'You collect the ID and bank details here at the counter.'
-                : 'The patron completes ID and bank details on their own phone. You will skip those steps.'}
+                : 'The patron completes the chosen checks on their own phone. You will skip those steps.'}
             </p>
           </div>
 
           {/* Patron contact details, only needed when sending them a link */}
           {verifyMode === 'link' && (
             <div className="space-y-5 pt-1">
+              <div className="flex flex-col gap-2">
+                <span className="text-[14px] font-semibold text-ink-hi">
+                  What the patron completes <span className="text-red-500">*</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {LINK_TYPES.map((type) => {
+                    const isActive = linkType === type.value;
+                    const isDisabled = hasBank === false && type.includesBank;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => handleLinkTypeChange(type.value)}
+                        className={`h-12 px-3 rounded-lg text-[15px] text-left transition-colors ${
+                          isDisabled
+                            ? 'bg-slate-50 text-ink-lo ring-1 ring-inset ring-border cursor-not-allowed'
+                            : isActive
+                            ? 'bg-[#f0fdfa] text-[#0d9488] font-bold ring-1 ring-inset ring-[#0d9488] cursor-pointer'
+                            : 'bg-white text-[#627d98] hover:text-[#102a43] hover:bg-[#f8fafc] ring-1 ring-inset ring-[#cbd5e1] cursor-pointer'
+                        }`}
+                      >
+                        {type.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {hasBank === false && (
+                  <p className="text-[13.5px] text-ink-mid m-0">
+                    Bank transfer was not selected for this payout, so bank details are not needed.
+                  </p>
+                )}
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="firstName" className="text-[14px] font-semibold text-ink-hi">
                   Patron first name <span className="text-red-500">*</span>

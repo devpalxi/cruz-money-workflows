@@ -21,6 +21,26 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Checkbox from '@/components/ui/Checkbox';
+import { isOccupationCaptureEnabled } from '@/lib/venueCompliance';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+import { initialBlacklist } from '@/lib/mockData';
+
+// Prototype preview switch for the exclusion register. The real check below
+// screens the name and date of birth actually entered, which is the strongest
+// match the register supports - these presets just make each outcome reachable
+// without having to remember which seeded patron to type.
+const EXCLUSION_PROTO_OPTIONS = [
+  { value: 'none', label: 'Exclusion: None' },
+  { value: 'self', label: 'Exclusion: Self-exclusion' },
+  { value: 'venueBan', label: 'Exclusion: Venue ban' },
+];
+
+const EXCLUSION_PROTO_NAMES = {
+  self: 'Marcus Vance',
+  venueBan: 'Chloe Gallagher',
+};
+
 
 function LicenceDetailContent() {
   const router = useRouter();
@@ -41,6 +61,11 @@ function LicenceDetailContent() {
   const [middleName, setMiddleName] = useState('Jane');
   const [lastName, setLastName] = useState('Jenkins');
   const [dob, setDob] = useState('14/08/1988');
+  const [occupation, setOccupation] = useState('');
+  // Venue-level setting, so the field only appears for venues that have adopted
+  // the initial CDD rules. Read after mount because it lives in localStorage.
+  const [occupationEnabled, setOccupationEnabled] = useState(false);
+  const [exclusionProtoState, setExclusionProtoState] = useState('none');
 
   // Subpage 2: Address
   const [addressSearch, setAddressSearch] = useState('');
@@ -87,6 +112,8 @@ function LicenceDetailContent() {
       if (saved.middleName) setMiddleName(saved.middleName);
       if (saved.lastName) setLastName(saved.lastName);
       if (saved.dob) setDob(saved.dob);
+      if (saved.occupation) setOccupation(saved.occupation);
+      setOccupationEnabled(isOccupationCaptureEnabled(saved.venueId));
       if (saved.addressSearch && saved.addressSearch.trim()) {
         setAddressSearch(saved.addressSearch);
         if (saved.unitNumber !== undefined) setUnitNumber(saved.unitNumber);
@@ -132,6 +159,16 @@ function LicenceDetailContent() {
 
   // Subpage validation
   const isPage0Valid = state && licNumber.trim() !== '' && cardNumber.trim() !== '';
+  // This is the first point in the flow where both halves of a register match
+  // exist, so it is the strongest check the collector flow can make.
+  const exclusionScreening =
+    exclusionProtoState !== 'none'
+      ? screenPatron({ name: EXCLUSION_PROTO_NAMES[exclusionProtoState] }, initialBlacklist)
+      : screenPatron(
+          { name: [firstName, lastName].filter(Boolean).join(' '), dob },
+          initialBlacklist
+        );
+
   const isPage1Valid = firstName.trim() !== '' && lastName.trim() !== '' && dob.trim() !== '';
   const isPage2Valid = showAddressFields && streetNumber.trim() !== '' && streetName.trim() !== '' && suburb.trim() !== '' && postcode.trim() !== '';
 
@@ -140,7 +177,7 @@ function LicenceDetailContent() {
       persist({ state, licNumber, cardNumber });
       setSubPage(1);
     } else if (subPage === 1 && isPage1Valid) {
-      persist({ firstName, middleName, lastName, dob });
+      persist({ firstName, middleName, lastName, dob, occupation: occupation.trim() });
       setSubPage(2);
     } else if (subPage === 2 && isPage2Valid) {
       persist({ unitNumber, streetNumber, streetName, suburb, addrState, postcode });
@@ -331,6 +368,9 @@ function LicenceDetailContent() {
                   Personal details
                 </h3>
 
+                <ExclusionAlert screening={exclusionScreening} />
+
+
                 <div className="space-y-5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[14px] font-semibold text-ink-hi flex items-center gap-1">
@@ -388,6 +428,24 @@ function LicenceDetailContent() {
                       <Calendar className="w-5 h-5 text-ink-lo absolute right-4 pointer-events-none" />
                     </div>
                   </div>
+
+                  {occupationEnabled && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[14px] font-semibold text-ink-hi flex items-center gap-1">
+                        Occupation <span className="text-[13px] font-normal text-ink-lo">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={occupation}
+                        placeholder="What does the patron do for work?"
+                        onChange={(e) => setOccupation(e.target.value)}
+                        className="h-12 px-4 bg-white border border-border rounded-md text-base text-ink-hi focus:border-ink-hi focus:ring-2 focus:ring-slate-200 outline-none"
+                      />
+                      <p className="text-[13px] text-ink-mid m-0">
+                        Self-reported. Kept on file in case enhanced due diligence is needed later.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -838,6 +896,28 @@ function LicenceDetailContent() {
               </Button>
             </div>
           )}
+
+          {/* Exclusion register scenario */}
+          <div className="mt-3 flex items-center gap-2 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">
+            <span className="font-semibold text-ink-mid flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-brand" />
+              Prototype preview only:
+            </span>
+            {EXCLUSION_PROTO_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setExclusionProtoState(option.value)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                  exclusionProtoState === option.value
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-slate-100 text-ink-mid hover:bg-slate-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
 
           {/* Prototype Simulation Toggle */}
           <div className="mt-8 flex items-center gap-3 p-3 rounded-lg border border-dashed border-border bg-surface-card flex-wrap text-xs">

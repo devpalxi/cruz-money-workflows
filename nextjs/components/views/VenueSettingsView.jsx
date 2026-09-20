@@ -34,6 +34,7 @@ import { initialVenues, initialClients, initialUsers, initialMachines } from '@/
 import { DEFAULT_VENUE_RISK_CONFIG } from '@/lib/riskEngine';
 import { STATE_CASH_LIMITS, STATE_LABELS } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, saveVenueIntegrationSettings } from '@/lib/mockMembershipDatabase';
+import { getVenueComplianceCapture, saveVenueComplianceCapture } from '@/lib/venueCompliance';
 import OcrDocketMappingView from './OcrDocketMappingView';
 
 // Default fields analyzed directly from public/dummy-docket.png
@@ -152,6 +153,7 @@ export default function VenueSettingsView({
         ...DEFAULT_VENUE_RISK_CONFIG,
       },
       membershipIntegration: getVenueIntegrationSettings(matchedVenue.id),
+      complianceCapture: getVenueComplianceCapture(matchedVenue.id),
       // Per-payout API call ceiling caps
       primaryIdvCalls: 3,
       primaryIdvRetries: 2,
@@ -361,6 +363,7 @@ export default function VenueSettingsView({
     }
 
     saveVenueIntegrationSettings(formData.venueId || venueId, formData.membershipIntegration);
+    saveVenueComplianceCapture(formData.venueId || venueId, formData.complianceCapture);
     ocrMappingRef.current?.commit();
     setSavedData(formData);
     setIsEditing(false);
@@ -1202,6 +1205,47 @@ export default function VenueSettingsView({
                       </>
                     )}
                   </div>
+
+                  {/* Initial CDD capture - occupation */}
+                  <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="text-[14px] font-bold text-[#0f172a] block">
+                          Capture patron occupation
+                        </label>
+                        <p className="text-[13px] text-slate-500 pt-1 mb-0 leading-relaxed max-w-2xl">
+                          Asks the patron for their occupation while their ID details are collected,
+                          and keeps it on file for any enhanced customer due diligence carried out
+                          later. Self-reported and optional, so a blank answer never blocks a payout.
+                          Leave this off until your venue adopts the initial CDD rules replacing IDV
+                          during the March 2026 to March 2029 transition.
+                        </p>
+                      </div>
+                      {isEditing ? (
+                        <SegmentedBooleanToggle
+                          value={formData.complianceCapture?.occupationCaptureEnabled ?? false}
+                          onChange={(val) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              complianceCapture: {
+                                ...(prev.complianceCapture || {}),
+                                occupationCaptureEnabled: val,
+                              },
+                            }));
+                          }}
+                          falseLabel="Off"
+                          trueLabel="On"
+                        />
+                      ) : (
+                        <StatusPill
+                          variant={savedData.complianceCapture?.occupationCaptureEnabled ? 'pass' : 'neutral'}
+                          className="normal-case font-semibold shrink-0"
+                        >
+                          {savedData.complianceCapture?.occupationCaptureEnabled ? 'Collected' : 'Not collected'}
+                        </StatusPill>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1881,6 +1925,7 @@ export default function VenueSettingsView({
                       { key: 'blacklist', label: 'Venue Blacklist Exclusion', shortDesc: 'Immediate match against active exclusion lists (High)' },
                       { key: 'cashRatio', label: 'Cash Disbursement Ratio', shortDesc: 'Cash ratio > 80% on payouts over $1,000' },
                       { key: 'documentCountry', label: 'Foreign Document Jurisdiction', shortDesc: 'Non-Australian passport / overseas identity (Medium)' },
+                      { key: 'foreignPayment', label: 'Foreign Payment', shortDesc: 'Payout directed outside Australia — always requires a second approver' },
                     ].map((signal) => {
                       const isEnabled = isEditing
                         ? formData.riskConfig?.enabledSignals?.[signal.key] !== false
