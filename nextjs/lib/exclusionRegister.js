@@ -59,6 +59,24 @@ export function formatRegisterDate(value) {
   });
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// A date input speaks "2027-01-12"; the register writes "12 Jan 2027". Built
+// from the parts rather than through Date so a timezone can't shift the day.
+export function isoToRegisterDate(iso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  if (!match) return null;
+  return `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
+}
+
+export function registerDateToIso(value) {
+  const parsed = parseRegisterDate(value);
+  if (parsed === null) return '';
+  const d = new Date(parsed);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 // An expiry that has already passed releases the payout on its own. Without
 // this a stale entry nobody remembered to close would strand the money
 // indefinitely.

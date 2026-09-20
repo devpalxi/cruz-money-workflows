@@ -2257,9 +2257,15 @@ export default function ApproverScenarioPage() {
     verification: false,
     history: false,
     collector: false,
+    firstApproval: false,
   });
 
-  const isAllExpanded = Object.values(openSections).every(Boolean);
+  // First approval only exists on a second approver's screen, so it is left
+  // out of the "all expanded" check elsewhere - otherwise Expand all could
+  // never read as complete on a payout that doesn't have that section.
+  const isAllExpanded = Object.entries(openSections)
+    .filter(([key]) => key !== 'firstApproval' || isSecondApprover)
+    .every(([, open]) => open);
 
   const toggleAll = () => {
     const next = !isAllExpanded;
@@ -2271,6 +2277,7 @@ export default function ApproverScenarioPage() {
       verification: next,
       history: next,
       collector: next,
+      firstApproval: next,
     });
   };
 
@@ -2487,38 +2494,6 @@ export default function ApproverScenarioPage() {
                 </span>
               </div>
               <p className="text-[13px] text-[#475569] m-0 mt-1">{computedRisk.routingReason}</p>
-            </div>
-          )}
-
-          {/* First approval - the second approver reviews the payout and the
-              call already made on it, so both are on the page */}
-          {isSecondApprover && (
-            <div className="mb-5 bg-white border border-[#e2e8f0] rounded-[8px] px-4 py-3.5">
-              <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-[#0d9488] m-0 mb-2.5">
-                First approval
-              </h2>
-              <div className="divide-y divide-[#eceef2]">
-                <div className="flex items-baseline justify-between gap-4 py-2">
-                  <span className="text-[13.5px] text-[#475569]">Approved by</span>
-                  <span className="text-[13.5px] font-bold text-[#0f172a]">
-                    {firstApproval.name} · {firstApproval.role}
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between gap-4 py-2">
-                  <span className="text-[13.5px] text-[#475569]">Approved at</span>
-                  <span className="text-[13.5px] font-mono text-[#0f172a]">{firstApproval.timestamp}</span>
-                </div>
-                <div className="flex items-baseline justify-between gap-4 py-2">
-                  <span className="text-[13.5px] text-[#475569]">Risk determination</span>
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-[#fffbeb] text-[#78350f] border border-[#fde68a]">
-                    {firstApproval.determination}
-                  </span>
-                </div>
-                <div className="py-2">
-                  <span className="text-[13.5px] text-[#475569] block mb-1">Notes</span>
-                  <p className="text-[13.5px] text-[#0f172a] m-0">{firstApproval.notes}</p>
-                </div>
-              </div>
             </div>
           )}
 
@@ -2830,6 +2805,40 @@ export default function ApproverScenarioPage() {
                   </div>
                 </div>
               </AccordionItem>
+
+              {/* 8. First approval - the second approver reviews the payout and
+                  the call already made on it, so both are on the page */}
+              {isSecondApprover && (
+                <AccordionItem
+                  isOpen={openSections.firstApproval}
+                  onToggle={() => toggleSection('firstApproval')}
+                  icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[15px] h-[15px]"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" /></svg>}
+                  title="First approval"
+                >
+                  <div className="divide-y divide-[#eceef2]">
+                    <div className="flex items-baseline justify-between gap-4 py-2.5">
+                      <span className="text-[15px] text-[#475569]">Approved by</span>
+                      <span className="text-[16px] font-bold text-[#0f172a]">
+                        {firstApproval.name} · {firstApproval.role}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 py-2.5">
+                      <span className="text-[15px] text-[#475569]">Approved at</span>
+                      <span className="text-[15px] font-mono text-[#0f172a]">{firstApproval.timestamp}</span>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-4 py-2.5">
+                      <span className="text-[15px] text-[#475569]">Risk determination</span>
+                      <span className="inline-flex items-center rounded-full px-3 py-0.5 text-[12px] font-bold bg-[#fffbeb] text-[#78350f] border border-[#fde68a]">
+                        {firstApproval.determination}
+                      </span>
+                    </div>
+                    <div className="py-2.5">
+                      <span className="text-[15px] text-[#475569] block mb-1">Notes</span>
+                      <p className="text-[15px] text-[#0f172a] m-0 leading-relaxed">{firstApproval.notes}</p>
+                    </div>
+                  </div>
+                </AccordionItem>
+              )}
 
             </div>
           </div>
