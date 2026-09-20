@@ -9,7 +9,7 @@
 // whether to show its real form or the skip message.
 //
 // Bank account is the exception: needsBankStep below drops it from the flow
-// entirely for a small cash-only payout.
+// entirely when no bank transfer is used and the win is under the AML threshold.
 
 import { getPatronCoverage } from './verificationLink';
 import { computeComplianceGate } from './complianceGate';
@@ -32,17 +32,16 @@ function rawAmount(value) {
 /**
  * Whether the Bank account step belongs in this payout's flow.
  *
- * A cash-only payout under the AML threshold has no account to collect: no
- * money moves electronically, so there is nothing for CoP to check and
- * nothing the record needs. The step is removed rather than shown as "not
- * required". At or above the threshold the account is still collected even
- * when the whole win is handed over in cash, because the AUSTRAC record wants
- * it. Every other combination keeps the step as it always was.
+ * The account is only needed when money moves electronically (bank transfer),
+ * so CoP has something to check. A payout with no bank transfer (cash only,
+ * cheque only, or cash plus cheque) under the AML threshold has no account to
+ * collect, so the step is removed rather than shown as "not required". At or
+ * above the threshold the account is still collected, because the AUSTRAC
+ * record wants it. An empty method keeps the step as it always was.
  */
 export function needsBankStep(form = readPayoutForm()) {
   const { hasCash, hasBank, hasCheque } = getDisbursementFlags(form.disbursementMethod);
-  const cashOnly = hasCash && !hasBank && !hasCheque;
-  if (!cashOnly) return true;
+  if (hasBank || !(hasCash || hasCheque)) return true;
 
   const { isAMLThresholdMet } = computeComplianceGate(rawAmount(form.winAmount), {
     venueState: form.venueState,
