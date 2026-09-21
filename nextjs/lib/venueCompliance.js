@@ -31,6 +31,12 @@ export const DEFAULT_COMPLIANCE_CAPTURE = {
   // Short code that starts the bank statement description. Null falls back to
   // the seeded code for the demo venues (see lib/statementReference.js).
   statementReference: null,
+  // Duplicate payee alerts: alert when this payout plus earlier ones for the
+  // same person, account or address reach these counts. Off-venue matches count
+  // only inside the same client group.
+  duplicateDailyThreshold: 2,
+  duplicateMonthlyThreshold: 3,
+  duplicateAcrossVenues: true,
 };
 
 function storageKey(venueId) {

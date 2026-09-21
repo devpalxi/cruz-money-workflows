@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
+import { runDuplicateDemo } from '@/lib/duplicatePayee';
 import { formatOccupation } from '@/lib/venueCompliance';
 import {
   EXCLUSION_TYPES,
@@ -1074,6 +1075,26 @@ SCENARIOS['returning-winner'] = {
   riskSignals: { ...SKIPPED_ID_SIGNALS, transactionValue: 7500.00 },
 };
 
+// Duplicate payee presets: the same payout reviewed after a repeat of the same
+// person in 24 hours, the same bank account across venues in 30 days, and one
+// bank account used under several names. The check runs on fixed demo history
+// (see lib/duplicatePayee.js) so each case reads the same every time.
+const DUPLICATE_PRESETS = [
+  ['duplicate-person', 'person', '17. Duplicate payee (same person)', '#596'],
+  ['duplicate-account', 'account', '18. Duplicate payee (same account)', '#597'],
+  ['duplicate-shared', 'shared', '19. Duplicate payee (shared account)', '#598'],
+];
+DUPLICATE_PRESETS.forEach(([key, kind, label, payoutNum]) => {
+  const duplicateCheck = runDuplicateDemo(kind);
+  SCENARIOS[key] = {
+    ...SCENARIOS['multi-id-pass'],
+    label,
+    payoutNum,
+    duplicateCheck,
+    riskSignals: { ...SCENARIOS['multi-id-pass'].riskSignals, duplicatePayee: duplicateCheck },
+  };
+});
+
 // Exclusion register presets. Kept separate from the blacklist-match preset so
 // each one tests a single thing: the self-exclusion preset proves an Approver
 // cannot release the funds, the venue-ban preset proves they can proceed once
@@ -1249,6 +1270,43 @@ function Pill({ variant, children, onClick }) {
     >
       {children}
     </span>
+  );
+}
+
+// Shows what the duplicate payee check found: each alert with the earlier
+// payouts behind it, or a clear result.
+function DuplicatePayeeSection({ check }) {
+  return (
+    <>
+      <SectionHead>Duplicate payee check</SectionHead>
+      <div className="flex flex-col mb-2">
+        {check.hasAlert ? (
+          check.alerts.map((alert, i) => (
+            <div key={i} className="p-[11px_14px]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[16px] font-bold text-[#0f172a]">{alert.text}</span>
+                <Pill variant={alert.severity === 'high' ? 'fail' : 'warn'}>
+                  {alert.severity === 'high' ? 'High alert' : 'Alert'}
+                </Pill>
+              </div>
+              <ul className="list-none m-0 mt-1.5 p-0 text-[14px] text-[#475569] space-y-0.5">
+                {alert.matches.map((m) => (
+                  <li key={m.id}>
+                    #{m.id}, {m.created}, {m.venue}, <span className="font-mono">${Number(m.amount).toLocaleString('en-AU')}</span>
+                    {alert.field === 'account_shared' ? `, ${m.accountName}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <div className="flex items-center justify-between p-[11px_14px]">
+            <span className="text-[16px] font-bold text-[#0f172a]">Repeat payee check</span>
+            <Pill variant="pass">No repeat found</Pill>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -2796,6 +2854,7 @@ export default function ApproverScenarioPage() {
                     {scenario.amlNotice}
                   </div>
                 )}
+                {scenario.duplicateCheck && <DuplicatePayeeSection check={scenario.duplicateCheck} />}
               </AccordionItem>
 
               {/* 6. Identity verification (IDV) history */}

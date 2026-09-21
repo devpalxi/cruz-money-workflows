@@ -25,6 +25,7 @@ export const DEFAULT_VENUE_RISK_CONFIG = {
     cashRatio: true,
     documentCountry: true,
     foreignPayment: true,
+    duplicatePayee: true,
   },
   // Conditions that require a second approver whatever the risk rating works
   // out to. Kept separate from the rating on purpose: a foreign payment wants
@@ -77,6 +78,7 @@ export function computeRisk(signals = {}, customConfig = {}) {
     cashRatio = 0,              // 0.0 to 1.0 (cashAmount / totalAmount)
     blacklistMatch = false,
     foreignPayment = false,
+    duplicatePayee = null,      // result of findDuplicatePayees, or null when not checked
     manualKycType = null,
     sessionTime = null,
     isPDocketImage = true,
@@ -291,6 +293,20 @@ export function computeRisk(signals = {}, customConfig = {}) {
       severity: 'medium',
       category: 'Jurisdiction',
       detail: 'Payout is directed outside Australia and carries cross-border AML exposure.'
+    });
+  }
+
+  // 10. Duplicate payee: the same person, account or address paid repeatedly.
+  // One account under several names is High, an ordinary repeat is Medium.
+  if (config.enabledSignals.duplicatePayee && duplicatePayee && duplicatePayee.hasAlert) {
+    const isHigh = duplicatePayee.severity === 'high';
+    score += isHigh ? 60 : 30;
+    triggers.push({
+      id: 'duplicate-payee',
+      label: 'Duplicate payee',
+      severity: isHigh ? 'high' : 'medium',
+      category: 'Repeat activity',
+      detail: duplicatePayee.summary
     });
   }
 

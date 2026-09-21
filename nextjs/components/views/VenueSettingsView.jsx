@@ -350,6 +350,16 @@ export default function VenueSettingsView({
       return;
     }
 
+    const dupCapture = formData.complianceCapture || {};
+    if (
+      !(Number.isInteger(dupCapture.duplicateDailyThreshold) && dupCapture.duplicateDailyThreshold >= 2) ||
+      !(Number.isInteger(dupCapture.duplicateMonthlyThreshold) && dupCapture.duplicateMonthlyThreshold >= 2)
+    ) {
+      showToast('Duplicate payee thresholds must be whole numbers of 2 or more.');
+      setActiveTab('risk_routing');
+      return;
+    }
+
     const statementRefError = validateStatementRef(formData.statementReference, formData.venueId || venueId);
     if (statementRefError) {
       showToast(statementRefError);
@@ -2041,6 +2051,91 @@ export default function VenueSettingsView({
                   </div>
                 </div>
 
+                {/* Duplicate payee alert thresholds */}
+                <div className="space-y-4 pt-6 border-t border-[#e2e8f0]">
+                  <div>
+                    <label className="text-[14px] font-bold text-[#0f172a] block">
+                      Duplicate payee alerts
+                    </label>
+                    <span className="text-[13px] text-slate-400 block mt-0.5">
+                      Alert the approver when the same person, bank account or address is paid again. Counts include the payout being reviewed. Alerts warn only and never block a payout.
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[14px] font-bold text-[#0f172a] block">
+                        Alert at this many payouts in 24 hours
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          min="2"
+                          step="1"
+                          value={formData.complianceCapture?.duplicateDailyThreshold ?? 2}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            complianceCapture: { ...(formData.complianceCapture || {}), duplicateDailyThreshold: Number(e.target.value) }
+                          })}
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                      ) : (
+                        <div className="text-[14.5px] font-mono font-normal text-slate-500 min-h-[28px] mt-1">
+                          {savedData.complianceCapture?.duplicateDailyThreshold ?? 2}
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[14px] font-bold text-[#0f172a] block">
+                        Alert at this many payouts in 30 days
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          min="2"
+                          step="1"
+                          value={formData.complianceCapture?.duplicateMonthlyThreshold ?? 3}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            complianceCapture: { ...(formData.complianceCapture || {}), duplicateMonthlyThreshold: Number(e.target.value) }
+                          })}
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                      ) : (
+                        <div className="text-[14.5px] font-mono font-normal text-slate-500 min-h-[28px] mt-1">
+                          {savedData.complianceCapture?.duplicateMonthlyThreshold ?? 3}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[14px] font-bold text-[#0f172a] block">Include other venues in the client group</span>
+                      <span className="text-[13px] text-slate-500 block mt-0.5">
+                        Off means only payouts at this venue are compared.
+                      </span>
+                    </div>
+                    {isEditing ? (
+                      <SegmentedBooleanToggle
+                        value={formData.complianceCapture?.duplicateAcrossVenues ?? true}
+                        onChange={(val) => setFormData({
+                          ...formData,
+                          complianceCapture: { ...(formData.complianceCapture || {}), duplicateAcrossVenues: val }
+                        })}
+                        trueLabel="On"
+                        falseLabel="Off"
+                      />
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                        (savedData.complianceCapture?.duplicateAcrossVenues ?? true)
+                          ? 'bg-[#ecfdf5] text-[#065f46] border-[#a7f3d0]'
+                          : 'bg-[#f8fafc] text-[#64748b] border-[#cbd5e1]'
+                      }`}>
+                        {(savedData.complianceCapture?.duplicateAcrossVenues ?? true) ? 'On' : 'Off'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {/* 4. Active Risk Engine Signals (2-Column Clean Grid) */}
                 <div className="space-y-4 pt-6 border-t border-[#e2e8f0]">
                   <div>
@@ -2062,6 +2157,7 @@ export default function VenueSettingsView({
                       { key: 'blacklist', label: 'Venue Blacklist Exclusion', shortDesc: 'Immediate match against active exclusion lists (High)' },
                       { key: 'cashRatio', label: 'Cash Disbursement Ratio', shortDesc: 'Cash ratio > 80% on payouts over $1,000' },
                       { key: 'documentCountry', label: 'Foreign Document Jurisdiction', shortDesc: 'Non-Australian passport / overseas identity (Medium)' },
+                      { key: 'duplicatePayee', label: 'Duplicate Payee', shortDesc: 'Same person, bank account or address paid again (Medium), one account under several names (High)' },
                       { key: 'foreignPayment', label: 'Foreign Payment', shortDesc: 'Payout directed outside Australia — always requires a second approver' },
                     ].map((signal) => {
                       const isEnabled = isEditing
