@@ -18,6 +18,8 @@ import {
 import AdminShell from '@/components/layout/AdminShell';
 import SegmentedBooleanToggle from '@/components/ui/SegmentedBooleanToggle';
 import VenueSettingsView from '@/components/views/VenueSettingsView';
+import { normaliseStatementRef, validateStatementRef, buildStatementDescription, STATEMENT_REF_MIN, STATEMENT_REF_MAX } from '@/lib/statementReference';
+import { saveVenueComplianceCapture } from '@/lib/venueCompliance';
 import { initialVenues, initialClients, initialUsers, initialMachines } from '@/lib/mockData';
 
 function SuperAdminVenuesContent() {
@@ -86,6 +88,7 @@ function SuperAdminVenuesContent() {
   const [createForm, setCreateForm] = useState({
     name: '',
     shortName: '',
+    statementReference: '',
     clientId: initialClients[0]?.id || 'client-riverside',
     venueEmail: 'admin@riversidersl.com.au',
     abn: '55 123 456 789',
@@ -140,12 +143,18 @@ function SuperAdminVenuesContent() {
       return;
     }
 
+    const newVenueId = `venue-${Date.now()}`;
+    const statementRefError = validateStatementRef(createForm.statementReference, newVenueId);
+    if (statementRefError) {
+      showToast(statementRefError);
+      return;
+    }
+
     if (createForm.disbursementMethods.includes('bank_transfer') && createForm.disbursementMethods.includes('cheque')) {
       setCreateDisbursementError('Bank transfer and cheque cannot be enabled together.');
       return;
     }
 
-    const newVenueId = `venue-${Date.now()}`;
     const newVenue = {
       id: newVenueId,
       clientId: createForm.clientId,
@@ -164,6 +173,7 @@ function SuperAdminVenuesContent() {
       users: 1
     };
 
+    saveVenueComplianceCapture(newVenueId, { statementReference: createForm.statementReference });
     setVenuesList([newVenue, ...venuesList]);
     showToast('Venue record created successfully.');
     setTimeout(() => router.push(`/super-admin/venue?id=${newVenueId}`), 500);
@@ -404,6 +414,22 @@ function SuperAdminVenuesContent() {
                     className="w-full h-10 px-3 bg-white border border-[#cbd5e1] rounded-md text-[13.5px] text-[#0f172a] focus:border-[#0d9488] outline-none"
                   />
                   <span className="text-[11px] text-[#64748b] mt-1 block">Maximum 20 characters.</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#475569] mb-1.5">Statement reference <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    maxLength={STATEMENT_REF_MAX}
+                    value={createForm.statementReference}
+                    onChange={(e) => setCreateForm({ ...createForm, statementReference: normaliseStatementRef(e.target.value) })}
+                    placeholder="e.g. RVRSL"
+                    className="w-full h-10 px-3 bg-white border border-[#cbd5e1] rounded-md text-[13.5px] font-mono text-[#0f172a] focus:border-[#0d9488] outline-none"
+                    required
+                  />
+                  <span className="text-[11px] text-[#64748b] mt-1 block">
+                    {STATEMENT_REF_MIN} to {STATEMENT_REF_MAX} characters, capital letters and digits, unique. Starts the bank statement description: <span className="font-mono">{buildStatementDescription(createForm.statementReference, '12345')}</span>
+                  </span>
                 </div>
 
                 <div>

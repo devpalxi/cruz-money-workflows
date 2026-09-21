@@ -28,6 +28,9 @@ export const DEFAULT_COMPLIANCE_CAPTURE = {
   idvSkipThreshold: null,
   // A winner paid cleanly inside this many days only needs the bank check.
   returningWinnerWindowDays: 90,
+  // Short code that starts the bank statement description. Null falls back to
+  // the seeded code for the demo venues (see lib/statementReference.js).
+  statementReference: null,
 };
 
 function storageKey(venueId) {

@@ -36,6 +36,14 @@ import { STATE_CASH_LIMITS, STATE_LABELS } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, saveVenueIntegrationSettings } from '@/lib/mockMembershipDatabase';
 import { getVenueComplianceCapture, saveVenueComplianceCapture } from '@/lib/venueCompliance';
 import { getStateIdvThresholds } from '@/lib/idvThresholds';
+import {
+  getStatementRef,
+  normaliseStatementRef,
+  validateStatementRef,
+  buildStatementDescription,
+  STATEMENT_REF_MIN,
+  STATEMENT_REF_MAX,
+} from '@/lib/statementReference';
 import OcrDocketMappingView from './OcrDocketMappingView';
 
 // Default fields analyzed directly from public/dummy-docket.png
@@ -120,6 +128,7 @@ export default function VenueSettingsView({
       venueId: matchedVenue.id,
       venueName: matchedVenue.name || 'Riverside RSL Club',
       shortName: matchedVenue.shortName || (matchedVenue.name ? matchedVenue.name.slice(0, 20) : 'Riverside RSL'),
+      statementReference: getStatementRef(matchedVenue.id),
       orgName: parentClient.name || 'Riverside Leagues Ltd',
       clientId: parentClient.id,
       status: matchedVenue.status || 'Active',
@@ -341,6 +350,13 @@ export default function VenueSettingsView({
       return;
     }
 
+    const statementRefError = validateStatementRef(formData.statementReference, formData.venueId || venueId);
+    if (statementRefError) {
+      showToast(statementRefError);
+      setActiveTab('profile');
+      return;
+    }
+
     if (formData.allowedMethods.includes('bank_transfer') && formData.allowedMethods.includes('cheque')) {
       setDisbursementError('Bank transfer and cheque cannot be enabled together.');
       setActiveTab('payouts');
@@ -381,6 +397,7 @@ export default function VenueSettingsView({
       idvPolicy: formData.sub5kIdvPolicy,
       idvSkipThreshold: formData.skipIdThreshold,
       returningWinnerWindowDays: formData.returningWinnerWindowDays,
+      statementReference: formData.statementReference,
     });
     ocrMappingRef.current?.commit();
     setSavedData(formData);
@@ -667,6 +684,33 @@ export default function VenueSettingsView({
                     />
                   </div>
 
+                  {/* Statement reference */}
+                  <div className="space-y-1.5">
+                    <label className="text-[13.5px] font-medium text-[#475569] block">
+                      Statement reference <span className="text-red-500">*</span>
+                    </label>
+                    {isSuperAdmin ? (
+                      <>
+                        <input
+                          type="text"
+                          maxLength={STATEMENT_REF_MAX}
+                          value={formData.statementReference}
+                          onChange={(e) => setFormData({ ...formData, statementReference: normaliseStatementRef(e.target.value) })}
+                          placeholder="e.g. RVRSL"
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                        <span className="text-[12.5px] text-slate-500 block">
+                          {STATEMENT_REF_MIN} to {STATEMENT_REF_MAX} characters, capital letters and digits. Must be unique.
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[15px] font-mono text-[#0f172a] block pt-1">{formData.statementReference || '-'}</span>
+                    )}
+                    <span className="text-[12.5px] text-slate-500 block">
+                      Bank statement description: <span className="font-mono">{buildStatementDescription(formData.statementReference, '12345')}</span>
+                    </span>
+                  </div>
+
                   {/* Organisation / Group */}
                   <div className="space-y-1.5">
                     <label className="text-[13.5px] font-medium text-[#475569] block">Organisation / Client Group</label>
@@ -802,6 +846,16 @@ export default function VenueSettingsView({
                         <span className="text-[14px] font-bold text-[#0f172a] block">Short Name</span>
                         <span className="text-[14.5px] font-normal text-slate-500 block mt-1">
                           {savedData.shortName || '—'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[14px] font-bold text-[#0f172a] block">Statement reference</span>
+                        <span className="text-[14.5px] font-mono font-normal text-slate-500 block mt-1">
+                          {savedData.statementReference || '-'}
+                        </span>
+                        <span className="text-[13px] font-normal text-slate-500 block mt-0.5">
+                          Bank statement description: <span className="font-mono">{buildStatementDescription(savedData.statementReference, '12345')}</span>
                         </span>
                       </div>
 

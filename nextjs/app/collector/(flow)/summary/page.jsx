@@ -15,6 +15,7 @@ import {
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { getDisbursementFlags, needsBankStep, getPayoutRequirements } from '@/lib/payoutFlow';
+import { getStatementRefByVenueName, buildStatementDescription } from '@/lib/statementReference';
 import {
   getLink,
   resendLink,
@@ -893,6 +894,14 @@ function SummaryContent() {
                             {(patronVerified && patronCoversBank && patronResult?.accountNumber) || view.accountNumber || '12345678'}
                           </span>
                         </div>
+                        {getStatementRefByVenueName(view.venue || 'Riverside RSL Club') && (
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-ink-mid font-medium">Bank statement description</span>
+                            <span className="font-bold text-ink-hi font-mono text-right">
+                              {buildStatementDescription(getStatementRefByVenueName(view.venue || 'Riverside RSL Club'), '')} number
+                            </span>
+                          </div>
+                        )}
                         {view.bankSavedNote && (
                           <div className="flex justify-between items-center py-1">
                             <span className="text-ink-mid font-medium">Account source</span>
