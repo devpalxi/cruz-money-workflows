@@ -883,6 +883,12 @@ function SummaryContent() {
                             {(patronVerified && patronCoversBank && patronResult?.accountNumber) || view.accountNumber || '12345678'}
                           </span>
                         </div>
+                        {view.bankSavedNote && (
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-ink-mid font-medium">Account source</span>
+                            <span className="font-medium text-ink-hi text-right">{view.bankSavedNote}</span>
+                          </div>
+                        )}
 
                         {/* Inline CoP Validation */}
                         <div className="flex justify-between items-center py-1">

@@ -14,6 +14,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import { getDisbursementFlags, getStepBeforeBank, needsBankStep } from '@/lib/payoutFlow';
+import { getSavedBankAccount, maskAccountNumber } from '@/lib/savedBankAccount';
 
 const SCENARIOS = {
   match: {
@@ -70,6 +71,12 @@ function BankAccountContent() {
   const [disbursementMethod, setDisbursementMethod] = useState('');
   const [bankBackHref, setBankBackHref] = useState('/collector/secondary-id');
 
+  // An account kept from an earlier payout (or the club system). While the
+  // collector is using it the fields are read only and the number is masked;
+  // CoP still runs on it every time.
+  const [savedAccount, setSavedAccount] = useState(null);
+  const [usingSaved, setUsingSaved] = useState(false);
+
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
@@ -82,6 +89,17 @@ function BankAccountContent() {
       }
       if (saved.bsb) setBsb(saved.bsb);
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
+      const kept = getSavedBankAccount(saved);
+      if (kept) {
+        setSavedAccount(kept);
+        // Coming back to this page after typing a different account keeps that choice.
+        if (saved.bankSource !== 'entered') {
+          setUsingSaved(true);
+          setAccountName(kept.accountName);
+          setBsb(kept.bsb);
+          setAccountNumber(kept.accountNumber);
+        }
+      }
       setBankBackHref(getStepBeforeBank(saved.secondaryDoc, saved));
       if (saved.disbursementMethod) setDisbursementMethod(saved.disbursementMethod);
       // This payout has no bank step - reached by a stale link or a typed URL,
@@ -95,6 +113,27 @@ function BankAccountContent() {
       const current = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       sessionStorage.setItem('payoutFormData', JSON.stringify({ ...current, ...patch }));
     } catch (e) {}
+  };
+
+  const handleUseSaved = () => {
+    if (!savedAccount) return;
+    setUsingSaved(true);
+    setAccountName(savedAccount.accountName);
+    setBsb(savedAccount.bsb);
+    setAccountNumber(savedAccount.accountNumber);
+    setBsbTouched(false);
+    setAcctTouched(false);
+    setValidationState('idle');
+  };
+
+  const handleUseDifferent = () => {
+    setUsingSaved(false);
+    setAccountName('');
+    setBsb('');
+    setAccountNumber('');
+    setBsbTouched(false);
+    setAcctTouched(false);
+    setValidationState('idle');
   };
 
   const handleBsbChange = (e) => {
@@ -154,6 +193,8 @@ function BankAccountContent() {
       accountName,
       bsb,
       accountNumber,
+      bankSource: usingSaved && savedAccount ? savedAccount.source : 'entered',
+      bankSavedNote: usingSaved && savedAccount ? savedAccount.note : '',
       copStatus: validationState,
       copResult,
       bypassNotes: bypassConfirmed ? bypassNotes : '',
@@ -187,6 +228,37 @@ function BankAccountContent() {
             </div>
           )}
 
+          {hasBank && savedAccount && (
+            <div className="mb-6 space-y-3">
+              <p className="text-[14px] font-semibold text-ink-hi m-0">Saved bank account found for this winner</p>
+              <button
+                type="button"
+                onClick={handleUseSaved}
+                aria-pressed={usingSaved}
+                className={`w-full text-left p-4 rounded-md border cursor-pointer transition-colors ${
+                  usingSaved ? 'border-[#99f6e4] bg-[#f0fdfa]' : 'border-border bg-white hover:border-border-mid'
+                }`}
+              >
+                <span className="block text-[15px] font-bold text-ink-hi">Use saved account</span>
+                <span className="block text-[14px] text-ink-mid mt-0.5">
+                  {savedAccount.accountName}, BSB <span className="font-mono">{savedAccount.bsb}</span>, account <span className="font-mono">{maskAccountNumber(savedAccount.accountNumber)}</span>
+                </span>
+                <span className="block text-[13px] text-ink-mid mt-0.5">{savedAccount.note}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleUseDifferent}
+                aria-pressed={!usingSaved}
+                className={`w-full text-left p-4 rounded-md border cursor-pointer transition-colors ${
+                  !usingSaved ? 'border-[#99f6e4] bg-[#f0fdfa]' : 'border-border bg-white hover:border-border-mid'
+                }`}
+              >
+                <span className="block text-[15px] font-bold text-ink-hi">Enter a different account</span>
+                <span className="block text-[13px] text-ink-mid mt-0.5">The details are checked as a new account.</span>
+              </button>
+            </div>
+          )}
+
           {hasBank && (
           <Card padding="md" className="border-border shadow-card mb-6 space-y-6">
             {/* Account Name */}
@@ -198,6 +270,7 @@ function BankAccountContent() {
                 id="accountName"
                 type="text"
                 value={accountName}
+                readOnly={usingSaved}
                 placeholder="Account name"
                 onChange={(e) => {
                   setAccountName(e.target.value);
@@ -216,6 +289,7 @@ function BankAccountContent() {
                 id="bsb"
                 type="text"
                 value={bsb}
+                readOnly={usingSaved}
                 placeholder="000-000"
                 maxLength={7}
                 inputMode="numeric"
@@ -243,7 +317,8 @@ function BankAccountContent() {
               <input
                 id="accountNumber"
                 type="text"
-                value={accountNumber}
+                value={usingSaved ? maskAccountNumber(accountNumber) : accountNumber}
+                readOnly={usingSaved}
                 placeholder="241-325-325"
                 maxLength={11}
                 inputMode="numeric"

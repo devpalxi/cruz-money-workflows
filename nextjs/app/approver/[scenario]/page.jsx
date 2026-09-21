@@ -2593,6 +2593,11 @@ export default function ApproverScenarioPage() {
                     <span className="text-[15.5px] font-mono tabular-nums font-medium text-[#0f172a]">{scenario.bank.accountNumber}</span>
                   </div>
                 </div>
+                {scenario.bank.reusedFrom && (
+                  <p className="px-[14px] pb-[11px] m-0 text-[14px] text-[#475569]">
+                    Bank details reused from a previous payout ({scenario.bank.reusedFrom}). Confirmation of payee was run again on this payout.
+                  </p>
+                )}
               </AccordionItem>
 
               {/* 4. Name verification */}
