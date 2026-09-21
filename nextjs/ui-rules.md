@@ -138,6 +138,12 @@ This rulebook defines every shared UI component and pattern in `nextjs/component
 
 ---
 
+### 2.9 Scenario Preset Bar and hover tooltip (`components/shared/ScenarioPresetBar.jsx`)
+- Used by the Approver and Authoriser review pages. Presets are grouped under sentence case group names (`lib/scenarioGroups.js`), one row per group, never one long scrolling strip.
+- Each preset is a text link (`text-[14px] font-bold`, active one outlined `border-[#0d9488]/30`). Hovering or keyboard focusing it shows a one or two sentence description of what the scenario demonstrates.
+- **Hover tooltip:** dark ink background (`bg-[#0f172a]`), white `text-[12.5px]` text, `rounded-md`, `shadow-lg`, `w-64`, opening below the trigger. Plain text only, sentence case, no dashes. It is for short explanations of a control, not for anything the user must read.
+- New presets are added to a group and given a description in `lib/scenarioGroups.js`. A preset missing there still appears under "Other".
+
 ## 3. Review Checklist for Agents
 - [ ] Are all static status indicators rendered as `rounded-full` (`border-radius: 9999px`) pills?
 - [ ] Are role badges restricted to navigation headers (`rounded-md`, Cobalt Blue), never rendered as pills in tables?

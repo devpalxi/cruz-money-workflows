@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
 import { runDuplicateDemo } from '@/lib/duplicatePayee';
+import ScenarioPresetBar from '@/components/shared/ScenarioPresetBar';
 import { formatOccupation } from '@/lib/venueCompliance';
 import {
   EXCLUSION_TYPES,
@@ -2506,25 +2507,7 @@ export default function ApproverScenarioPage() {
         <div className="max-w-[840px] mx-auto px-6 pt-6 pb-20">
 
           {/* Scenario Switcher Bar */}
-          <div className="flex items-center justify-between gap-3 bg-white border border-[#e2e8f0] rounded-[6px] px-2 py-1.5 mb-7 flex-wrap">
-            <span className="text-[13.5px] font-bold uppercase tracking-[0.08em] text-[#0f172a] pl-3">
-              Scenario presets
-            </span>
-            <div className="flex gap-1 flex-wrap">
-              {Object.entries(SCENARIOS).map(([key, sc]) => (
-                <Link
-                  key={key}
-                  href={`/approver/${key}`}
-                  className={`text-[14.5px] font-bold no-underline px-3.5 py-1.5 rounded-[6px] border transition-all duration-150
-                    ${scenarioKey === key
-                      ? 'text-[#0f172a] bg-transparent border-[#0d9488]/30'
-                      : 'text-[#334155] border-transparent hover:text-[#0f172a] hover:bg-white'}`}
-                >
-                  {sc.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <ScenarioPresetBar scenarios={SCENARIOS} activeKey={scenarioKey} basePath="/approver" />
 
           {/* Blacklist Confirmation Toast */}
           {blacklistToast && (
