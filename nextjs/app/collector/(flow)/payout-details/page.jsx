@@ -21,6 +21,7 @@ import MemberLookupPanel from '@/components/shared/MemberLookupPanel';
 import { initialVenues, initialBlacklist } from '@/lib/mockData';
 import { getEffectiveCashCap } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, MOCK_CLUB_MEMBERS } from '@/lib/mockMembershipDatabase';
+import { isSavedBankReuseEnabled } from '@/lib/venueCompliance';
 import ExclusionAlert from '@/components/shared/ExclusionAlert';
 import { screenPatron } from '@/lib/exclusionRegister';
 
@@ -201,9 +202,14 @@ export default function PayoutDetailsPage() {
       addressSearch: member.address?.formatted || '',
       docType: member.idDocOnFile?.type || 'licence',
       licNumber: member.idDocOnFile?.number || '',
-      accountName: member.bankDetailsOnFile?.accountName || member.fullName,
-      bsb: member.bankDetailsOnFile?.bsb || '',
-      accountNumber: member.bankDetailsOnFile?.accountNumber || '',
+      // With reuse off the club record's account is not carried across.
+      ...(isSavedBankReuseEnabled()
+        ? {
+            accountName: member.bankDetailsOnFile?.accountName || member.fullName,
+            bsb: member.bankDetailsOnFile?.bsb || '',
+            accountNumber: member.bankDetailsOnFile?.accountNumber || '',
+          }
+        : {}),
     });
   };
 
@@ -558,7 +564,7 @@ export default function PayoutDetailsPage() {
 
                   {payoutTypeOpen && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg z-30 py-1">
-                      {['EGM', 'Table Game', 'MyCash'].map((type) => (
+                      {['EGM', 'MyCash'].map((type) => (
                         <button
                           key={type}
                           type="button"

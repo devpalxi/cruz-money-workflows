@@ -32,6 +32,39 @@ export const STATE_LABELS = {
 // National AML threshold — statutory fixed value (AUD)
 export const AML_THRESHOLD = 5000;
 
+// Amount at which ID verification and screening become mandatory, per state.
+// Every state starts at the national AML amount. These are platform defaults:
+// the super admin can change them (see lib/idvThresholds.js) and a venue can
+// only go lower. The real figures need confirming with compliance.
+export const DEFAULT_STATE_IDV_THRESHOLDS = {
+  ACT: AML_THRESHOLD,
+  NSW: AML_THRESHOLD,
+  VIC: AML_THRESHOLD,
+  NT: AML_THRESHOLD,
+  QLD: AML_THRESHOLD,
+  SA: AML_THRESHOLD,
+  TAS: AML_THRESHOLD,
+  WA: AML_THRESHOLD,
+};
+
+/**
+ * The amount at or above which a venue requires ID and screening.
+ *
+ * @param {string} venueState
+ * @param {object} [stateThresholds] - state overrides, defaults to the built-in table
+ * @param {object} [venuePolicy]
+ * @param {'all'|'skip'} [venuePolicy.idvPolicy] - 'all' requires ID on every payout
+ * @param {number} [venuePolicy.idvSkipThreshold] - venue amount, only ever lowers the state figure
+ * @returns {number} 0 means every payout needs ID
+ */
+export function getIdvThreshold(venueState = 'NSW', stateThresholds = DEFAULT_STATE_IDV_THRESHOLDS, venuePolicy = {}) {
+  const stateAmount = Number(stateThresholds?.[venueState] ?? DEFAULT_STATE_IDV_THRESHOLDS[venueState] ?? AML_THRESHOLD);
+  if (venuePolicy.idvPolicy === 'all') return 0;
+  const venueAmount = Number(venuePolicy.idvSkipThreshold);
+  if (venuePolicy.idvPolicy === 'skip' && venueAmount > 0) return Math.min(stateAmount, venueAmount);
+  return stateAmount;
+}
+
 /**
  * Calculates the effective cash cap for a venue.
  * 

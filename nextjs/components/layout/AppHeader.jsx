@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, User } from 'lucide-react';
-import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep, needsIdStep } from '@/lib/payoutFlow';
 
 export default function AppHeader({ role = 'ADMIN' }) {
   const pathname = usePathname();
@@ -18,16 +18,19 @@ export default function AppHeader({ role = 'ADMIN' }) {
   // A small cash-only payout has no Bank account step at all, so it comes out
   // of the list rather than showing as "not required".
   const [showsBankStep, setShowsBankStep] = useState(true);
+  // Primary and Secondary ID come out when the payout doesn't need them.
+  const [showsIdSteps, setShowsIdSteps] = useState(true);
 
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
       setShowsBankStep(needsBankStep(saved));
+      setShowsIdSteps(needsIdStep(saved));
     } catch (e) {
       setDisbursementMethod('');
     }
-  }, []);
+  }, [pathname]);
 
   const adminNavLinks = [
     { label: 'Dashboard', href: '/admin/dashboard' },
@@ -58,6 +61,7 @@ export default function AppHeader({ role = 'ADMIN' }) {
   ];
   const collectorNavLinks = collectorSteps
     .filter((item) => showsBankStep || item.href !== '/collector/bank-account')
+    .filter((item) => showsIdSteps || (item.href !== '/collector/primary-id' && item.href !== '/collector/secondary-id'))
     .map((item, idx) => ({
       label: `${idx + 1}. ${item.title}`,
       href: item.href,

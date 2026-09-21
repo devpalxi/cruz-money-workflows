@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check } from 'lucide-react';
-import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep, needsIdStep } from '@/lib/payoutFlow';
 import { getPatronCoverage } from '@/lib/verificationLink';
 
 export const COLLECTOR_STEPS = [
@@ -25,6 +25,9 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
   // than shown greyed out. `null` means the form hasn't been read yet.
   const [disbursementMethod, setDisbursementMethod] = useState(null);
   const [showsBankStep, setShowsBankStep] = useState(true);
+  // Primary and Secondary ID drop out the same way when the payout is under
+  // the state threshold or is a recent clean returning winner.
+  const [showsIdSteps, setShowsIdSteps] = useState(true);
   const [patronCoverage, setPatronCoverage] = useState({ id: false, secondary: false, bank: false });
 
   // Re-read on every route change: this component lives in the flow layout,
@@ -37,6 +40,7 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
       setDisbursementMethod(saved.disbursementMethod || '');
       setShowsBankStep(needsBankStep(saved));
+      setShowsIdSteps(needsIdStep(saved));
       setPatronCoverage(getPatronCoverage(saved));
     } catch (e) {
       setDisbursementMethod('');
@@ -44,9 +48,11 @@ export default function Stepper({ currentStep = 1, completedThrough, className =
   }, [pathname]);
 
   const { hasBank, hasCheque } = getDisbursementFlags(disbursementMethod);
-  const steps = showsBankStep
-    ? COLLECTOR_STEPS
-    : COLLECTOR_STEPS.filter((s) => s.path !== '/collector/bank-account');
+  const steps = COLLECTOR_STEPS.filter(
+    (s) =>
+      (showsBankStep || s.path !== '/collector/bank-account') &&
+      (showsIdSteps || (s.path !== '/collector/primary-id' && s.path !== '/collector/secondary-id'))
+  );
 
   // Steps the patron is completing on their own phone, depending on the link
   // type the collector chose. Cheque details stay with staff either way - a

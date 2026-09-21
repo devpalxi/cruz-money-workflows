@@ -45,6 +45,10 @@ export const returningPlayersDatabase = [
     dvsResult: 'PASS',
     reuseWindowMonths: 12,
     isEligibleForReuse: true,
+    // Last payout at a venue: how long ago, and whether ID and screening were
+    // clear (not a manual ID or No-ID). Drives the returning winner rule.
+    lastPayoutDaysAgo: 34,
+    lastPayoutClear: true,
     notes: 'Returning winner with valid DVS verification on file.',
   },
   {
@@ -90,6 +94,8 @@ export const returningPlayersDatabase = [
     dvsResult: 'PASS',
     reuseWindowMonths: 12,
     isEligibleForReuse: true,
+        lastPayoutDaysAgo: 120,
+    lastPayoutClear: true,
     notes: 'Regular patron with valid electronic passport check on file.',
   },
   {
@@ -127,6 +133,8 @@ export const returningPlayersDatabase = [
     dvsResult: 'PASS',
     reuseWindowMonths: 12,
     isEligibleForReuse: false,
+        lastPayoutDaysAgo: 45,
+    lastPayoutClear: false, // last payout used a manual ID
     notes: 'Previous verification exceeds 12-month venue reuse window — re-verification required.',
   }
 ];
