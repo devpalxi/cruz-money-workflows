@@ -29,7 +29,7 @@ import {
   LINK_STATUS,
   LINK_STATUS_LABELS,
 } from '@/lib/verificationLink';
-import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep, getStepAfterEmail, getPayoutRequirements, readPayoutForm } from '@/lib/payoutFlow';
 
 const VERIFY_MODES = [
   { value: 'manual', label: 'Verify at the counter' },
@@ -217,7 +217,8 @@ function EmailAddressContent() {
     if (fromSummary) {
       router.push('/collector/summary');
     } else {
-      router.push('/collector/primary-id');
+      // Past the ID steps entirely when the payout doesn't need them.
+      router.push(getStepAfterEmail(readPayoutForm()));
     }
   };
 

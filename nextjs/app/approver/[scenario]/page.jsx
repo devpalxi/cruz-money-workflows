@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { computeRisk } from '@/lib/riskEngine';
+import { runDuplicateDemo } from '@/lib/duplicatePayee';
+import ScenarioPresetBar from '@/components/shared/ScenarioPresetBar';
 import { formatOccupation } from '@/lib/venueCompliance';
 import {
   EXCLUSION_TYPES,
@@ -976,6 +978,124 @@ const SCENARIOS = {
   },
 };
 
+
+// Bank details reused from an earlier payout. Same clean payout as
+// 'multi-id-pass' so the reused-account line is the only thing that differs.
+SCENARIOS['reused-account'] = {
+  ...SCENARIOS['multi-id-pass'],
+  label: '13. Reused bank account',
+  payoutNum: '#592',
+  bank: {
+    ...SCENARIOS['multi-id-pass'].bank,
+    reusedFrom: 'last verified 12 Apr 2026',
+  },
+};
+
+// Conditional checks by amount. The three presets below show the same kind of
+// payout under each rule: over the state threshold (full checks), under it
+// (bank check only) and a returning winner paid cleanly inside the venue
+// window (bank check only). A skipped check is shown as "Not required", never
+// as a failure.
+const IDV_RULE_BASE = SCENARIOS['multi-id-pass'];
+const NOT_REQUIRED_AML_ROWS = [
+  { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+  { id: 'pep', label: 'PEP screening', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+  { id: 'sanctions', label: 'Sanctions screening', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+];
+const NOT_REQUIRED_AML_TRAIL = [
+  { id: 'blacklist', label: 'Venue blacklist status', sub: 'Exclusion register checked on the name being paid.', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+  { id: 'pep', label: 'PEP match status', sub: 'Screening not required for this payout.', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+  { id: 'sanctions', label: 'Sanctions match status', sub: 'Screening not required for this payout.', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+];
+const NOT_REQUIRED_IDV_ROWS = [
+  { label: 'Government ID', status: 'skip', text: 'Not required' },
+  { label: 'Venue Blacklist', status: 'pass', text: 'No match' },
+];
+const SKIPPED_ID_SIGNALS = {
+  ...IDV_RULE_BASE.riskSignals,
+  idvPath: 'skipped',
+  driverLicenceResult: null,
+  passportResult: null,
+  cashRatio: 0,
+  blacklistMatch: false,
+};
+const BANK_ONLY_PAYOUT = (amount) => ({
+  ...IDV_RULE_BASE.payout,
+  cashAmount: 'AUD 0.00',
+  transferAmount: amount,
+  disbursementPolicy: 'Bank transfer only',
+});
+
+SCENARIOS['over-threshold'] = {
+  ...IDV_RULE_BASE,
+  label: '14. Over threshold (full checks)',
+  payoutNum: '#593',
+  payout: BANK_ONLY_PAYOUT('AUD 8,000.00'),
+  idvNotice: 'Payout is at or above the NSW threshold of $5,000, so ID verification, screening and confirmation of payee all ran.',
+  riskSignals: { ...IDV_RULE_BASE.riskSignals, transactionValue: 8000.00, cashRatio: 0 },
+};
+
+SCENARIOS['under-threshold'] = {
+  ...IDV_RULE_BASE,
+  label: '15. Under threshold (bank check only)',
+  payoutNum: '#594',
+  payout: BANK_ONLY_PAYOUT('AUD 1,200.00'),
+  member: { ...IDV_RULE_BASE.member, documentType: 'Not collected' },
+  idvRows: NOT_REQUIRED_IDV_ROWS,
+  idvNotice: 'ID verification and screening were not required: the payout is under the NSW threshold of $5,000. Confirmation of payee ran and matched.',
+  amlRows: NOT_REQUIRED_AML_ROWS,
+  idvHistory: [],
+  execSummary: [
+    { label: 'Identity verification', value: 'Not required (under threshold)', color: 'ok' },
+    { label: 'Name match', value: 'Match', color: 'ok' },
+    { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+    { label: 'Venue blacklist', value: 'No match', color: 'ok' },
+  ],
+  amlAuditRows: NOT_REQUIRED_AML_TRAIL,
+  riskSignals: { ...SKIPPED_ID_SIGNALS, transactionValue: 1200.00 },
+};
+
+SCENARIOS['returning-winner'] = {
+  ...IDV_RULE_BASE,
+  label: '16. Returning winner (bank check only)',
+  payoutNum: '#595',
+  payout: BANK_ONLY_PAYOUT('AUD 7,500.00'),
+  idvRows: NOT_REQUIRED_IDV_ROWS,
+  idvNotice: 'ID verification and screening were not required: this winner was paid cleanly 34 days ago, inside the 90 day window, and that payout did not use a manual ID. Confirmation of payee ran again.',
+  amlRows: NOT_REQUIRED_AML_ROWS,
+  idvHistory: [
+    { doc: 'Previous payout, 34 days ago (ID and screening clear)', dateTime: '18 August 2026', result: 'pass' },
+  ],
+  execSummary: [
+    { label: 'Identity verification', value: 'Not required (returning winner)', color: 'ok' },
+    { label: 'Name match', value: 'Match', color: 'ok' },
+    { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+    { label: 'Venue blacklist', value: 'No match', color: 'ok' },
+  ],
+  amlAuditRows: NOT_REQUIRED_AML_TRAIL,
+  riskSignals: { ...SKIPPED_ID_SIGNALS, transactionValue: 7500.00 },
+};
+
+// Duplicate payee presets: the same payout reviewed after a repeat of the same
+// person in 24 hours, the same bank account across venues in 30 days, and one
+// bank account used under several names. The check runs on fixed demo history
+// (see lib/duplicatePayee.js) so each case reads the same every time.
+const DUPLICATE_PRESETS = [
+  ['duplicate-person', 'person', '17. Duplicate payee (same person)', '#596'],
+  ['duplicate-account', 'account', '18. Duplicate payee (same account)', '#597'],
+  ['duplicate-shared', 'shared', '19. Duplicate payee (shared account)', '#598'],
+];
+DUPLICATE_PRESETS.forEach(([key, kind, label, payoutNum]) => {
+  const duplicateCheck = runDuplicateDemo(kind);
+  SCENARIOS[key] = {
+    ...SCENARIOS['multi-id-pass'],
+    label,
+    payoutNum,
+    duplicateCheck,
+    riskSignals: { ...SCENARIOS['multi-id-pass'].riskSignals, duplicatePayee: duplicateCheck },
+  };
+});
+
 // Exclusion register presets. Kept separate from the blacklist-match preset so
 // each one tests a single thing: the self-exclusion preset proves an Approver
 // cannot release the funds, the venue-ban preset proves they can proceed once
@@ -1151,6 +1271,43 @@ function Pill({ variant, children, onClick }) {
     >
       {children}
     </span>
+  );
+}
+
+// Shows what the duplicate payee check found: each alert with the earlier
+// payouts behind it, or a clear result.
+function DuplicatePayeeSection({ check }) {
+  return (
+    <>
+      <SectionHead>Duplicate payee check</SectionHead>
+      <div className="flex flex-col mb-2">
+        {check.hasAlert ? (
+          check.alerts.map((alert, i) => (
+            <div key={i} className="p-[11px_14px]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[16px] font-bold text-[#0f172a]">{alert.text}</span>
+                <Pill variant={alert.severity === 'high' ? 'fail' : 'warn'}>
+                  {alert.severity === 'high' ? 'High alert' : 'Alert'}
+                </Pill>
+              </div>
+              <ul className="list-none m-0 mt-1.5 p-0 text-[14px] text-[#475569] space-y-0.5">
+                {alert.matches.map((m) => (
+                  <li key={m.id}>
+                    #{m.id}, {m.created}, {m.venue}, <span className="font-mono">${Number(m.amount).toLocaleString('en-AU')}</span>
+                    {alert.field === 'account_shared' ? `, ${m.accountName}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        ) : (
+          <div className="flex items-center justify-between p-[11px_14px]">
+            <span className="text-[16px] font-bold text-[#0f172a]">Repeat payee check</span>
+            <Pill variant="pass">No repeat found</Pill>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -2350,25 +2507,7 @@ export default function ApproverScenarioPage() {
         <div className="max-w-[840px] mx-auto px-6 pt-6 pb-20">
 
           {/* Scenario Switcher Bar */}
-          <div className="flex items-center justify-between gap-3 bg-white border border-[#e2e8f0] rounded-[6px] px-2 py-1.5 mb-7 flex-wrap">
-            <span className="text-[13.5px] font-bold uppercase tracking-[0.08em] text-[#0f172a] pl-3">
-              Scenario presets
-            </span>
-            <div className="flex gap-1 flex-wrap">
-              {Object.entries(SCENARIOS).map(([key, sc]) => (
-                <Link
-                  key={key}
-                  href={`/approver/${key}`}
-                  className={`text-[14.5px] font-bold no-underline px-3.5 py-1.5 rounded-[6px] border transition-all duration-150
-                    ${scenarioKey === key
-                      ? 'text-[#0f172a] bg-transparent border-[#0d9488]/30'
-                      : 'text-[#334155] border-transparent hover:text-[#0f172a] hover:bg-white'}`}
-                >
-                  {sc.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <ScenarioPresetBar scenarios={SCENARIOS} activeKey={scenarioKey} basePath="/approver" />
 
           {/* Blacklist Confirmation Toast */}
           {blacklistToast && (
@@ -2593,6 +2732,11 @@ export default function ApproverScenarioPage() {
                     <span className="text-[15.5px] font-mono tabular-nums font-medium text-[#0f172a]">{scenario.bank.accountNumber}</span>
                   </div>
                 </div>
+                {scenario.bank.reusedFrom && (
+                  <p className="px-[14px] pb-[11px] m-0 text-[14px] text-[#475569]">
+                    Bank details reused from a previous payout ({scenario.bank.reusedFrom}). Confirmation of payee was run again on this payout.
+                  </p>
+                )}
               </AccordionItem>
 
               {/* 4. Name verification */}
@@ -2651,7 +2795,7 @@ export default function ApproverScenarioPage() {
                   {scenario.idvRows.map((row, i) => (
                     <div key={i} className="flex items-center justify-between p-[11px_14px]">
                       <span className="text-[16.5px] font-bold text-[#0f172a]">{row.label}</span>
-                      <Pill variant={row.status === 'pass' ? 'pass' : row.status === 'fail' ? 'fail' : 'warn'}>
+                      <Pill variant={row.status === 'pass' ? 'pass' : row.status === 'fail' ? 'fail' : row.status === 'skip' ? 'neutral' : 'warn'}>
                         {row.text}
                       </Pill>
                     </div>
@@ -2693,6 +2837,7 @@ export default function ApproverScenarioPage() {
                     {scenario.amlNotice}
                   </div>
                 )}
+                {scenario.duplicateCheck && <DuplicatePayeeSection check={scenario.duplicateCheck} />}
               </AccordionItem>
 
               {/* 6. Identity verification (IDV) history */}

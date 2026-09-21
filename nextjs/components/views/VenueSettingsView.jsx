@@ -35,6 +35,15 @@ import { DEFAULT_VENUE_RISK_CONFIG } from '@/lib/riskEngine';
 import { STATE_CASH_LIMITS, STATE_LABELS } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, saveVenueIntegrationSettings } from '@/lib/mockMembershipDatabase';
 import { getVenueComplianceCapture, saveVenueComplianceCapture } from '@/lib/venueCompliance';
+import { getStateIdvThresholds } from '@/lib/idvThresholds';
+import {
+  getStatementRef,
+  normaliseStatementRef,
+  validateStatementRef,
+  buildStatementDescription,
+  STATEMENT_REF_MIN,
+  STATEMENT_REF_MAX,
+} from '@/lib/statementReference';
 import OcrDocketMappingView from './OcrDocketMappingView';
 
 // Default fields analyzed directly from public/dummy-docket.png
@@ -119,6 +128,7 @@ export default function VenueSettingsView({
       venueId: matchedVenue.id,
       venueName: matchedVenue.name || 'Riverside RSL Club',
       shortName: matchedVenue.shortName || (matchedVenue.name ? matchedVenue.name.slice(0, 20) : 'Riverside RSL'),
+      statementReference: getStatementRef(matchedVenue.id),
       orgName: parentClient.name || 'Riverside Leagues Ltd',
       clientId: parentClient.id,
       status: matchedVenue.status || 'Active',
@@ -134,8 +144,12 @@ export default function VenueSettingsView({
       delayUnresolvedPaymentItems: matchedVenue.delayUnresolvedPaymentItems ?? 30,
       maxPerTransaction: 5000,
       maxDaily: matchedVenue.dailyLimit ?? 30000,
-      sub5kIdvPolicy: 'skip',
-      skipIdThreshold: 500,
+      // ID rules live in the compliance capture store so the collector can read them.
+      sub5kIdvPolicy: getVenueComplianceCapture(matchedVenue.id).idvPolicy,
+      skipIdThreshold:
+        getVenueComplianceCapture(matchedVenue.id).idvSkipThreshold ??
+        (getStateIdvThresholds()[matchedVenue.state || 'NSW'] ?? 5000),
+      returningWinnerWindowDays: getVenueComplianceCapture(matchedVenue.id).returningWinnerWindowDays,
       noEFTLimit: 500,
       allowedMethods: matchedVenue.disbursementMethods || ['cash', 'bank_transfer'],
       venueState: matchedVenue.state || 'NSW',
@@ -170,6 +184,8 @@ export default function VenueSettingsView({
   const [formData, setFormData] = useState(initialData);
   const [savedData, setSavedData] = useState(initialData);
   const [disbursementError, setDisbursementError] = useState('');
+  // The amount set for this venue's state. The venue can go lower, not higher.
+  const stateIdvThreshold = getStateIdvThresholds()[formData.venueState] ?? 5000;
 
   // Measure the active segment's position so the pill "thumb" can slide smoothly to it
   useLayoutEffect(() => {
@@ -334,6 +350,23 @@ export default function VenueSettingsView({
       return;
     }
 
+    const dupCapture = formData.complianceCapture || {};
+    if (
+      !(Number.isInteger(dupCapture.duplicateDailyThreshold) && dupCapture.duplicateDailyThreshold >= 2) ||
+      !(Number.isInteger(dupCapture.duplicateMonthlyThreshold) && dupCapture.duplicateMonthlyThreshold >= 2)
+    ) {
+      showToast('Duplicate payee thresholds must be whole numbers of 2 or more.');
+      setActiveTab('risk_routing');
+      return;
+    }
+
+    const statementRefError = validateStatementRef(formData.statementReference, formData.venueId || venueId);
+    if (statementRefError) {
+      showToast(statementRefError);
+      setActiveTab('profile');
+      return;
+    }
+
     if (formData.allowedMethods.includes('bank_transfer') && formData.allowedMethods.includes('cheque')) {
       setDisbursementError('Bank transfer and cheque cannot be enabled together.');
       setActiveTab('payouts');
@@ -355,15 +388,27 @@ export default function VenueSettingsView({
     }
 
     if (formData.sub5kIdvPolicy === 'skip') {
-      if (formData.skipIdThreshold <= 0 || formData.skipIdThreshold >= 5000) {
-        showToast('Sub-$5,000 Skip-ID threshold must be between $1 and $4,999 AUD.');
+      if (formData.skipIdThreshold <= 0 || formData.skipIdThreshold > stateIdvThreshold) {
+        showToast(`Venue ID threshold must be between $1 and $${stateIdvThreshold.toLocaleString('en-AU')} AUD, the ${formData.venueState} state threshold.`);
         setActiveTab('payouts');
         return;
       }
     }
 
+    if (!(formData.returningWinnerWindowDays >= 1 && formData.returningWinnerWindowDays <= 365)) {
+      showToast('Returning winner window must be between 1 and 365 days.');
+      setActiveTab('payouts');
+      return;
+    }
+
     saveVenueIntegrationSettings(formData.venueId || venueId, formData.membershipIntegration);
-    saveVenueComplianceCapture(formData.venueId || venueId, formData.complianceCapture);
+    saveVenueComplianceCapture(formData.venueId || venueId, {
+      ...formData.complianceCapture,
+      idvPolicy: formData.sub5kIdvPolicy,
+      idvSkipThreshold: formData.skipIdThreshold,
+      returningWinnerWindowDays: formData.returningWinnerWindowDays,
+      statementReference: formData.statementReference,
+    });
     ocrMappingRef.current?.commit();
     setSavedData(formData);
     setIsEditing(false);
@@ -649,6 +694,33 @@ export default function VenueSettingsView({
                     />
                   </div>
 
+                  {/* Statement reference */}
+                  <div className="space-y-1.5">
+                    <label className="text-[13.5px] font-medium text-[#475569] block">
+                      Statement reference <span className="text-red-500">*</span>
+                    </label>
+                    {isSuperAdmin ? (
+                      <>
+                        <input
+                          type="text"
+                          maxLength={STATEMENT_REF_MAX}
+                          value={formData.statementReference}
+                          onChange={(e) => setFormData({ ...formData, statementReference: normaliseStatementRef(e.target.value) })}
+                          placeholder="e.g. RVRSL"
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                        <span className="text-[12.5px] text-slate-500 block">
+                          {STATEMENT_REF_MIN} to {STATEMENT_REF_MAX} characters, capital letters and digits. Must be unique.
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[15px] font-mono text-[#0f172a] block pt-1">{formData.statementReference || '-'}</span>
+                    )}
+                    <span className="text-[12.5px] text-slate-500 block">
+                      Bank statement description: <span className="font-mono">{buildStatementDescription(formData.statementReference, '12345')}</span>
+                    </span>
+                  </div>
+
                   {/* Organisation / Group */}
                   <div className="space-y-1.5">
                     <label className="text-[13.5px] font-medium text-[#475569] block">Organisation / Client Group</label>
@@ -784,6 +856,16 @@ export default function VenueSettingsView({
                         <span className="text-[14px] font-bold text-[#0f172a] block">Short Name</span>
                         <span className="text-[14.5px] font-normal text-slate-500 block mt-1">
                           {savedData.shortName || '—'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[14px] font-bold text-[#0f172a] block">Statement reference</span>
+                        <span className="text-[14.5px] font-mono font-normal text-slate-500 block mt-1">
+                          {savedData.statementReference || '-'}
+                        </span>
+                        <span className="text-[13px] font-normal text-slate-500 block mt-0.5">
+                          Bank statement description: <span className="font-mono">{buildStatementDescription(savedData.statementReference, '12345')}</span>
                         </span>
                       </div>
 
@@ -1113,20 +1195,20 @@ export default function VenueSettingsView({
                   {/* Federal AUSTRAC Requirement */}
                   <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
                     <label className="text-[14px] font-bold text-[#0f172a] block">
-                      Federal AUSTRAC threshold (≥ $5,000 AUD)
+                      {formData.venueState} ID threshold (≥ ${stateIdvThreshold.toLocaleString('en-AU')} AUD)
                     </label>
                     <StatusPill variant="pass" className="normal-case font-semibold mt-1">
                       Mandatory DVS &amp; screening
                     </StatusPill>
                     <p className="text-[13px] text-slate-500 pt-1 mb-0 leading-relaxed">
-                      Non-configurable federal mandate: electronic ID verification (DVS) and PEP/Sanctions screening required prior to disbursement.
+                      Set by the platform for {formData.venueState}: electronic ID verification (DVS) and PEP/Sanctions screening are required at or above this amount. Below it only the bank check runs, unless your venue asks for ID on all payouts.
                     </p>
                   </div>
 
                   {/* Sub-$5,000 Venue Policy */}
                   <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
                     <label className="text-[14px] font-bold text-[#0f172a] block">
-                      Sub-$5,000 venue verification policy
+                      Venue verification policy
                     </label>
 
                     {isEditing ? (
@@ -1169,14 +1251,14 @@ export default function VenueSettingsView({
                         {formData.sub5kIdvPolicy === 'skip' && (
                           <div className="space-y-1 max-w-xs pt-1">
                             <label className="text-[12.5px] font-medium text-[#475569] block">
-                              Skip-ID threshold ($ AUD) <span className="text-red-500">*</span>
+                              Venue ID threshold ($ AUD, up to ${stateIdvThreshold.toLocaleString('en-AU')}) <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <span className="absolute left-3.5 top-3 text-[15px] text-[#64748b] font-mono select-none">$</span>
                               <input
                                 type="number"
                                 min="1"
-                                max="4999.99"
+                                max={stateIdvThreshold}
                                 step="50"
                                 value={formData.skipIdThreshold}
                                 onChange={(e) => setFormData({ ...formData, skipIdThreshold: Number(e.target.value) })}
@@ -1204,6 +1286,31 @@ export default function VenueSettingsView({
                         </p>
                       </>
                     )}
+                  </div>
+
+                  {/* Returning winner window */}
+                  <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
+                    <label className="text-[14px] font-bold text-[#0f172a] block">
+                      Returning winner window (days)
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        step="1"
+                        value={formData.returningWinnerWindowDays}
+                        onChange={(e) => setFormData({ ...formData, returningWinnerWindowDays: Number(e.target.value) })}
+                        className="w-full max-w-xs h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                      />
+                    ) : (
+                      <div className="text-[14.5px] font-normal text-slate-500 pt-1 min-h-[28px]">
+                        <span className="font-mono">{savedData.returningWinnerWindowDays}</span> days
+                      </div>
+                    )}
+                    <p className="text-[13px] text-slate-500 pt-0.5 mb-0 leading-relaxed">
+                      A winner paid within this many days, with ID and screening clear on that payout (not a manual ID or No-ID), only needs the bank check.
+                    </p>
                   </div>
 
                   {/* Initial CDD capture - occupation */}
@@ -1242,6 +1349,46 @@ export default function VenueSettingsView({
                           className="normal-case font-semibold shrink-0"
                         >
                           {savedData.complianceCapture?.occupationCaptureEnabled ? 'Collected' : 'Not collected'}
+                        </StatusPill>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reuse saved bank accounts */}
+                  <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="text-[14px] font-bold text-[#0f172a] block">
+                          Reuse saved bank accounts
+                        </label>
+                        <p className="text-[13px] text-slate-500 pt-1 mb-0 leading-relaxed max-w-2xl">
+                          Offers the collector a returning winner&apos;s saved bank account instead of
+                          typing it again. The account number is masked, the collector can still enter a
+                          different account, and confirmation of payee runs on every payout either way.
+                          Turn this off if your venue wants every account entered fresh.
+                        </p>
+                      </div>
+                      {isEditing ? (
+                        <SegmentedBooleanToggle
+                          value={formData.complianceCapture?.reuseSavedBankEnabled ?? true}
+                          onChange={(val) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              complianceCapture: {
+                                ...(prev.complianceCapture || {}),
+                                reuseSavedBankEnabled: val,
+                              },
+                            }));
+                          }}
+                          falseLabel="Off"
+                          trueLabel="On"
+                        />
+                      ) : (
+                        <StatusPill
+                          variant={(savedData.complianceCapture?.reuseSavedBankEnabled ?? true) ? 'pass' : 'neutral'}
+                          className="normal-case font-semibold shrink-0"
+                        >
+                          {(savedData.complianceCapture?.reuseSavedBankEnabled ?? true) ? 'On' : 'Off'}
                         </StatusPill>
                       )}
                     </div>
@@ -1904,6 +2051,91 @@ export default function VenueSettingsView({
                   </div>
                 </div>
 
+                {/* Duplicate payee alert thresholds */}
+                <div className="space-y-4 pt-6 border-t border-[#e2e8f0]">
+                  <div>
+                    <label className="text-[14px] font-bold text-[#0f172a] block">
+                      Duplicate payee alerts
+                    </label>
+                    <span className="text-[13px] text-slate-400 block mt-0.5">
+                      Alert the approver when the same person, bank account or address is paid again. Counts include the payout being reviewed. Alerts warn only and never block a payout.
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[14px] font-bold text-[#0f172a] block">
+                        Alert at this many payouts in 24 hours
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          min="2"
+                          step="1"
+                          value={formData.complianceCapture?.duplicateDailyThreshold ?? 2}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            complianceCapture: { ...(formData.complianceCapture || {}), duplicateDailyThreshold: Number(e.target.value) }
+                          })}
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                      ) : (
+                        <div className="text-[14.5px] font-mono font-normal text-slate-500 min-h-[28px] mt-1">
+                          {savedData.complianceCapture?.duplicateDailyThreshold ?? 2}
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[14px] font-bold text-[#0f172a] block">
+                        Alert at this many payouts in 30 days
+                      </label>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          min="2"
+                          step="1"
+                          value={formData.complianceCapture?.duplicateMonthlyThreshold ?? 3}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            complianceCapture: { ...(formData.complianceCapture || {}), duplicateMonthlyThreshold: Number(e.target.value) }
+                          })}
+                          className="w-full h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                        />
+                      ) : (
+                        <div className="text-[14.5px] font-mono font-normal text-slate-500 min-h-[28px] mt-1">
+                          {savedData.complianceCapture?.duplicateMonthlyThreshold ?? 3}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[14px] font-bold text-[#0f172a] block">Include other venues in the client group</span>
+                      <span className="text-[13px] text-slate-500 block mt-0.5">
+                        Off means only payouts at this venue are compared.
+                      </span>
+                    </div>
+                    {isEditing ? (
+                      <SegmentedBooleanToggle
+                        value={formData.complianceCapture?.duplicateAcrossVenues ?? true}
+                        onChange={(val) => setFormData({
+                          ...formData,
+                          complianceCapture: { ...(formData.complianceCapture || {}), duplicateAcrossVenues: val }
+                        })}
+                        trueLabel="On"
+                        falseLabel="Off"
+                      />
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                        (savedData.complianceCapture?.duplicateAcrossVenues ?? true)
+                          ? 'bg-[#ecfdf5] text-[#065f46] border-[#a7f3d0]'
+                          : 'bg-[#f8fafc] text-[#64748b] border-[#cbd5e1]'
+                      }`}>
+                        {(savedData.complianceCapture?.duplicateAcrossVenues ?? true) ? 'On' : 'Off'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {/* 4. Active Risk Engine Signals (2-Column Clean Grid) */}
                 <div className="space-y-4 pt-6 border-t border-[#e2e8f0]">
                   <div>
@@ -1925,6 +2157,7 @@ export default function VenueSettingsView({
                       { key: 'blacklist', label: 'Venue Blacklist Exclusion', shortDesc: 'Immediate match against active exclusion lists (High)' },
                       { key: 'cashRatio', label: 'Cash Disbursement Ratio', shortDesc: 'Cash ratio > 80% on payouts over $1,000' },
                       { key: 'documentCountry', label: 'Foreign Document Jurisdiction', shortDesc: 'Non-Australian passport / overseas identity (Medium)' },
+                      { key: 'duplicatePayee', label: 'Duplicate Payee', shortDesc: 'Same person, bank account or address paid again (Medium), one account under several names (High)' },
                       { key: 'foreignPayment', label: 'Foreign Payment', shortDesc: 'Payout directed outside Australia — always requires a second approver' },
                     ].map((signal) => {
                       const isEnabled = isEditing

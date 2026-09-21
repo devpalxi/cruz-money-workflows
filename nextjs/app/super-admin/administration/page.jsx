@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Check, ShieldCheck, Scale, Info, Building2 } from 'lucide-react';
 import AdminShell from '@/components/layout/AdminShell';
 import SegmentedBooleanToggle from '@/components/ui/SegmentedBooleanToggle';
+import { STATE_LABELS, DEFAULT_STATE_IDV_THRESHOLDS } from '@/lib/complianceGate';
+import { getStateIdvThresholds, saveStateIdvThresholds } from '@/lib/idvThresholds';
 
 export default function SuperAdminAdministrationPage() {
   const [activeTab, setActiveTab] = useState('settings');
@@ -22,6 +24,27 @@ export default function SuperAdminAdministrationPage() {
   const [defaultSuspiciousAnalysis, setDefaultSuspiciousAnalysis] = useState(true);
   const [defaultSkipIdThreshold, setDefaultSkipIdThreshold] = useState(500);
   const [complianceSavedNotice, setComplianceSavedNotice] = useState(false);
+
+  // ID verification thresholds by state. Venues can go lower, never higher.
+  const [stateThresholds, setStateThresholds] = useState({ ...DEFAULT_STATE_IDV_THRESHOLDS });
+  const [thresholdError, setThresholdError] = useState('');
+  const [thresholdSavedNotice, setThresholdSavedNotice] = useState(false);
+  useEffect(() => {
+    setStateThresholds(getStateIdvThresholds());
+  }, []);
+
+  const handleSaveThresholds = (e) => {
+    e.preventDefault();
+    const invalid = Object.entries(stateThresholds).find(([, v]) => !(Number(v) > 0));
+    if (invalid) {
+      setThresholdError(`Enter an amount above $0 for ${invalid[0]}.`);
+      return;
+    }
+    setThresholdError('');
+    saveStateIdvThresholds(stateThresholds);
+    setThresholdSavedNotice(true);
+    setTimeout(() => setThresholdSavedNotice(false), 3000);
+  };
 
   // Notifications state
   const [notifications, setNotifications] = useState([
@@ -283,6 +306,59 @@ export default function SuperAdminAdministrationPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 1b. ID verification thresholds by state */}
+              <form onSubmit={handleSaveThresholds} className="border border-[#d9e2ec] rounded-lg overflow-hidden bg-white">
+                <div className="p-4 border-b border-[#d9e2ec] bg-[#f8fafb] flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#0d9488]" />
+                    <h3 className="text-[14px] font-bold text-[#102a43] m-0">
+                      ID verification thresholds by state
+                    </h3>
+                  </div>
+                  <span className="text-[12px] text-[#627d98]">Venues can set a lower amount, never higher</span>
+                </div>
+                <div className="p-5 space-y-4">
+                  <p className="text-[13px] text-[#627d98] m-0 max-w-[72ch] leading-relaxed">
+                    At or above this amount a payout needs ID verification, screening and confirmation of payee. Below it only confirmation of payee runs. Every state starts at the national $5,000 and should be confirmed with compliance before it is changed.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                    {Object.keys(DEFAULT_STATE_IDV_THRESHOLDS).map((code) => (
+                      <div key={code} className="flex items-center justify-between gap-3">
+                        <label htmlFor={`idv-threshold-${code}`} className="text-[13.5px] font-semibold text-[#102a43]">
+                          {STATE_LABELS[code]} ({code})
+                        </label>
+                        <div className="relative w-40">
+                          <span className="absolute left-3 top-2.5 text-[14px] text-[#64748b] font-mono select-none">$</span>
+                          <input
+                            id={`idv-threshold-${code}`}
+                            type="number"
+                            min="1"
+                            step="100"
+                            value={stateThresholds[code]}
+                            onChange={(e) => setStateThresholds({ ...stateThresholds, [code]: Number(e.target.value) })}
+                            className="w-full h-10 pl-7 pr-3 border border-[#cbd5e1] rounded-lg text-[14px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {thresholdError && (
+                    <p className="text-[13px] font-semibold text-[#991b1b] m-0">{thresholdError}</p>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      className="h-[38px] px-4 rounded-md bg-[#0d9488] hover:bg-[#0b7a6f] text-white text-[14px] font-bold cursor-pointer"
+                    >
+                      Save thresholds
+                    </button>
+                    {thresholdSavedNotice && (
+                      <span className="text-[13px] font-semibold text-[#065f46]">Thresholds saved</span>
+                    )}
+                  </div>
+                </div>
+              </form>
 
               {/* 2. Platform Default Rules for New Venues */}
               <form onSubmit={handleSaveCompliance} className="border border-[#d9e2ec] rounded-lg overflow-hidden bg-white">
