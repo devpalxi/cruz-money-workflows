@@ -1840,19 +1840,19 @@ export default function AuthoriserScenarioPage() {
           </div>
 
           {/* Scenario Switcher Bar */}
-          <div className="flex items-center gap-5 p-[12px_24px] bg-white border border-[#edf2f7] mb-6 rounded-[6px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-x-auto">
-            <span className="text-[13px] font-bold text-[#475569] uppercase tracking-[0.06em] whitespace-nowrap">
+          <div className="flex items-center justify-between gap-3 bg-white border border-[#e2e8f0] rounded-[6px] px-2 py-1.5 mb-7 flex-wrap">
+            <span className="text-[13.5px] font-bold uppercase tracking-[0.08em] text-[#0f172a] pl-3">
               Scenario presets
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-1 flex-wrap">
               {Object.entries(SCENARIOS).map(([key, sc]) => (
                 <Link
                   key={key}
                   href={`/authoriser/${key}`}
-                  className={`p-[6px_14px] rounded-[6px] text-[14.5px] font-bold no-underline transition-all whitespace-nowrap border
+                  className={`text-[14.5px] font-bold no-underline px-3.5 py-1.5 rounded-[6px] border transition-all duration-150
                     ${scenarioKey === key
-                      ? 'bg-[#0f172a] text-white border-[#0f172a]'
-                      : 'text-[#0f172a] bg-[#f4f5f8] border-transparent hover:bg-[#e2e3ea]'}`}
+                      ? 'text-[#0f172a] bg-transparent border-[#0d9488]/30'
+                      : 'text-[#334155] border-transparent hover:text-[#0f172a] hover:bg-white'}`}
                 >
                   {sc.label}
                 </Link>
