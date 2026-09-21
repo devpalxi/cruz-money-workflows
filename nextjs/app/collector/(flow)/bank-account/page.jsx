@@ -13,7 +13,10 @@ import {
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
-import { getDisbursementFlags, getStepBeforeBank, needsBankStep } from '@/lib/payoutFlow';
+import { getDisbursementFlags, getStepBeforeBank, needsBankStep, getPayoutRequirements } from '@/lib/payoutFlow';
+import ExclusionAlert from '@/components/shared/ExclusionAlert';
+import { screenPatron } from '@/lib/exclusionRegister';
+import { initialBlacklist } from '@/lib/mockData';
 import { getSavedBankAccount, maskAccountNumber } from '@/lib/savedBankAccount';
 import { isSavedBankReuseEnabled } from '@/lib/venueCompliance';
 
@@ -78,6 +81,11 @@ function BankAccountContent() {
   const [savedAccount, setSavedAccount] = useState(null);
   const [usingSaved, setUsingSaved] = useState(false);
 
+  // Set when ID and screening were skipped for this payout. The self-exclusion
+  // register is still checked here, on the name being paid, so a skipped ID
+  // step never lets an excluded winner through.
+  const [idSkipNote, setIdSkipNote] = useState('');
+
   useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
@@ -90,6 +98,8 @@ function BankAccountContent() {
       }
       if (saved.bsb) setBsb(saved.bsb);
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
+      const req = getPayoutRequirements(saved);
+      if (!req.requiresIdv) setIdSkipNote(req.note);
       const kept = isSavedBankReuseEnabled() ? getSavedBankAccount(saved) : null;
       if (kept) {
         setSavedAccount(kept);
@@ -152,6 +162,9 @@ function BankAccountContent() {
   };
 
   const { hasBank } = getDisbursementFlags(disbursementMethod);
+  const exclusionScreening = idSkipNote && hasBank
+    ? screenPatron({ name: accountName }, initialBlacklist)
+    : null;
 
   const isBsbValid = bsb.replace(/[^0-9]/g, '').length === 6;
   const isAcctValid = accountNumber.replace(/[^0-9]/g, '').length >= 6;
@@ -228,6 +241,14 @@ function BankAccountContent() {
               </p>
             </div>
           )}
+
+          {idSkipNote && hasBank && (
+            <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-200 mb-6">
+              <p className="text-[14px] font-bold text-ink-hi m-0">ID check not required</p>
+              <p className="text-[13.5px] text-ink-mid m-0 mt-0.5">{idSkipNote}. Only the bank check runs on this payout.</p>
+            </div>
+          )}
+          <ExclusionAlert screening={exclusionScreening} className="mb-6" />
 
           {hasBank && savedAccount && (
             <div className="mb-6 space-y-3">

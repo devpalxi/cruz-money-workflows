@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
-import { getDisbursementFlags, needsBankStep } from '@/lib/payoutFlow';
+import { getDisbursementFlags, needsBankStep, getPayoutRequirements } from '@/lib/payoutFlow';
 import {
   getLink,
   resendLink,
@@ -376,7 +376,7 @@ function SummaryContent() {
   // real patron name is used, so a genuine match still shows.
   const exclusionScreening = screenPatron(
     exclusionProtoState === 'none'
-      ? { name: view.fullName, dob: view.dob }
+      ? { name: view.fullName || formData.accountName, dob: view.dob }
       : { name: EXCLUSION_PROTO_NAMES[exclusionProtoState] },
     initialBlacklist
   );
@@ -386,6 +386,9 @@ function SummaryContent() {
   // preview-adjusted view: `view.state` is the patron's address state, not the
   // venue's.
   const showsBankSection = needsBankStep(formData);
+  // Which checks this payout needed, so skipped ID and screening read as a
+  // rule being applied, not as something missing.
+  const requirements = getPayoutRequirements(formData);
 
   // Determine Primary ID Edit destination
   const getPrimaryIdEditUrl = () => {
@@ -415,6 +418,13 @@ function SummaryContent() {
           </div>
 
           <ExclusionAlert screening={exclusionScreening} className="mb-6" />
+
+          {!requirements.requiresIdv && (
+            <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-200 mb-6">
+              <p className="text-[14px] font-bold text-ink-hi m-0">ID verification and screening not required</p>
+              <p className="text-[13.5px] text-ink-mid m-0 mt-0.5">{requirements.note}. Confirmation of payee still runs. The self-exclusion register is still checked.</p>
+            </div>
+          )}
 
           {/* Patron self-service verification state */}
           {isLinkMode && linkRecord && (

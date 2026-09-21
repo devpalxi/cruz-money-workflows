@@ -22,6 +22,12 @@ export const DEFAULT_COMPLIANCE_CAPTURE = {
   // CoP still runs on it, so a venue that wants every account typed fresh
   // turns this off.
   reuseSavedBankEnabled: true,
+  // ID verification: 'all' asks for ID on every payout, 'skip' asks from
+  // the venue amount up. A null amount means "use the state threshold".
+  idvPolicy: 'skip',
+  idvSkipThreshold: null,
+  // A winner paid cleanly inside this many days only needs the bank check.
+  returningWinnerWindowDays: 90,
 };
 
 function storageKey(venueId) {

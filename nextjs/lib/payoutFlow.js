@@ -12,7 +12,9 @@
 // entirely when no bank transfer is used and the win is under the AML threshold.
 
 import { getPatronCoverage } from './verificationLink';
-import { computeComplianceGate } from './complianceGate';
+import { computeComplianceGate, getIdvThreshold, STATE_LABELS } from './complianceGate';
+import { getStateIdvThresholds } from './idvThresholds';
+import { getVenueComplianceCapture } from './venueCompliance';
 
 export function getDisbursementFlags(disbursementMethod) {
   const method = disbursementMethod || '';
@@ -49,6 +51,69 @@ export function needsBankStep(form = readPayoutForm()) {
   return isAMLThresholdMet;
 }
 
+// A winner paid cleanly inside the venue window (default 90 days) only needs
+// the bank check. "Clean" means ID and screening were clear on that payout,
+// not a manual ID or No-ID.
+export function isRecentClearWinner(player, windowDays = 90) {
+  if (!player) return false;
+  return player.lastPayoutClear === true && Number(player.lastPayoutDaysAgo) <= windowDays;
+}
+
+/**
+ * What checks this payout needs.
+ *
+ * - At or above the state threshold: ID, screening and CoP.
+ * - Below it, or a recent clean returning winner: CoP only.
+ * A venue set to "require ID on all payouts" is always at or above.
+ * `reason` says why ID was skipped so the screens can show it: null (ID needed),
+ * 'threshold' or 'returning'.
+ */
+export function getPayoutRequirements(form = readPayoutForm(), config = {}) {
+  const capture = config.capture || getVenueComplianceCapture();
+  const stateThresholds = config.stateThresholds || getStateIdvThresholds();
+  const venueState = form.venueState || 'NSW';
+  const amount = rawAmount(form.winAmount);
+  const threshold = getIdvThreshold(venueState, stateThresholds, {
+    idvPolicy: capture.idvPolicy,
+    idvSkipThreshold: capture.idvSkipThreshold,
+  });
+  const windowDays = capture.returningWinnerWindowDays ?? 90;
+  const returning = form.returningPlayerMatch ? form.returningPlayerData : null;
+
+  let reason = null;
+  // No amount yet means the payout can't be judged, so ID stays required.
+  if (amount > 0 && amount < threshold) reason = 'threshold';
+  else if (isRecentClearWinner(returning, windowDays)) reason = 'returning';
+
+  const requiresIdv = reason === null;
+  return {
+    requiresIdv,
+    requiresScreening: requiresIdv,
+    requiresCop: true,
+    reason,
+    threshold,
+    venueState,
+    windowDays,
+    note:
+      reason === 'threshold'
+        ? `Under the ID threshold of $${threshold.toLocaleString('en-AU')} for ${STATE_LABELS[venueState] || venueState}`
+        : reason === 'returning'
+        ? `Paid cleanly ${returning.lastPayoutDaysAgo} days ago (inside ${windowDays} days)`
+        : '',
+  };
+}
+
+// Primary and Secondary ID (and the screening that goes with them) are removed
+// from the flow when the rules above don't ask for them.
+export function needsIdStep(form = readPayoutForm()) {
+  return getPayoutRequirements(form).requiresIdv;
+}
+
+// Where Email address goes next: Primary ID, or straight past the ID steps.
+export function getStepAfterEmail(form = readPayoutForm()) {
+  return needsIdStep(form) ? '/collector/primary-id' : getStepAfterSecondary(form);
+}
+
 export function readPayoutForm() {
   try {
     return JSON.parse(sessionStorage.getItem('payoutFormData') || '{}');
@@ -78,6 +143,7 @@ export function getStepAfterSecondary(form = readPayoutForm()) {
 // Where "Back" from bank account should return to, given which secondary ID
 // document (if any) was collected.
 export function getStepBeforeBank(secondaryDoc, form = readPayoutForm()) {
+  if (!needsIdStep(form)) return '/collector/email-address';
   if (getPatronCoverage(form).secondary) return '/collector/email-address';
   return secondaryDoc === 'medicare' ? '/collector/medicare' : '/collector/secondary-id';
 }

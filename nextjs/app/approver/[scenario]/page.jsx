@@ -989,6 +989,91 @@ SCENARIOS['reused-account'] = {
   },
 };
 
+// Conditional checks by amount. The three presets below show the same kind of
+// payout under each rule: over the state threshold (full checks), under it
+// (bank check only) and a returning winner paid cleanly inside the venue
+// window (bank check only). A skipped check is shown as "Not required", never
+// as a failure.
+const IDV_RULE_BASE = SCENARIOS['multi-id-pass'];
+const NOT_REQUIRED_AML_ROWS = [
+  { id: 'blacklist', label: 'Venue Blacklist - Screening', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+  { id: 'pep', label: 'PEP screening', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+  { id: 'sanctions', label: 'Sanctions screening', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+];
+const NOT_REQUIRED_AML_TRAIL = [
+  { id: 'blacklist', label: 'Venue blacklist status', sub: 'Exclusion register checked on the name being paid.', badgeType: 'pass', badgeText: 'No match', action: 'pill' },
+  { id: 'pep', label: 'PEP match status', sub: 'Screening not required for this payout.', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+  { id: 'sanctions', label: 'Sanctions match status', sub: 'Screening not required for this payout.', badgeType: 'neutral', badgeText: 'Not required', action: 'pill' },
+];
+const NOT_REQUIRED_IDV_ROWS = [
+  { label: 'Government ID', status: 'skip', text: 'Not required' },
+  { label: 'Venue Blacklist', status: 'pass', text: 'No match' },
+];
+const SKIPPED_ID_SIGNALS = {
+  ...IDV_RULE_BASE.riskSignals,
+  idvPath: 'skipped',
+  driverLicenceResult: null,
+  passportResult: null,
+  cashRatio: 0,
+  blacklistMatch: false,
+};
+const BANK_ONLY_PAYOUT = (amount) => ({
+  ...IDV_RULE_BASE.payout,
+  cashAmount: 'AUD 0.00',
+  transferAmount: amount,
+  disbursementPolicy: 'Bank transfer only',
+});
+
+SCENARIOS['over-threshold'] = {
+  ...IDV_RULE_BASE,
+  label: '14. Over threshold (full checks)',
+  payoutNum: '#593',
+  payout: BANK_ONLY_PAYOUT('AUD 8,000.00'),
+  idvNotice: 'Payout is at or above the NSW threshold of $5,000, so ID verification, screening and confirmation of payee all ran.',
+  riskSignals: { ...IDV_RULE_BASE.riskSignals, transactionValue: 8000.00, cashRatio: 0 },
+};
+
+SCENARIOS['under-threshold'] = {
+  ...IDV_RULE_BASE,
+  label: '15. Under threshold (bank check only)',
+  payoutNum: '#594',
+  payout: BANK_ONLY_PAYOUT('AUD 1,200.00'),
+  member: { ...IDV_RULE_BASE.member, documentType: 'Not collected' },
+  idvRows: NOT_REQUIRED_IDV_ROWS,
+  idvNotice: 'ID verification and screening were not required: the payout is under the NSW threshold of $5,000. Confirmation of payee ran and matched.',
+  amlRows: NOT_REQUIRED_AML_ROWS,
+  idvHistory: [],
+  execSummary: [
+    { label: 'Identity verification', value: 'Not required (under threshold)', color: 'ok' },
+    { label: 'Name match', value: 'Match', color: 'ok' },
+    { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+    { label: 'Venue blacklist', value: 'No match', color: 'ok' },
+  ],
+  amlAuditRows: NOT_REQUIRED_AML_TRAIL,
+  riskSignals: { ...SKIPPED_ID_SIGNALS, transactionValue: 1200.00 },
+};
+
+SCENARIOS['returning-winner'] = {
+  ...IDV_RULE_BASE,
+  label: '16. Returning winner (bank check only)',
+  payoutNum: '#595',
+  payout: BANK_ONLY_PAYOUT('AUD 7,500.00'),
+  idvRows: NOT_REQUIRED_IDV_ROWS,
+  idvNotice: 'ID verification and screening were not required: this winner was paid cleanly 34 days ago, inside the 90 day window, and that payout did not use a manual ID. Confirmation of payee ran again.',
+  amlRows: NOT_REQUIRED_AML_ROWS,
+  idvHistory: [
+    { doc: 'Previous payout, 34 days ago (ID and screening clear)', dateTime: '18 August 2026', result: 'pass' },
+  ],
+  execSummary: [
+    { label: 'Identity verification', value: 'Not required (returning winner)', color: 'ok' },
+    { label: 'Name match', value: 'Match', color: 'ok' },
+    { label: 'Confirmation of payee', value: 'Exact match', color: 'ok' },
+    { label: 'Venue blacklist', value: 'No match', color: 'ok' },
+  ],
+  amlAuditRows: NOT_REQUIRED_AML_TRAIL,
+  riskSignals: { ...SKIPPED_ID_SIGNALS, transactionValue: 7500.00 },
+};
+
 // Exclusion register presets. Kept separate from the blacklist-match preset so
 // each one tests a single thing: the self-exclusion preset proves an Approver
 // cannot release the funds, the venue-ban preset proves they can proceed once
@@ -2669,7 +2754,7 @@ export default function ApproverScenarioPage() {
                   {scenario.idvRows.map((row, i) => (
                     <div key={i} className="flex items-center justify-between p-[11px_14px]">
                       <span className="text-[16.5px] font-bold text-[#0f172a]">{row.label}</span>
-                      <Pill variant={row.status === 'pass' ? 'pass' : row.status === 'fail' ? 'fail' : 'warn'}>
+                      <Pill variant={row.status === 'pass' ? 'pass' : row.status === 'fail' ? 'fail' : row.status === 'skip' ? 'neutral' : 'warn'}>
                         {row.text}
                       </Pill>
                     </div>

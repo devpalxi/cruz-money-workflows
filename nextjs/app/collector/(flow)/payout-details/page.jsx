@@ -564,7 +564,7 @@ export default function PayoutDetailsPage() {
 
                   {payoutTypeOpen && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg z-30 py-1">
-                      {['EGM', 'Table Game', 'MyCash'].map((type) => (
+                      {['EGM', 'MyCash'].map((type) => (
                         <button
                           key={type}
                           type="button"

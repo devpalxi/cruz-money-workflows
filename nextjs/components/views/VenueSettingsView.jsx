@@ -35,6 +35,7 @@ import { DEFAULT_VENUE_RISK_CONFIG } from '@/lib/riskEngine';
 import { STATE_CASH_LIMITS, STATE_LABELS } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, saveVenueIntegrationSettings } from '@/lib/mockMembershipDatabase';
 import { getVenueComplianceCapture, saveVenueComplianceCapture } from '@/lib/venueCompliance';
+import { getStateIdvThresholds } from '@/lib/idvThresholds';
 import OcrDocketMappingView from './OcrDocketMappingView';
 
 // Default fields analyzed directly from public/dummy-docket.png
@@ -134,8 +135,12 @@ export default function VenueSettingsView({
       delayUnresolvedPaymentItems: matchedVenue.delayUnresolvedPaymentItems ?? 30,
       maxPerTransaction: 5000,
       maxDaily: matchedVenue.dailyLimit ?? 30000,
-      sub5kIdvPolicy: 'skip',
-      skipIdThreshold: 500,
+      // ID rules live in the compliance capture store so the collector can read them.
+      sub5kIdvPolicy: getVenueComplianceCapture(matchedVenue.id).idvPolicy,
+      skipIdThreshold:
+        getVenueComplianceCapture(matchedVenue.id).idvSkipThreshold ??
+        (getStateIdvThresholds()[matchedVenue.state || 'NSW'] ?? 5000),
+      returningWinnerWindowDays: getVenueComplianceCapture(matchedVenue.id).returningWinnerWindowDays,
       noEFTLimit: 500,
       allowedMethods: matchedVenue.disbursementMethods || ['cash', 'bank_transfer'],
       venueState: matchedVenue.state || 'NSW',
@@ -170,6 +175,8 @@ export default function VenueSettingsView({
   const [formData, setFormData] = useState(initialData);
   const [savedData, setSavedData] = useState(initialData);
   const [disbursementError, setDisbursementError] = useState('');
+  // The amount set for this venue's state. The venue can go lower, not higher.
+  const stateIdvThreshold = getStateIdvThresholds()[formData.venueState] ?? 5000;
 
   // Measure the active segment's position so the pill "thumb" can slide smoothly to it
   useLayoutEffect(() => {
@@ -355,15 +362,26 @@ export default function VenueSettingsView({
     }
 
     if (formData.sub5kIdvPolicy === 'skip') {
-      if (formData.skipIdThreshold <= 0 || formData.skipIdThreshold >= 5000) {
-        showToast('Sub-$5,000 Skip-ID threshold must be between $1 and $4,999 AUD.');
+      if (formData.skipIdThreshold <= 0 || formData.skipIdThreshold > stateIdvThreshold) {
+        showToast(`Venue ID threshold must be between $1 and $${stateIdvThreshold.toLocaleString('en-AU')} AUD, the ${formData.venueState} state threshold.`);
         setActiveTab('payouts');
         return;
       }
     }
 
+    if (!(formData.returningWinnerWindowDays >= 1 && formData.returningWinnerWindowDays <= 365)) {
+      showToast('Returning winner window must be between 1 and 365 days.');
+      setActiveTab('payouts');
+      return;
+    }
+
     saveVenueIntegrationSettings(formData.venueId || venueId, formData.membershipIntegration);
-    saveVenueComplianceCapture(formData.venueId || venueId, formData.complianceCapture);
+    saveVenueComplianceCapture(formData.venueId || venueId, {
+      ...formData.complianceCapture,
+      idvPolicy: formData.sub5kIdvPolicy,
+      idvSkipThreshold: formData.skipIdThreshold,
+      returningWinnerWindowDays: formData.returningWinnerWindowDays,
+    });
     ocrMappingRef.current?.commit();
     setSavedData(formData);
     setIsEditing(false);
@@ -1113,20 +1131,20 @@ export default function VenueSettingsView({
                   {/* Federal AUSTRAC Requirement */}
                   <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
                     <label className="text-[14px] font-bold text-[#0f172a] block">
-                      Federal AUSTRAC threshold (≥ $5,000 AUD)
+                      {formData.venueState} ID threshold (≥ ${stateIdvThreshold.toLocaleString('en-AU')} AUD)
                     </label>
                     <StatusPill variant="pass" className="normal-case font-semibold mt-1">
                       Mandatory DVS &amp; screening
                     </StatusPill>
                     <p className="text-[13px] text-slate-500 pt-1 mb-0 leading-relaxed">
-                      Non-configurable federal mandate: electronic ID verification (DVS) and PEP/Sanctions screening required prior to disbursement.
+                      Set by the platform for {formData.venueState}: electronic ID verification (DVS) and PEP/Sanctions screening are required at or above this amount. Below it only the bank check runs, unless your venue asks for ID on all payouts.
                     </p>
                   </div>
 
                   {/* Sub-$5,000 Venue Policy */}
                   <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
                     <label className="text-[14px] font-bold text-[#0f172a] block">
-                      Sub-$5,000 venue verification policy
+                      Venue verification policy
                     </label>
 
                     {isEditing ? (
@@ -1169,14 +1187,14 @@ export default function VenueSettingsView({
                         {formData.sub5kIdvPolicy === 'skip' && (
                           <div className="space-y-1 max-w-xs pt-1">
                             <label className="text-[12.5px] font-medium text-[#475569] block">
-                              Skip-ID threshold ($ AUD) <span className="text-red-500">*</span>
+                              Venue ID threshold ($ AUD, up to ${stateIdvThreshold.toLocaleString('en-AU')}) <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                               <span className="absolute left-3.5 top-3 text-[15px] text-[#64748b] font-mono select-none">$</span>
                               <input
                                 type="number"
                                 min="1"
-                                max="4999.99"
+                                max={stateIdvThreshold}
                                 step="50"
                                 value={formData.skipIdThreshold}
                                 onChange={(e) => setFormData({ ...formData, skipIdThreshold: Number(e.target.value) })}
@@ -1204,6 +1222,31 @@ export default function VenueSettingsView({
                         </p>
                       </>
                     )}
+                  </div>
+
+                  {/* Returning winner window */}
+                  <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
+                    <label className="text-[14px] font-bold text-[#0f172a] block">
+                      Returning winner window (days)
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        step="1"
+                        value={formData.returningWinnerWindowDays}
+                        onChange={(e) => setFormData({ ...formData, returningWinnerWindowDays: Number(e.target.value) })}
+                        className="w-full max-w-xs h-11 px-3.5 border border-[#cbd5e1] rounded-lg text-[15px] font-mono text-[#0f172a] outline-none focus:border-[#0d9488]"
+                      />
+                    ) : (
+                      <div className="text-[14.5px] font-normal text-slate-500 pt-1 min-h-[28px]">
+                        <span className="font-mono">{savedData.returningWinnerWindowDays}</span> days
+                      </div>
+                    )}
+                    <p className="text-[13px] text-slate-500 pt-0.5 mb-0 leading-relaxed">
+                      A winner paid within this many days, with ID and screening clear on that payout (not a manual ID or No-ID), only needs the bank check.
+                    </p>
                   </div>
 
                   {/* Initial CDD capture - occupation */}
