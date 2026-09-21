@@ -21,6 +21,7 @@ import MemberLookupPanel from '@/components/shared/MemberLookupPanel';
 import { initialVenues, initialBlacklist } from '@/lib/mockData';
 import { getEffectiveCashCap } from '@/lib/complianceGate';
 import { getVenueIntegrationSettings, MOCK_CLUB_MEMBERS } from '@/lib/mockMembershipDatabase';
+import { isSavedBankReuseEnabled } from '@/lib/venueCompliance';
 import ExclusionAlert from '@/components/shared/ExclusionAlert';
 import { screenPatron } from '@/lib/exclusionRegister';
 
@@ -201,9 +202,14 @@ export default function PayoutDetailsPage() {
       addressSearch: member.address?.formatted || '',
       docType: member.idDocOnFile?.type || 'licence',
       licNumber: member.idDocOnFile?.number || '',
-      accountName: member.bankDetailsOnFile?.accountName || member.fullName,
-      bsb: member.bankDetailsOnFile?.bsb || '',
-      accountNumber: member.bankDetailsOnFile?.accountNumber || '',
+      // With reuse off the club record's account is not carried across.
+      ...(isSavedBankReuseEnabled()
+        ? {
+            accountName: member.bankDetailsOnFile?.accountName || member.fullName,
+            bsb: member.bankDetailsOnFile?.bsb || '',
+            accountNumber: member.bankDetailsOnFile?.accountNumber || '',
+          }
+        : {}),
     });
   };
 

@@ -976,6 +976,19 @@ const SCENARIOS = {
   },
 };
 
+
+// Bank details reused from an earlier payout. Same clean payout as
+// 'multi-id-pass' so the reused-account line is the only thing that differs.
+SCENARIOS['reused-account'] = {
+  ...SCENARIOS['multi-id-pass'],
+  label: '13. Reused bank account',
+  payoutNum: '#592',
+  bank: {
+    ...SCENARIOS['multi-id-pass'].bank,
+    reusedFrom: 'last verified 12 Apr 2026',
+  },
+};
+
 // Exclusion register presets. Kept separate from the blacklist-match preset so
 // each one tests a single thing: the self-exclusion preset proves an Approver
 // cannot release the funds, the venue-ban preset proves they can proceed once

@@ -687,6 +687,17 @@ SCENARIOS['foreign-payment'] = {
   },
 };
 
+// Bank details reused from an earlier payout. Same clean payout as
+// 'multi-id-pass' so the reused-account line is the only thing that differs.
+SCENARIOS['reused-account'] = {
+  ...SCENARIOS['multi-id-pass'],
+  label: '13. Reused bank account',
+  payoutNum: '#592',
+  bank: {
+    ...SCENARIOS['multi-id-pass'].bank,
+    reusedFrom: 'last verified 12 Apr 2026',
+  },
+};
 
 /* ─── Payout total helper ─── */
 function formatTotalAmount(cashAmount, transferAmount) {
@@ -2009,6 +2020,11 @@ export default function AuthoriserScenarioPage() {
                     <span className="text-[15.5px] font-mono tabular-nums font-medium text-[#0f172a]">{scenario.bank.accountNumber}</span>
                   </div>
                 </div>
+                {scenario.bank.reusedFrom && (
+                  <p className="px-[14px] pb-[11px] m-0 text-[14px] text-[#475569]">
+                    Bank details reused from a previous payout ({scenario.bank.reusedFrom}). Confirmation of payee was run again on this payout.
+                  </p>
+                )}
               </AccordionItem>
 
               {/* 4. Name verification */}

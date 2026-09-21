@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import Checkbox from '@/components/ui/Checkbox';
 import { getDisbursementFlags, getStepBeforeBank, needsBankStep } from '@/lib/payoutFlow';
 import { getSavedBankAccount, maskAccountNumber } from '@/lib/savedBankAccount';
+import { isSavedBankReuseEnabled } from '@/lib/venueCompliance';
 
 const SCENARIOS = {
   match: {
@@ -89,7 +90,7 @@ function BankAccountContent() {
       }
       if (saved.bsb) setBsb(saved.bsb);
       if (saved.accountNumber) setAccountNumber(saved.accountNumber);
-      const kept = getSavedBankAccount(saved);
+      const kept = isSavedBankReuseEnabled() ? getSavedBankAccount(saved) : null;
       if (kept) {
         setSavedAccount(kept);
         // Coming back to this page after typing a different account keeps that choice.

@@ -1246,6 +1246,46 @@ export default function VenueSettingsView({
                       )}
                     </div>
                   </div>
+
+                  {/* Reuse saved bank accounts */}
+                  <div className="border border-[#e2e8f0] rounded-lg bg-white p-4 space-y-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="text-[14px] font-bold text-[#0f172a] block">
+                          Reuse saved bank accounts
+                        </label>
+                        <p className="text-[13px] text-slate-500 pt-1 mb-0 leading-relaxed max-w-2xl">
+                          Offers the collector a returning winner&apos;s saved bank account instead of
+                          typing it again. The account number is masked, the collector can still enter a
+                          different account, and confirmation of payee runs on every payout either way.
+                          Turn this off if your venue wants every account entered fresh.
+                        </p>
+                      </div>
+                      {isEditing ? (
+                        <SegmentedBooleanToggle
+                          value={formData.complianceCapture?.reuseSavedBankEnabled ?? true}
+                          onChange={(val) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              complianceCapture: {
+                                ...(prev.complianceCapture || {}),
+                                reuseSavedBankEnabled: val,
+                              },
+                            }));
+                          }}
+                          falseLabel="Off"
+                          trueLabel="On"
+                        />
+                      ) : (
+                        <StatusPill
+                          variant={(savedData.complianceCapture?.reuseSavedBankEnabled ?? true) ? 'pass' : 'neutral'}
+                          className="normal-case font-semibold shrink-0"
+                        >
+                          {(savedData.complianceCapture?.reuseSavedBankEnabled ?? true) ? 'On' : 'Off'}
+                        </StatusPill>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -18,6 +18,10 @@ const DEFAULT_VENUE_ID = 'venue-riverside-rsl';
 // Off by default: a venue opts in when it adopts the new initial CDD rules.
 export const DEFAULT_COMPLIANCE_CAPTURE = {
   occupationCaptureEnabled: false,
+  // On by default: the collector is offered a winner's saved bank account.
+  // CoP still runs on it, so a venue that wants every account typed fresh
+  // turns this off.
+  reuseSavedBankEnabled: true,
 };
 
 function storageKey(venueId) {
@@ -47,6 +51,10 @@ export function saveVenueComplianceCapture(venueId, settings) {
 // one place and be missing in another.
 export function isOccupationCaptureEnabled(venueId = DEFAULT_VENUE_ID) {
   return getVenueComplianceCapture(venueId).occupationCaptureEnabled;
+}
+
+export function isSavedBankReuseEnabled(venueId = DEFAULT_VENUE_ID) {
+  return getVenueComplianceCapture(venueId).reuseSavedBankEnabled !== false;
 }
 
 // What the approver and the AUSTRAC helper show. An empty value is not the same
